@@ -14,6 +14,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState('');
 
   // Redirect if already logged in
   useEffect(() => {
@@ -43,163 +44,316 @@ const LoginPage = () => {
     }
   };
 
+  const isFormValid = form.email && form.password;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-2xl shadow-lg">
-              <span className="text-white font-bold text-3xl">R</span>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-purple-600/20 to-pink-600/20"></div>
+      
+      {/* Floating Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-400/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '4s'}}></div>
+      </div>
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          {/* Enhanced Logo and Header */}
+          <div className="text-center mb-10 animate-fade-in-up">
+            <div className="flex justify-center mb-6">
+              <div className="relative group">
+                <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-all duration-300"></div>
+                <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 p-6 rounded-3xl shadow-2xl transform group-hover:scale-105 transition-all duration-300">
+                  <div className="text-white font-black text-4xl">R</div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-3xl"></div>
+                </div>
+              </div>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight">
+              Welcome Back
+            </h1>
+            <p className="text-xl text-blue-100 font-medium">
+              Sign in to manage your business reputation
+            </p>
+            <div className="mt-4 flex items-center justify-center space-x-2">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Welcome Back
-          </h1>
-          <p className="text-gray-600">Sign in to manage your business reputation</p>
-        </div>
 
-        {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
-                <span className="text-red-600">❌</span>
-                <span className="text-red-800 text-sm">{error}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your email"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-400">📧</span>
+          {/* Enhanced Login Form */}
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 lg:p-10 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {error && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-5 flex items-center space-x-4 animate-shake">
+                  <div className="bg-red-100 rounded-full p-2">
+                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <span className="text-red-800 font-semibold">{error}</span>
                 </div>
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your password"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-400">🔒</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                >
-                  <span>{showPassword ? '🙈' : '👁️'}</span>
-                </button>
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              disabled={loading || !form.email || !form.password}
-              className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
-                loading || !form.email || !form.password
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
-              }`}
-            >
-              {loading ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Signing in...</span>
-                </div>
-              ) : (
-                'Sign In'
               )}
-            </button>
-          </form>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="space-y-6">
+                <div className="relative group">
+                  <label className="block text-sm font-bold text-gray-900 mb-3">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField('')}
+                      required
+                      className={`w-full pl-14 pr-4 py-4 border-2 rounded-2xl transition-all duration-300 text-lg font-medium ${
+                        focusedField === 'email' 
+                          ? 'border-blue-500 ring-4 ring-blue-500/20 shadow-lg' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      placeholder="Enter your email address"
+                    />
+                    <div className={`absolute inset-y-0 left-0 pl-5 flex items-center transition-all duration-300 ${
+                      focusedField === 'email' ? 'transform scale-110' : ''
+                    }`}>
+                      <svg className={`w-6 h-6 ${focusedField === 'email' ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                      </svg>
+                    </div>
+                    {form.email && (
+                      <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                        <svg className="w-5 h-5 text-green-500 animate-scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="relative group">
+                  <label className="block text-sm font-bold text-gray-900 mb-3">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField('')}
+                      required
+                      className={`w-full pl-14 pr-14 py-4 border-2 rounded-2xl transition-all duration-300 text-lg font-medium ${
+                        focusedField === 'password' 
+                          ? 'border-blue-500 ring-4 ring-blue-500/20 shadow-lg' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      placeholder="Enter your password"
+                    />
+                    <div className={`absolute inset-y-0 left-0 pl-5 flex items-center transition-all duration-300 ${
+                      focusedField === 'password' ? 'transform scale-110' : ''
+                    }`}>
+                      <svg className={`w-6 h-6 ${focusedField === 'password' ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-5 flex items-center text-gray-400 hover:text-gray-600 transition-colors group"
+                    >
+                      <div className="group-hover:scale-110 transition-transform">
+                        {showPassword ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464M9.878 9.878L12 12m0 0l2.122 2.122M15 12l2.122 2.122M12 12l-3-3m0 0L6.464 6.464M9 9L6.464 6.464" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading || !isFormValid}
+                className={`relative w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 transform ${
+                  loading || !isFormValid
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed scale-95'
+                    : 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95'
+                } overflow-hidden`}
+              >
+                {!loading && !isFormValid && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 opacity-50"></div>
+                )}
+                {loading && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 animate-pulse"></div>
+                )}
+                <div className="relative flex items-center justify-center space-x-3">
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                      <span>Signing you in...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign In to Dashboard</span>
+                      <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </>
+                  )}
+                </div>
+              </button>
+            </form>
+
+            {/* Enhanced Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-6 bg-white text-gray-500 font-medium">New to Reputul?</span>
+              </div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">New to Reputul?</span>
+
+            {/* Enhanced Sign Up Link */}
+            <div className="text-center">
+              <Link 
+                to="/register" 
+                className="group inline-flex items-center space-x-3 text-blue-600 hover:text-blue-700 font-bold text-lg transition-all duration-300 transform hover:scale-105"
+              >
+                <span>Create your account</span>
+                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
             </div>
           </div>
 
-          {/* Sign Up Link */}
-          <div className="text-center">
-            <Link 
-              to="/register" 
-              className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          {/* Enhanced Demo Credentials */}
+          <div className="mt-8 bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-teal-500/10 backdrop-blur-lg border border-green-200/30 rounded-2xl p-6 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-green-100 rounded-full p-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="font-bold text-green-900 text-lg">Try Demo Account</span>
+            </div>
+            <div className="bg-white/50 rounded-xl p-4 mb-4 backdrop-blur-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="font-semibold text-green-900">Email:</span>
+                  <div className="font-mono text-green-800 bg-green-50 px-2 py-1 rounded mt-1">john@example.com</div>
+                </div>
+                <div>
+                  <span className="font-semibold text-green-900">Password:</span>
+                  <div className="font-mono text-green-800 bg-green-50 px-2 py-1 rounded mt-1">password</div>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setForm({ email: 'john@example.com', password: 'password' });
+              }}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              <span>Create an account</span>
-              <span>→</span>
-            </Link>
+              Use Demo Credentials
+            </button>
           </div>
-        </div>
 
-        {/* Demo Credentials */}
-        <div className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="text-green-600">💡</span>
-            <span className="font-semibold text-green-900">Demo Account</span>
-          </div>
-          <div className="text-sm text-green-800 space-y-1">
-            <div><strong>Email:</strong> john@example.com</div>
-            <div><strong>Password:</strong> password</div>
-          </div>
-          <button
-            onClick={() => {
-              setForm({ email: 'john@example.com', password: 'password' });
-            }}
-            className="mt-2 text-xs text-green-700 hover:text-green-800 underline"
-          >
-            Use Demo Credentials
-          </button>
-        </div>
-
-        {/* Features Preview */}
-        <div className="mt-8 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Why Choose Reputul?</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
-              <div className="text-2xl mb-2">📊</div>
-              <div className="text-sm font-medium text-gray-900">Analytics</div>
-              <div className="text-xs text-gray-600">Track your reputation</div>
-            </div>
-            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
-              <div className="text-2xl mb-2">⭐</div>
-              <div className="text-sm font-medium text-gray-900">Reviews</div>
-              <div className="text-xs text-gray-600">Manage all reviews</div>
-            </div>
-            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
-              <div className="text-2xl mb-2">🚀</div>
-              <div className="text-sm font-medium text-gray-900">Growth</div>
-              <div className="text-xs text-gray-600">Boost your business</div>
+          {/* Enhanced Features Preview */}
+          <div className="mt-10 text-center animate-fade-in-up" style={{animationDelay: '0.6s'}}>
+            <h3 className="text-2xl font-bold text-white mb-6">Why Choose Reputul?</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="group bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="text-lg font-bold text-white mb-2">Smart Analytics</div>
+                <div className="text-blue-100">Track reputation trends and insights</div>
+              </div>
+              
+              <div className="group bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2">
+                <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                </div>
+                <div className="text-lg font-bold text-white mb-2">Review Management</div>
+                <div className="text-blue-100">Collect and showcase reviews</div>
+              </div>
+              
+              <div className="group bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <div className="text-lg font-bold text-white mb-2">Business Growth</div>
+                <div className="text-blue-100">Boost trust and credibility</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        
+        .animate-fade-in-up {
+          animation: fade-in-up 0.6s ease-out forwards;
+        }
+        
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out forwards;
+        }
+        
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 };
