@@ -97,6 +97,24 @@ const Navbar = () => {
                       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
                     )}
                   </Link>
+                  <Link to="/customers" className={navLinkClass('/customers')}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                    <span>Customers</span>
+                    {isActiveRoute('/customers') && (
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                    )}
+                  </Link>
+                  <Link to="/email-templates" className={navLinkClass('/email-templates')}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>Templates</span>
+                    {isActiveRoute('/email-templates') && (
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                    )}
+                  </Link>
                   <Link to="/profile" className={navLinkClass('/profile')}>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -201,6 +219,28 @@ const Navbar = () => {
                           <span className="text-gray-700 font-medium">Dashboard</span>
                         </Link>
 
+                        <Link 
+                          to="/customers"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
+                        >
+                          <svg className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                          </svg>
+                          <span className="text-gray-700 font-medium">Customers</span>
+                        </Link>
+
+                        <Link 
+                          to="/email-templates"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
+                        >
+                          <svg className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-gray-700 font-medium">Email Templates</span>
+                        </Link>
+
                         <div className="border-t border-gray-200/50 mt-2 pt-2">
                           <button 
                             onClick={handleLogout}
@@ -296,6 +336,36 @@ const Navbar = () => {
                     </Link>
                     
                     <Link 
+                      to="/customers" 
+                      className={`flex items-center space-x-3 p-4 rounded-xl font-semibold transition-all duration-300 ${
+                        isActiveRoute('/customers') 
+                          ? 'bg-white/20 text-white border border-white/20' 
+                          : 'text-white/80 hover:text-white hover:bg-white/10'
+                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                      </svg>
+                      <span>Customers</span>
+                    </Link>
+
+                    <Link 
+                      to="/email-templates" 
+                      className={`flex items-center space-x-3 p-4 rounded-xl font-semibold transition-all duration-300 ${
+                        isActiveRoute('/email-templates') 
+                          ? 'bg-white/20 text-white border border-white/20' 
+                          : 'text-white/80 hover:text-white hover:bg-white/10'
+                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span>Email Templates</span>
+                    </Link>
+                    
+                    <Link 
                       to="/profile" 
                       className={`flex items-center space-x-3 p-4 rounded-xl font-semibold transition-all duration-300 ${
                         isActiveRoute('/profile') 
@@ -365,7 +435,8 @@ const Navbar = () => {
       {/* Spacer to prevent content from hiding behind fixed navbar */}
       <div className="h-20"></div>
 
-      <style jsx>{`
+      <style>
+        {`
         @keyframes fade-in-up {
           from {
             opacity: 0;
@@ -395,7 +466,8 @@ const Navbar = () => {
         .animate-fade-in-down {
           animation: fade-in-down 0.3s ease-out forwards;
         }
-      `}</style>
+        `}
+      </style>
     </>
   );
 };

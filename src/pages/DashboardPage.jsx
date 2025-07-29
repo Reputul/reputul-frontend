@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { Link } from 'react-router-dom';
 
 const DashboardPage = () => {
   const { token } = useAuth();
@@ -470,6 +471,19 @@ const DashboardPage = () => {
           </div>
           <span className="font-medium text-gray-900">Add New Business</span>
         </button>
+  
+        {/* NEW: Customer Management Link */}
+        <Link 
+          to="/customers"
+          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-indigo-50 rounded-lg transition-colors group"
+        >
+          <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            </svg>
+          </div>
+          <span className="font-medium text-gray-900">Manage Customers</span>
+        </Link>
         
         <button 
           onClick={() => setShowRequestReviews(true)}

@@ -6,11 +6,13 @@ import { ToastProvider } from './context/ToastContext';
 import Navbar from './components/Navbar';
 import Toast from './components/Toast';
 import DashboardPage from './pages/DashboardPage';
+import CustomerManagementPage from './pages/CustomerManagementPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import PrivateRoute from './components/PrivateRoute';
 import BusinessPublicPage from './pages/BusinessPublicPage';
+import EmailTemplatesPage from './pages/EmailTemplatesPage';
 import { NotFoundPage, ServerErrorPage, ForbiddenPage, MaintenancePage } from './pages/ErrorPage';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -89,6 +91,22 @@ function App() {
                   element={
                     <PrivateRoute>
                       <DashboardPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/customers"
+                  element={
+                    <PrivateRoute>
+                      <CustomerManagementPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/email-templates"
+                  element={
+                    <PrivateRoute>
+                      <EmailTemplatesPage />
                     </PrivateRoute>
                   }
                 />
