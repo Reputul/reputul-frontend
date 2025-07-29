@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 const ReviewPlatformSetupPage = () => {
@@ -9,6 +9,7 @@ const ReviewPlatformSetupPage = () => {
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const successRef = useRef(null);
 
   const [platformData, setPlatformData] = useState({
     googlePlaceId: '',
@@ -36,6 +37,24 @@ const ReviewPlatformSetupPage = () => {
       fetchPlatformData();
     }
   }, [selectedBusiness]);
+
+  // Scroll to success notification when it appears
+  useEffect(() => {
+    if (success && successRef.current) {
+      successRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      successRef.current.focus();
+      
+      // Clear success message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccess('');
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const fetchBusinesses = async () => {
     try {
@@ -80,69 +99,6 @@ const ReviewPlatformSetupPage = () => {
     setValidation(prev => ({ ...prev, [`${name.replace('PageUrl', '').replace('PlaceId', '')}Valid`]: null }));
   };
 
-  // ADD TESTING FUNCTIONS
-  const testGoogleReviews = () => {
-    if (!platformData.googlePlaceId?.trim()) {
-      alert('Please enter a Google Place ID first');
-      return;
-    }
-    
-    // Validate format
-    const placeId = platformData.googlePlaceId.trim();
-    if (!placeId.startsWith('ChIJ') || placeId.length < 20) {
-      alert('Invalid Place ID format. Should start with "ChIJ" and be 20-30 characters long.');
-      return;
-    }
-    
-    const testUrl = `https://search.google.com/local/writereview?placeid=${placeId}`;
-    console.log('Testing Google URL:', testUrl);
-    
-    const confirmTest = window.confirm(
-      `This will open Google Reviews for your business. Continue?\n\nURL: ${testUrl}`
-    );
-    
-    if (confirmTest) {
-      window.open(testUrl, '_blank');
-    }
-  };
-
-  const testFacebookReviews = () => {
-    if (!platformData.facebookPageUrl?.trim()) {
-      alert('Please enter a Facebook page URL first');
-      return;
-    }
-    
-    const baseUrl = platformData.facebookPageUrl.trim();
-    const testUrl = `${baseUrl}/reviews`;
-    console.log('Testing Facebook URL:', testUrl);
-    
-    const confirmTest = window.confirm(
-      `This will open Facebook Reviews for your business. Continue?\n\nURL: ${testUrl}`
-    );
-    
-    if (confirmTest) {
-      window.open(testUrl, '_blank');
-    }
-  };
-
-  const testYelpReviews = () => {
-    if (!platformData.yelpPageUrl?.trim()) {
-      alert('Please enter a Yelp page URL first');
-      return;
-    }
-    
-    const testUrl = platformData.yelpPageUrl.trim();
-    console.log('Testing Yelp URL:', testUrl);
-    
-    const confirmTest = window.confirm(
-      `This will open Yelp Reviews for your business. Continue?\n\nURL: ${testUrl}`
-    );
-    
-    if (confirmTest) {
-      window.open(testUrl, '_blank');
-    }
-  };
-
   const validatePlatforms = async () => {
     if (!selectedBusiness) return;
 
@@ -162,7 +118,6 @@ const ReviewPlatformSetupPage = () => {
     }
   };
 
-  // IMPROVED SAVE FUNCTION WITH BETTER ERROR HANDLING
   const savePlatforms = async () => {
     if (!selectedBusiness) {
       setError('Please select a business first');
@@ -179,7 +134,6 @@ const ReviewPlatformSetupPage = () => {
     try {
       const token = localStorage.getItem('token');
       
-      // Try the PUT request first
       const response = await axios.put(
         `${API_BASE}/api/businesses/${selectedBusiness}/review-platforms`, 
         platformData, 
@@ -196,6 +150,9 @@ const ReviewPlatformSetupPage = () => {
       
       // Refresh businesses to update configuration status
       fetchBusinesses();
+      
+      // Trigger event for dashboard to refresh
+      window.dispatchEvent(new CustomEvent('platformsUpdated'));
       
     } catch (err) {
       console.error('Error saving platforms:', err);
@@ -223,7 +180,22 @@ const ReviewPlatformSetupPage = () => {
     );
   };
 
+  // Helper function to generate fallback URL preview
+  const generateFallbackUrl = (business) => {
+    if (!business) return null;
+    
+    if (business.name && business.address) {
+      const query = encodeURIComponent(`${business.name} ${business.address}`);
+      return `https://www.google.com/maps/search/${query}`;
+    } else if (business.name) {
+      const query = encodeURIComponent(`${business.name} reviews`);
+      return `https://www.google.com/search?q=${query}`;
+    }
+    return 'https://www.google.com/business/';
+  };
+
   const selectedBusinessData = businesses.find(b => b.id.toString() === selectedBusiness);
+  const fallbackUrl = generateFallbackUrl(selectedBusinessData);
 
   if (loading) {
     return (
@@ -250,7 +222,11 @@ const ReviewPlatformSetupPage = () => {
       )}
 
       {success && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+        <div 
+          ref={successRef}
+          tabIndex={-1}
+          className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
           {success}
         </div>
       )}
@@ -278,18 +254,18 @@ const ReviewPlatformSetupPage = () => {
           <div className="bg-white rounded-lg shadow border p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Configure Review Platforms</h2>
             
-            {/* Google My Business */}
+            {/* Google My Business - UPDATED with Google green color */}
             <div className="mb-8">
               <div className="flex items-center mb-3">
-                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-red-600 font-bold">G</span>
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-green-600 font-bold">G</span>
                 </div>
-                <h3 className="text-md font-semibold text-gray-900">Google My Business</h3>
+                <h3 className="text-md font-semibold text-gray-900">Google Reviews</h3>
                 {getValidationIcon(validation.googleValid)}
               </div>
               
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Google Place ID
+                Google Place ID (Optional - Recommended for best results)
               </label>
               <input
                 type="text"
@@ -299,19 +275,53 @@ const ReviewPlatformSetupPage = () => {
                 placeholder="e.g., ChIJN1t_tDeuEmsRUsoyG83frY4"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-sm text-gray-500 mt-1">
-                Find your Google Place ID at: <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Place ID Finder</a>
-              </p>
               
-              {/* TEST BUTTON FOR GOOGLE */}
+              {/* Show current fallback strategy */}
+              {!platformData.googlePlaceId && selectedBusinessData && (
+                <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-green-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-semibold text-green-800 mb-1">
+                        ✅ No Problem! Google Reviews Will Still Work
+                      </h4>
+                      <p className="text-sm text-green-700 mb-2">
+                        Without a Place ID, we'll create a smart Google search using your business info:
+                      </p>
+                      <div className="bg-white p-2 rounded border text-xs font-mono text-gray-600 break-all">
+                        {fallbackUrl}
+                      </div>
+                      <p className="text-sm text-green-700 mt-2">
+                        This helps customers find your business and leave reviews. For even better results, add your Place ID below.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Help section */}
               <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={testGoogleReviews}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
-                >
-                  🧪 Test Google Reviews
-                </button>
+                <details className="group">
+                  <summary className="cursor-pointer text-sm text-blue-600 hover:text-blue-800 flex items-center">
+                    <svg className="w-4 h-4 mr-1 transform group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    How to find my Google Place ID
+                  </summary>
+                  <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>Go to <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Place ID Finder</a></li>
+                      <li>Search for your business name and location</li>
+                      <li>Click on your business when it appears</li>
+                      <li>Copy the Place ID that starts with "ChIJ"</li>
+                    </ol>
+                    <p className="mt-2 text-xs text-gray-600">
+                      <strong>Don't have a Google listing?</strong> No worries! Your customers can still leave Google reviews using our smart fallback system.
+                    </p>
+                  </div>
+                </details>
               </div>
               
               {validation.googleReviewUrl && (
@@ -346,17 +356,6 @@ const ReviewPlatformSetupPage = () => {
                 Enter your Facebook business page URL
               </p>
               
-              {/* TEST BUTTON FOR FACEBOOK */}
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={testFacebookReviews}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
-                >
-                  🧪 Test Facebook Reviews
-                </button>
-              </div>
-              
               {validation.facebookReviewUrl && (
                 <div className="mt-2 p-2 bg-green-50 rounded">
                   <p className="text-sm text-green-800">Preview: <a href={validation.facebookReviewUrl} target="_blank" rel="noopener noreferrer" className="underline">Facebook Review Link</a></p>
@@ -389,17 +388,6 @@ const ReviewPlatformSetupPage = () => {
                 Optional: Enter your Yelp business page URL
               </p>
               
-              {/* TEST BUTTON FOR YELP */}
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={testYelpReviews}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
-                >
-                  🧪 Test Yelp Reviews
-                </button>
-              </div>
-              
               {validation.yelpReviewUrl && (
                 <div className="mt-2 p-2 bg-green-50 rounded">
                   <p className="text-sm text-green-800">Preview: <a href={validation.yelpReviewUrl} target="_blank" rel="noopener noreferrer" className="underline">Yelp Review Link</a></p>
@@ -428,7 +416,7 @@ const ReviewPlatformSetupPage = () => {
 
               <button
                 onClick={savePlatforms}
-                disabled={saving || (!platformData.googlePlaceId && !platformData.facebookPageUrl && !platformData.yelpPageUrl)}
+                disabled={saving}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
                 {saving ? (
@@ -444,53 +432,55 @@ const ReviewPlatformSetupPage = () => {
               </button>
             </div>
 
-            {/* DEBUG INFO */}
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Debug Info:</h4>
-              <p className="text-xs text-gray-600">Selected Business: {selectedBusiness}</p>
-              <p className="text-xs text-gray-600">Google Place ID: {platformData.googlePlaceId || 'Not set'}</p>
-              <p className="text-xs text-gray-600">Facebook URL: {platformData.facebookPageUrl || 'Not set'}</p>
-              <p className="text-xs text-gray-600">Button Disabled: {(saving || (!platformData.googlePlaceId && !platformData.facebookPageUrl && !platformData.yelpPageUrl)).toString()}</p>
+            {/* Updated helpful info */}
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="text-sm font-semibold text-blue-800 mb-2">💡 How It Works:</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• <strong>Google Reviews:</strong> Works with or without Place ID (smart fallback included)</li>
+                <li>• <strong>Facebook Reviews:</strong> Enter your page URL to enable Facebook review buttons</li>
+                <li>• <strong>Yelp Reviews:</strong> Optional - add if you have a Yelp business page</li>
+                <li>• <strong>Private Feedback:</strong> Always included for customers who prefer private feedback</li>
+              </ul>
+              <p className="text-xs text-blue-600 mt-2">
+                You can save even without URLs - Google reviews will use smart search to help customers find your business!
+              </p>
             </div>
           </div>
 
-          {/* Preview Section */}
-          {selectedBusinessData && (selectedBusinessData.reviewPlatformsConfigured) && (
+          {/* Preview Section - UPDATED with single column layout */}
+          {selectedBusinessData && (
             <div className="bg-white rounded-lg shadow border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Email Preview</h2>
               <div className="bg-gray-50 p-4 rounded border">
                 <div className="text-center">
                   <h3 className="font-medium mb-4">Thanks for working with {selectedBusinessData.name}!</h3>
-                  <p className="mb-4">We'd love your feedback. You can leave a review on your preferred platform below:</p>
+                  <p className="mb-6">We'd love your feedback. You can leave a review on your preferred platform below:</p>
                   
-                  <div className="space-y-2">
-                    {platformData.googlePlaceId && (
-                      <div>
-                        <a href="#" className="inline-block bg-red-500 text-white px-4 py-2 rounded mr-2">
-                          📍 Google Review
-                        </a>
-                      </div>
-                    )}
+                  <div className="space-y-3 max-w-xs mx-auto">
+                    <a href="#" className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium text-center block transition-colors w-full">
+                      📍 Google Review
+                    </a>
+                    
                     {platformData.facebookPageUrl && (
-                      <div>
-                        <a href="#" className="inline-block bg-blue-600 text-white px-4 py-2 rounded mr-2">
-                          👥 Facebook Review
-                        </a>
-                      </div>
-                    )}
-                    {platformData.yelpPageUrl && (
-                      <div>
-                        <a href="#" className="inline-block bg-red-600 text-white px-4 py-2 rounded mr-2">
-                          ⭐ Yelp Review
-                        </a>
-                      </div>
-                    )}
-                    <div>
-                      <a href="#" className="inline-block bg-purple-600 text-white px-4 py-2 rounded">
-                        💬 Private Feedback
+                      <a href="#" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium text-center block transition-colors w-full">
+                        👥 Facebook Review
                       </a>
-                    </div>
+                    )}
+                    
+                    {platformData.yelpPageUrl && (
+                      <a href="#" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium text-center block transition-colors w-full">
+                        ⭐ Yelp Review
+                      </a>
+                    )}
+                    
+                    <a href="#" className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium text-center block transition-colors w-full">
+                      💬 Private Feedback
+                    </a>
                   </div>
+                  
+                  <p className="text-xs text-gray-500 mt-4">
+                    Choose the platform that works best for you
+                  </p>
                 </div>
               </div>
             </div>

@@ -42,10 +42,12 @@ const DashboardPage = () => {
   });
 
   const fetchBusinesses = useCallback(async () => {
+    console.log('🔄 fetchBusinesses called');
     try {
       const res = await axios.get("http://localhost:8080/api/dashboard", {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log('📥 Raw API response:', res.data);
       setBusinesses(res.data);
 
       // Fetch review summaries
@@ -98,6 +100,47 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchBusinesses();
   }, [fetchBusinesses]);
+
+  // Listen for platform updates and page visibility changes
+  useEffect(() => {
+    const handlePlatformUpdate = () => {
+      console.log('Platform configuration updated, refreshing businesses...');
+      fetchBusinesses();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, refreshing businesses...');
+        fetchBusinesses();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      console.log('Window focused, refreshing businesses...');
+      fetchBusinesses();
+    };
+
+    // Listen for custom platform update events
+    window.addEventListener('platformsUpdated', handlePlatformUpdate);
+    
+    // Listen for page visibility changes (when user switches tabs/apps)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Listen for window focus (when user returns from another page)
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('platformsUpdated', handlePlatformUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [fetchBusinesses]);
+
+  // ADDITIONAL: Refresh when component mounts (important for navigation)
+  useEffect(() => {
+    console.log('Dashboard component mounted, fetching latest business data...');
+    fetchBusinesses();
+  }, []); // Only run on mount
 
   // Banner dismiss functionality useEffect
   useEffect(() => {
