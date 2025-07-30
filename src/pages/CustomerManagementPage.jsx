@@ -19,6 +19,10 @@ const CustomerManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [sendingReview, setSendingReview] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  
+  // NEW: SMS delivery state
+  const [deliveryMethod, setDeliveryMethod] = useState("EMAIL");
+  const [phoneValidation, setPhoneValidation] = useState({ valid: true, message: "" });
 
   const [newCustomer, setNewCustomer] = useState({
     businessId: "",
@@ -74,6 +78,32 @@ const CustomerManagementPage = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // NEW: Validate phone number when delivery method changes
+  const validatePhoneNumber = useCallback(async (phone) => {
+    if (!phone || deliveryMethod !== "SMS") {
+      setPhoneValidation({ valid: true, message: "" });
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/review-requests/validate-phone",
+        { phone },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setPhoneValidation({
+        valid: response.data.valid,
+        message: response.data.message
+      });
+    } catch (err) {
+      setPhoneValidation({
+        valid: false,
+        message: "Error validating phone number"
+      });
+    }
+  }, [deliveryMethod, token]);
 
   const handleAddCustomer = useCallback(async () => {
     if (
@@ -182,24 +212,47 @@ const CustomerManagementPage = () => {
     [token, fetchData]
   );
 
+  // UPDATED: Handle both email and SMS delivery
   const handleSendReviewRequest = useCallback(
-    async (customer, templateId) => {
+    async (customer) => {
+      // Validate delivery method requirements
+      if (deliveryMethod === "SMS") {
+        if (!customer.phone) {
+          alert("Customer phone number is required for SMS delivery");
+          return;
+        }
+        if (!phoneValidation.valid) {
+          alert("Please enter a valid phone number for SMS delivery");
+          return;
+        }
+      }
+
       setSendingReview(true);
 
       try {
+        const requestData = {
+          customerId: customer.id,
+          deliveryMethod: deliveryMethod
+        };
+
+        // Add template ID for email delivery (SMS uses built-in templates)
+        if (deliveryMethod === "EMAIL" && selectedTemplate) {
+          requestData.templateId = parseInt(selectedTemplate);
+        }
+
         const response = await axios.post(
           "http://localhost:8080/api/review-requests",
-          {
-            customerId: customer.id,
-            templateId: parseInt(templateId),
-          },
+          requestData,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
 
         if (response.data.status === "SENT") {
-          alert(`✅ Review request sent successfully to ${customer.name}!`);
+          const method = response.data.deliveryMethod || deliveryMethod;
+          const recipient = response.data.recipient || 
+                           (method === "SMS" ? customer.phone : customer.email);
+          alert(`✅ ${method} review request sent successfully to ${customer.name} (${recipient})!`);
         } else {
           alert(
             `❌ Failed to send review request: ${
@@ -210,6 +263,7 @@ const CustomerManagementPage = () => {
 
         setShowReviewRequestModal(null);
         setSelectedTemplate("");
+        setDeliveryMethod("EMAIL");
       } catch (err) {
         console.error("Error sending review request:", err);
         alert("Failed to send review request");
@@ -217,7 +271,7 @@ const CustomerManagementPage = () => {
         setSendingReview(false);
       }
     },
-    [token]
+    [deliveryMethod, phoneValidation.valid, selectedTemplate, token]
   );
 
   const handleCustomerChange = useCallback((e) => {
@@ -264,10 +318,21 @@ const CustomerManagementPage = () => {
     setShowEditCustomer(customer);
   };
 
+  // UPDATED: Reset delivery method when opening modal
   const openReviewRequestModal = (customer) => {
     setShowReviewRequestModal(customer);
     setSelectedTemplate("");
+    setDeliveryMethod("EMAIL");
+    setPhoneValidation({ valid: true, message: "" });
   };
+
+  // NEW: Handle delivery method change and validate phone
+  const handleDeliveryMethodChange = useCallback((method) => {
+    setDeliveryMethod(method);
+    if (method === "SMS" && showReviewRequestModal?.phone) {
+      validatePhoneNumber(showReviewRequestModal.phone);
+    }
+  }, [showReviewRequestModal?.phone, validatePhoneNumber]);
 
   const filteredCustomers = customers.filter((customer) => {
     const businessMatch =
@@ -389,7 +454,7 @@ const CustomerManagementPage = () => {
               d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
             />
           </svg>
-          {customer.phone}
+          {customer.phone || "No phone"}
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <svg
@@ -464,7 +529,7 @@ const CustomerManagementPage = () => {
                 Customer Management
               </h1>
               <p className="text-gray-600 mt-1">
-                Manage customers and send targeted review requests
+                Manage customers and send targeted review requests via email or SMS
               </p>
             </div>
             <div className="flex gap-3">
@@ -683,14 +748,10 @@ const CustomerManagementPage = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Repeat Customers
+                  With Phone Numbers
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {
-                    customers.filter(
-                      (c) => c.tags && c.tags.includes("REPEAT_CUSTOMER")
-                    ).length
-                  }
+                  {customers.filter((c) => c.phone && c.phone.trim()).length}
                 </p>
               </div>
             </div>
@@ -773,7 +834,7 @@ const CustomerManagementPage = () => {
         )}
       </div>
 
-      {/* Review Request Modal */}
+      {/* UPDATED: Review Request Modal with SMS Support */}
       {showReviewRequestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6">
@@ -788,42 +849,123 @@ const CustomerManagementPage = () => {
                   {showReviewRequestModal.email})
                 </p>
                 <p className="text-sm text-gray-600">
+                  <strong>Phone:</strong> {showReviewRequestModal.phone || "Not provided"}
+                </p>
+                <p className="text-sm text-gray-600">
                   <strong>Service:</strong> {showReviewRequestModal.serviceType}{" "}
                   on {showReviewRequestModal.serviceDate}
                 </p>
               </div>
 
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Email Template
-              </label>
-              <div className="space-y-2">
-                {templates.map((template) => (
-                  <label
-                    key={template.id}
-                    className="flex items-start cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                  >
-                    <input
-                      type="radio"
-                      name="template"
-                      value={template.id}
-                      checked={selectedTemplate == template.id}
-                      onChange={(e) => setSelectedTemplate(e.target.value)}
-                      className="mt-1 mr-3"
+              {/* NEW: Delivery Method Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Delivery Method
+                </label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input 
+                      type="radio" 
+                      name="deliveryMethod" 
+                      value="EMAIL"
+                      checked={deliveryMethod === 'EMAIL'}
+                      onChange={(e) => handleDeliveryMethodChange(e.target.value)}
+                      className="mr-2"
                     />
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {template.name}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {template.subject}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {template.typeDisplayName}
-                      </div>
-                    </div>
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Email
+                    </span>
                   </label>
-                ))}
+                  <label className="flex items-center">
+                    <input 
+                      type="radio" 
+                      name="deliveryMethod" 
+                      value="SMS"
+                      checked={deliveryMethod === 'SMS'}
+                      onChange={(e) => handleDeliveryMethodChange(e.target.value)}
+                      disabled={!showReviewRequestModal.phone}
+                      className="mr-2"
+                    />
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10m0 0v10l-5-5-5 5V8z" />
+                      </svg>
+                      SMS
+                    </span>
+                  </label>
+                </div>
+                
+                {/* Phone validation feedback */}
+                {deliveryMethod === 'SMS' && (
+                  <div className="mt-2">
+                    {!showReviewRequestModal.phone ? (
+                      <p className="text-sm text-red-600">⚠️ Customer phone number required for SMS delivery</p>
+                    ) : !phoneValidation.valid ? (
+                      <p className="text-sm text-red-600">⚠️ {phoneValidation.message}</p>
+                    ) : (
+                      <p className="text-sm text-green-600">✅ Valid phone number for SMS delivery</p>
+                    )}
+                  </div>
+                )}
               </div>
+
+              {/* Email Template Selection (only show for email delivery) */}
+              {deliveryMethod === 'EMAIL' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Email Template
+                  </label>
+                  <div className="space-y-2">
+                    {templates.map((template) => (
+                      <label
+                        key={template.id}
+                        className="flex items-start cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <input
+                          type="radio"
+                          name="template"
+                          value={template.id}
+                          checked={selectedTemplate == template.id}
+                          onChange={(e) => setSelectedTemplate(e.target.value)}
+                          className="mt-1 mr-3"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {template.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {template.subject}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {template.typeDisplayName}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* SMS Preview (only show for SMS delivery) */}
+              {deliveryMethod === 'SMS' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    SMS Message Preview
+                  </label>
+                  <div className="bg-gray-50 p-3 rounded-lg border">
+                    <p className="text-sm text-gray-700">
+                      Hi {showReviewRequestModal.name.split(' ')[0]}! Thanks for choosing your business for your {showReviewRequestModal.serviceType}. 
+                      Share your experience: [Review Link] Reply STOP to opt out.
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      📱 SMS messages are automatically optimized for mobile delivery
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3">
@@ -834,16 +976,15 @@ const CustomerManagementPage = () => {
                 Cancel
               </button>
               <button
-                onClick={() =>
-                  handleSendReviewRequest(
-                    showReviewRequestModal,
-                    selectedTemplate
-                  )
+                onClick={() => handleSendReviewRequest(showReviewRequestModal)}
+                disabled={
+                  sendingReview || 
+                  (deliveryMethod === 'EMAIL' && !selectedTemplate) ||
+                  (deliveryMethod === 'SMS' && (!showReviewRequestModal.phone || !phoneValidation.valid))
                 }
-                disabled={!selectedTemplate || sendingReview}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
               >
-                {sendingReview ? "Sending..." : "Send Review Request"}
+                {sendingReview ? "Sending..." : `Send ${deliveryMethod} Review Request`}
               </button>
             </div>
           </div>
@@ -909,13 +1050,14 @@ const CustomerManagementPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone
+                    Phone <span className="text-sm text-gray-500">(for SMS reviews)</span>
                   </label>
                   <input
                     type="tel"
                     name="phone"
                     value={newCustomer.phone}
                     onChange={handleCustomerChange}
+                    placeholder="+1234567890"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -1080,13 +1222,14 @@ const CustomerManagementPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone
+                    Phone <span className="text-sm text-gray-500">(for SMS reviews)</span>
                   </label>
                   <input
                     type="tel"
                     name="phone"
                     value={editCustomer.phone}
                     onChange={handleEditCustomerChange}
+                    placeholder="+1234567890"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -1251,7 +1394,7 @@ const CustomerManagementPage = () => {
                     Phone
                   </label>
                   <p className="text-lg text-gray-900">
-                    {showCustomerDetails.phone}
+                    {showCustomerDetails.phone || "Not provided"}
                   </p>
                 </div>
                 <div>
