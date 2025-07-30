@@ -7,10 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is the frontend for **Reputul**, a business reputation management platform. It's a React SPA that allows business owners to:
 - Manage multiple businesses
 - Collect and monitor customer reviews
-- Send review requests to customers
+- Send review requests to customers via email templates
+- Set up and configure review platforms (Google, Facebook, Yelp)
+- Collect customer feedback through dedicated feedback forms
 - View analytics and business performance metrics
-- Manage customer data
-- Use email templates for customer communication
+- Manage customer data and communication
+- Use customizable email templates for customer outreach
 
 ## Development Commands
 
@@ -49,6 +51,7 @@ src/
 │   └── ToastContext.jsx     # Toast notification state
 ├── pages/               # Route components
 │   ├── BusinessPublicPage.jsx   # Public business profile (/business/:id)
+│   ├── CustomerFeedbackPage.jsx # Customer feedback form (/feedback/:customerId)
 │   ├── CustomerManagementPage.jsx  # Customer CRUD (/customers)
 │   ├── DashboardPage.jsx        # Main dashboard (/dashboard)
 │   ├── EmailTemplatesPage.jsx   # Email template management (/email-templates)
@@ -56,7 +59,9 @@ src/
 │   ├── LoginPage.jsx            # Login form (/login)
 │   ├── ProfilePage.jsx          # User profile (/profile)
 │   ├── RegisterPage.jsx         # Registration form (/register)
-│   └── ReviewPage.jsx           # Review management
+│   ├── ReviewPage.jsx           # Review management
+│   ├── ReviewPlatformSetupPage.jsx # Review platform configuration (/review-platform-setup)
+│   └── ReviewRequestPage.jsx    # Review request management (/review-requests)
 ├── api/                 # API client code (currently empty)
 ├── services/            # Business logic services (currently empty)
 └── utils/               # Utility functions (currently empty)
@@ -83,14 +88,19 @@ src/
   - Users: `/users/profile`
   - Businesses: `/businesses`, `/dashboard`
   - Reviews: `/reviews/business/{id}`, `/reviews/request`, `/reviews/manual/{id}`
+  - Customers: `/customers`, `/customers/{id}/feedback-info`
+  - Email Templates: `/email-templates`
 
 #### Routing Structure
 - `/` → redirects to `/dashboard`
 - `/login`, `/register` → public routes
 - `/business/:id` → public business profile
+- `/feedback/:customerId` → customer feedback form (public)
 - `/dashboard` → main business management (protected)
 - `/customers` → customer management (protected)
 - `/email-templates` → email template management (protected)
+- `/review-requests` → review request management (protected)
+- `/review-platform-setup` → review platform configuration (protected)
 - `/profile` → user profile (protected)
 - Error pages: `/forbidden`, `/server-error`, `/maintenance`
 
@@ -123,6 +133,27 @@ src/
 - Review request sending
 - Manual review addition
 
+#### Customer Feedback (CustomerFeedbackPage.jsx)
+- Public feedback form accessible via `/feedback/:customerId`
+- Allows customers to submit private feedback or reviews
+- Auto-detects feedback type based on link parameters
+- Displays associated business information
+- Form validation and submission handling
+
+#### Review Platform Setup (ReviewPlatformSetupPage.jsx)
+- Configure review platforms for businesses (Google, Facebook, Yelp)
+- Validate platform URLs and generate review links
+- Real-time URL validation with feedback
+- Platform-specific configuration management
+- Success notifications and error handling
+
+#### Review Request Management (ReviewRequestPage.jsx)
+- Send review requests to customers using email templates
+- Bulk customer selection for mass review requests
+- View request history and statistics
+- Filter requests by status (pending, sent, responded)
+- Integration with email template system
+
 #### Maintenance Mode
 - Controlled via `REACT_APP_MAINTENANCE_MODE` env var or localStorage
 - Shows maintenance page when enabled
@@ -154,8 +185,9 @@ src/
 
 ## Environment Configuration
 
-### Required Environment Variables
+### Optional Environment Variables
 - `REACT_APP_MAINTENANCE_MODE=true/false` - Controls maintenance mode
+- `REACT_APP_API_BASE` - Backend API base URL (defaults to "http://localhost:8080")
 
 ### Backend Dependencies
 - Backend API must be running on http://localhost:8080

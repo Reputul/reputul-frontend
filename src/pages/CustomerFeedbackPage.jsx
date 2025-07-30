@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 
 const CustomerFeedbackPage = () => {
   const { customerId } = useParams();
+  const [searchParams] = useSearchParams();
   const [customer, setCustomer] = useState(null);
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +20,10 @@ const CustomerFeedbackPage = () => {
         const response = await axios.get(`http://localhost:8080/api/customers/${customerId}/feedback-info`);
         setCustomer(response.data.customer);
         setBusiness(response.data.business);
+        
+        // Auto-set to private feedback since they clicked the private feedback link
+        setFeedback(prev => ({ ...prev, type: "private" }));
+        
       } catch (err) {
         console.error("Error fetching customer data:", err);
         setError("Customer not found or link has expired.");
@@ -51,7 +56,7 @@ const CustomerFeedbackPage = () => {
       });
 
       setSuccess("Thank you for your feedback! We truly appreciate your time and insights.");
-      setFeedback({ rating: "", comment: "", type: "" });
+      setFeedback({ rating: "", comment: "", type: "private" }); // Keep type as private
     } catch (err) {
       console.error("Error submitting feedback:", err);
       setError("Failed to submit feedback. Please try again.");
@@ -84,6 +89,10 @@ const CustomerFeedbackPage = () => {
     }
     
     return urls;
+  };
+
+  const showPlatformChoice = () => {
+    setFeedback({ rating: "", comment: "", type: "" });
   };
 
   if (loading) {
@@ -133,60 +142,73 @@ const CustomerFeedbackPage = () => {
           </div>
         </div>
 
-        {/* Review Platform Options */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            Share Your Experience
-          </h2>
-          <p className="text-gray-600 text-center mb-8">
-            We'd love your feedback! You can leave a review on your preferred platform:
-          </p>
-          
-          <div className="space-y-4 max-w-md mx-auto">
-            {/* Google Review Button */}
-            {externalUrls.google && (
-              <a
-                href={externalUrls.google}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-xl font-semibold text-center transition-colors w-full text-lg"
-              >
-                📍 Leave Google Review
-              </a>
-            )}
+        {/* Show Platform Choice only if no type is selected */}
+        {!feedback.type && (
+          <div className="bg-white rounded-3xl shadow-xl p-8 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+              Share Your Experience
+            </h2>
+            <p className="text-gray-600 text-center mb-8">
+              We'd love your feedback! You can leave a review on your preferred platform:
+            </p>
             
-            {/* Facebook Review Button */}
-            {externalUrls.facebook && (
-              <a
-                href={externalUrls.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold text-center transition-colors w-full text-lg"
+            <div className="space-y-4 max-w-md mx-auto">
+              {/* Google Review Button */}
+              {externalUrls.google && (
+                <a
+                  href={externalUrls.google}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-xl font-semibold text-center transition-colors w-full text-lg"
+                >
+                  📍 Leave Google Review
+                </a>
+              )}
+              
+              {/* Facebook Review Button */}
+              {externalUrls.facebook && (
+                <a
+                  href={externalUrls.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold text-center transition-colors w-full text-lg"
+                >
+                  👥 Leave Facebook Review
+                </a>
+              )}
+              
+              {/* Private Feedback Button */}
+              <button
+                onClick={() => setFeedback({...feedback, type: "private"})}
+                className="block bg-gray-600 hover:bg-gray-700 text-white px-6 py-4 rounded-xl font-semibold text-center transition-colors w-full text-lg"
               >
-                👥 Leave Facebook Review
-              </a>
-            )}
+                💬 Share Private Feedback
+              </button>
+            </div>
             
-            {/* Private Feedback Button */}
-            <button
-              onClick={() => setFeedback({...feedback, type: "private"})}
-              className="block bg-gray-600 hover:bg-gray-700 text-white px-6 py-4 rounded-xl font-semibold text-center transition-colors w-full text-lg"
-            >
-              💬 Share Private Feedback
-            </button>
+            <p className="text-sm text-gray-500 text-center mt-6">
+              Choose the platform that works best for you
+            </p>
           </div>
-          
-          <p className="text-sm text-gray-500 text-center mt-6">
-            Choose the platform that works best for you
-          </p>
-        </div>
+        )}
 
-        {/* Private Feedback Form */}
+        {/* Private Feedback Form - Shows automatically when type is "private" */}
         {feedback.type === "private" && (
           <div className="bg-white rounded-3xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Private Feedback for {business?.name}
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Private Feedback for {business?.name}
+              </h2>
+              <button
+                onClick={showPlatformChoice}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Other Review Options
+              </button>
+            </div>
             
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
@@ -207,13 +229,22 @@ const CustomerFeedbackPage = () => {
                   </svg>
                 </div>
                 <span className="text-green-800 font-semibold text-lg">{success}</span>
-                <div className="mt-4">
+                <div className="mt-4 space-y-2">
                   <button 
-                    onClick={() => setFeedback({ rating: "", comment: "", type: "" })}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
+                    onClick={() => setFeedback({ rating: "", comment: "", type: "private" })}
+                    className="text-blue-600 hover:text-blue-800 font-medium block mx-auto"
                   >
                     Leave another review →
                   </button>
+                  <div className="text-sm text-gray-600">
+                    or{" "}
+                    <button 
+                      onClick={showPlatformChoice}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      explore other review platforms
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
