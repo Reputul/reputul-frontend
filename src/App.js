@@ -29,6 +29,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ReviewRequestPage from "./pages/ReviewRequestPage";
 import ReviewPlatformSetupPage from "./pages/ReviewPlatformSetupPage";
 import CustomerFeedbackPage from "./pages/CustomerFeedbackPage";
+import OptInPolicy from './pages/OptInPolicy';
 
 function App() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -102,10 +103,8 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
-                <Route
-                  path="/feedback/:customerId"
-                  element={<CustomerFeedbackPage />}
-                />
+                <Route path="/feedback/:customerId" element={<CustomerFeedbackPage />} />
+                <Route path="/opt-in-policy" element={<OptInPolicy />} />
 
                 {/* Error routes */}
                 <Route path="/forbidden" element={<ForbiddenPage />} />
