@@ -10,6 +10,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import Navbar from "./components/Navbar";
 import Toast from "./components/Toast";
+import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import CustomerManagementPage from "./pages/CustomerManagementPage";
 import LoginPage from "./pages/LoginPage";
@@ -27,7 +28,7 @@ import {
 import ErrorBoundary from "./components/ErrorBoundary";
 import ReviewRequestPage from "./pages/ReviewRequestPage";
 import ReviewPlatformSetupPage from "./pages/ReviewPlatformSetupPage";
-import CustomerFeedbackPage from './pages/CustomerFeedbackPage';
+import CustomerFeedbackPage from "./pages/CustomerFeedbackPage";
 
 function App() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -55,6 +56,12 @@ function App() {
 
     checkMaintenanceStatus();
   }, []);
+
+  // 👇 Determine whether to show the Navbar
+  const hideNavbarOnRoutes = ["/"];
+  const shouldShowNavbar = !hideNavbarOnRoutes.includes(
+    window.location.pathname
+  );
 
   // Show loading while checking maintenance status
   if (!maintenanceChecked) {
@@ -85,20 +92,20 @@ function App() {
         <ToastProvider>
           <ErrorBoundary>
             <div className="App">
-              <Navbar />
+              {shouldShowNavbar && <Navbar />}
               <Toast />
               <Routes>
                 {/* Redirect root path to dashboard if authenticated, else login */}
-                <Route
-                  path="/"
-                  element={<Navigate to="/dashboard" replace />}
-                />
+                <Route path="/" element={<LandingPage />} />
 
                 {/* Public routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
-                <Route path="/feedback/:customerId" element={<CustomerFeedbackPage />} />
+                <Route
+                  path="/feedback/:customerId"
+                  element={<CustomerFeedbackPage />}
+                />
 
                 {/* Error routes */}
                 <Route path="/forbidden" element={<ForbiddenPage />} />
