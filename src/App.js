@@ -47,7 +47,7 @@ function App() {
 
         setIsMaintenanceMode(maintenanceStatus);
       } catch (error) {
-        console.error("Error checking maintenance status:", error);
+        // Silently handle maintenance check errors in production
         // If we can't check status, assume app is available
         setIsMaintenanceMode(false);
       } finally {

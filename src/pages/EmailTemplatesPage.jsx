@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { sanitizeHtml } from "../utils/sanitizer";
 
 const EmailTemplatesPage = () => {
   const API_BASE_URL = "http://localhost:8080/api/email-templates";
@@ -812,9 +813,7 @@ const EmailTemplatesPage = () => {
                     <div
                       className="whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{
-                        __html: (previewContent || "")
-                          .toString()
-                          .replace(/\n/g, "<br>"),
+                        __html: sanitizeHtml(previewContent || "")
                       }}
                     />
                   </div>

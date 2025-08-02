@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { buildUrl, API_ENDPOINTS } from '../config/api';
 
 const RegisterPage = () => {
   const { token } = useAuth();
@@ -68,7 +69,7 @@ const RegisterPage = () => {
       case 'email':
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
       case 'password':
-        return form.password.length >= 6;
+        return form.password.length >= 8;
       case 'confirmPassword':
         return form.confirmPassword && form.password === form.confirmPassword;
       default:
@@ -84,8 +85,22 @@ const RegisterPage = () => {
       return;
     }
 
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    // Enhanced password strength validation
+    const passwordStrengthChecks = [
+      { test: /[a-z]/, message: 'lowercase letter' },
+      { test: /[A-Z]/, message: 'uppercase letter' },
+      { test: /\d/, message: 'number' },
+      { test: /[^a-zA-Z\d]/, message: 'special character' }
+    ];
+
+    const failedChecks = passwordStrengthChecks.filter(check => !check.test.test(form.password));
+    if (failedChecks.length > 0) {
+      setError(`Password must contain at least one ${failedChecks.map(c => c.message).join(', ')}`);
       return;
     }
 
@@ -93,7 +108,7 @@ const RegisterPage = () => {
     setError('');
     
     try {
-      await axios.post('http://localhost:8080/api/auth/register', {
+      await axios.post(buildUrl(API_ENDPOINTS.AUTH.REGISTER), {
         name: form.name,
         email: form.email,
         password: form.password
@@ -110,7 +125,7 @@ const RegisterPage = () => {
     }
   };
 
-  const isFormValid = form.name && form.email && form.password && form.password === form.confirmPassword && form.password.length >= 6;
+  const isFormValid = form.name && form.email && form.password && form.password === form.confirmPassword && form.password.length >= 8;
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -311,7 +326,7 @@ const RegisterPage = () => {
                         </span>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
-                        <div className="text-xs font-medium text-gray-700 mb-2">Password requirements:</div>
+                        <div className="text-xs font-medium text-gray-700 mb-2">Password requirements (all required):</div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className={`flex items-center space-x-1 ${form.password.length >= 8 ? 'text-green-600' : 'text-gray-400'}`}>
                             <span>{form.password.length >= 8 ? '✓' : '○'}</span>
@@ -328,6 +343,10 @@ const RegisterPage = () => {
                           <div className={`flex items-center space-x-1 ${/\d/.test(form.password) ? 'text-green-600' : 'text-gray-400'}`}>
                             <span>{/\d/.test(form.password) ? '✓' : '○'}</span>
                             <span>Number</span>
+                          </div>
+                          <div className={`flex items-center space-x-1 ${/[^a-zA-Z\d]/.test(form.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span>{/[^a-zA-Z\d]/.test(form.password) ? '✓' : '○'}</span>
+                            <span>Special char</span>
                           </div>
                         </div>
                       </div>

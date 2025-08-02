@@ -1,24 +1,84 @@
 import React, { useState, useEffect } from "react";
+import waitlistService from "../api/WaitlistService"; // Import the API service
 
 const LandingPage = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [waitlistCount, setWaitlistCount] = useState(2847);
 
-  // Simulate growing waitlist
+  // Fetch realistic waitlist count on component mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      setWaitlistCount((prev) => prev + Math.floor(Math.random() * 3));
-    }, 10000);
-    return () => clearInterval(interval);
+    const fetchWaitlistCount = async () => {
+      try {
+        const { count } = await waitlistService.getWaitlistCount();
+        setWaitlistCount(count);
+      } catch (error) {
+        console.error('Error fetching waitlist count:', error);
+        // Keep the default count if API fails
+      }
+    };
+
+    fetchWaitlistCount();
   }, []);
 
-  const handleSubmit = (e) => {
+  // Simulate realistic growing count with slower, more believable updates
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      // Only update if we haven't submitted (to avoid conflicts)
+      if (!isSubmitted) {
+        // 20% chance of increment every 30 seconds (more realistic)
+        if (Math.random() < 0.2) {
+          const increment = Math.random() < 0.7 ? 1 : 2; // Usually 1, sometimes 2
+          setWaitlistCount((prev) => prev + increment);
+        }
+      }
+    }, 30000); // Every 30 seconds instead of 10
+
+    return () => clearInterval(interval);
+  }, [isSubmitted]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email) {
-      setIsSubmitted(true);
-      setWaitlistCount((prev) => prev + 1);
-      setEmail("");
+    
+    // Reset previous errors
+    setError("");
+    
+    // Basic validation
+    if (!email || !email.includes('@')) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await waitlistService.addToWaitlist(email);
+      
+      if (result.success) {
+        // Success!
+        setIsSubmitted(true);
+        setEmail("");
+        if (result.waitlistCount) {
+          setWaitlistCount(result.waitlistCount);
+        }
+      } else {
+        // Handle different types of errors
+        if (result.duplicate) {
+          setError(result.message || "You're already on our waitlist!");
+          if (result.waitlistCount) {
+            setWaitlistCount(result.waitlistCount);
+          }
+        } else {
+          setError(result.message || "Something went wrong. Please try again.");
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,8 +98,6 @@ const LandingPage = () => {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <div className="w-8 h-8 mr-2">
-                {" "}
-                {/* Changed from mr-3 to mr-2 */}
                 <img
                   src="/assets/reputul-logo.png"
                   alt="Reputul Logo"
@@ -51,8 +109,7 @@ const LandingPage = () => {
                 style={{ fontFamily: "Poppins, sans-serif" }}
               >
                 Reputul
-              </h1>{" "}
-              {/* Added Poppins font */}
+              </h1>
               <div className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
                 BETA
               </div>
@@ -827,11 +884,11 @@ const LandingPage = () => {
                   RJ Culley, Founder
                 </h3>
                 <p className="text-lg text-gray-700 mb-6">
-                  "For the past 8 years, I’ve worked closely with roofers,
+                  "For the past 8 years, I've worked closely with roofers,
                   plumbers, landscapers, HVAC techs, and more — building
                   websites, running ads, improving SEO, and helping them stand
                   out online. Again and again, I saw great businesses lose out
-                  to competitors simply because they didn’t have enough reviews.
+                  to competitors simply because they didn't have enough reviews.
                   I built Reputul to fix that — so the best local pros can
                   finally get the trust and recognition they deserve."
                 </p>
@@ -875,7 +932,7 @@ const LandingPage = () => {
           {!isSubmitted ? (
             <div className="max-w-lg mx-auto">
               <div className="bg-white/10 backdrop-blur rounded-2xl p-8 border border-white/20">
-                <div className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <input
                     type="email"
                     value={email}
@@ -883,14 +940,30 @@ const LandingPage = () => {
                     placeholder="Enter your email to get early access"
                     className="w-full px-6 py-4 rounded-xl border-0 text-gray-900 placeholder-gray-500 text-lg focus:ring-4 focus:ring-white/50 focus:outline-none"
                     required
+                    disabled={isLoading}
                   />
+                  
+                  {error && (
+                    <div className="bg-red-500/20 border border-red-300 text-red-100 px-4 py-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+                  
                   <button
-                    onClick={handleSubmit}
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
-                    Get My Competitive Edge Now
+                    {isLoading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-900 border-t-transparent mr-2"></div>
+                        Joining Waitlist...
+                      </div>
+                    ) : (
+                      "Get My Competitive Edge Now"
+                    )}
                   </button>
-                </div>
+                </form>
 
                 <div className="mt-6 grid grid-cols-3 gap-4 text-sm text-white/80">
                   <div className="text-center">
@@ -931,8 +1004,7 @@ const LandingPage = () => {
                 </h3>
                 <p className="text-purple-100 mb-6">
                   You're now #{waitlistCount.toLocaleString()} on our early
-                  access list. We'll notify you the moment Reputul is ready to
-                  transform your business.
+                  access list. Check your email to confirm your spot and get exclusive updates on our progress.
                 </p>
                 <div className="bg-white/10 rounded-xl p-4">
                   <div className="text-sm text-white/80">
@@ -953,126 +1025,53 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="w-8 h-8 mr-2">
-                  {" "}
-                  {/* Changed from mr-3 to mr-2 */}
-                  <img
-                    src="/assets/reputul-logo.png"
-                    alt="Reputul Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h3
-                  className="text-2xl font-bold"
-                  style={{ fontFamily: "Poppins, sans-serif" }}
-                >
-                  Reputul
-                </h3>{" "}
-                {/* Added Poppins font */}
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center mb-6 md:mb-0">
+              <div className="w-8 h-8 mr-2">
+                <img
+                  src="/assets/reputul-logo.png"
+                  alt="Reputul Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <p className="text-gray-400 mb-6">
-                The reputation management platform that actually gets you more
-                customers.
-              </p>
+              <h3
+                className="text-2xl font-bold"
+                style={{ fontFamily: "Poppins, sans-serif" }}
+              >
+                Reputul
+              </h3>
+            </div>
+            
+            <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8">
+              <a 
+                href="mailto:hello@reputul.com"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                hello@reputul.com
+              </a>
+              
               <div className="flex space-x-4">
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer">
-                  <span className="text-gray-400">f</span>
-                </div>
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer">
+                <a 
+                  href="#" 
+                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors"
+                  aria-label="Follow us on Twitter"
+                >
+                  <span className="text-gray-400">𝕏</span>
+                </a>
+                <a 
+                  href="#" 
+                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors"
+                  aria-label="Connect on LinkedIn"
+                >
                   <span className="text-gray-400">in</span>
-                </div>
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer">
-                  <span className="text-gray-400">tw</span>
-                </div>
+                </a>
               </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4 text-white">Product</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Integrations
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    API
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4 text-white">Resources</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Case Studies
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    ROI Calculator
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4 text-white">Company</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Terms of Service
-                  </a>
-                </li>
-              </ul>
             </div>
           </div>
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
             <p>
-              &copy; 2025 Reputul. All rights reserved. | hello@reputul.com |
-              Made with ❤️ for contractors
+              &copy; 2025 Reputul. Built with ❤️ for contractors.
             </p>
           </div>
         </div>

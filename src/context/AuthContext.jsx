@@ -1,23 +1,50 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
+import { buildUrl, API_ENDPOINTS } from '../config/api';
+import logger from '../utils/logger';
+import { TokenStorage, validateToken, isTokenExpired } from '../utils/auth';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [token, setToken] = useState(TokenStorage.get());
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if token is valid on mount
+  // Enhanced token validation on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const storedToken = localStorage.getItem('token');
+      const storedToken = TokenStorage.get();
+      
       if (storedToken) {
+        // First validate token structure and expiry
+        const validation = validateToken(storedToken);
+        
+        if (!validation.valid) {
+          logger.error('Invalid token found:', validation.reason);
+          TokenStorage.remove();
+          setToken(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        // Check if token is about to expire
+        if (isTokenExpired(storedToken)) {
+          logger.warn('Token expired or about to expire');
+          TokenStorage.remove();
+          setToken(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
         try {
-          // Verify token by fetching user profile
-          const response = await fetch('http://localhost:8080/api/users/profile', {
+          // Verify token with server
+          const response = await fetch(buildUrl(API_ENDPOINTS.USERS.PROFILE), {
             headers: {
               'Authorization': `Bearer ${storedToken}`,
+              'X-Requested-With': 'XMLHttpRequest',
             },
           });
           
@@ -26,14 +53,15 @@ export const AuthProvider = ({ children }) => {
             setUser(userData);
             setToken(storedToken);
           } else {
-            // Token is invalid, remove it
-            localStorage.removeItem('token');
+            // Server rejected token
+            logger.warn('Server rejected token');
+            TokenStorage.remove();
             setToken(null);
             setUser(null);
           }
         } catch (error) {
-          console.error('Auth check failed:', error);
-          localStorage.removeItem('token');
+          logger.error('Auth check failed:', error);
+          TokenStorage.remove();
           setToken(null);
           setUser(null);
         }
@@ -45,7 +73,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const response = await fetch('http://localhost:8080/api/auth/login', {
+    const response = await fetch(buildUrl(API_ENDPOINTS.AUTH.LOGIN), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,12 +87,17 @@ export const AuthProvider = ({ children }) => {
     }
 
     const data = await response.json();
-    localStorage.setItem('token', data.token);
-    setToken(data.token);
+    
+    // Validate token before storing
+    if (TokenStorage.set(data.token)) {
+      setToken(data.token);
+    } else {
+      throw new Error('Received invalid token from server');
+    }
 
     // Fetch user profile after login
     try {
-      const profileResponse = await fetch('http://localhost:8080/api/users/profile', {
+      const profileResponse = await fetch(buildUrl(API_ENDPOINTS.USERS.PROFILE), {
         headers: {
           'Authorization': `Bearer ${data.token}`,
         },
@@ -75,12 +108,12 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
       }
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      logger.error('Failed to fetch user profile:', error);
     }
   };
 
   const register = async (name, email, password) => {
-    const response = await fetch('http://localhost:8080/api/auth/register', {
+    const response = await fetch(buildUrl(API_ENDPOINTS.AUTH.REGISTER), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -97,7 +130,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    TokenStorage.remove();
     setToken(null);
     setUser(null);
   };
