@@ -4,6 +4,7 @@ This is the frontend application for **Reputul**, a comprehensive business reput
 
 ## Features
 
+- **Landing Page & Waitlist**: Public landing page with waitlist signup functionality
 - **Business Management**: Create and manage multiple business profiles
 - **Review Collection**: Collect and monitor customer reviews from multiple platforms
 - **Customer Feedback**: Dedicated feedback forms for customer input
@@ -12,6 +13,7 @@ This is the frontend application for **Reputul**, a comprehensive business reput
 - **Platform Integration**: Configure Google, Facebook, and Yelp review platforms
 - **Analytics Dashboard**: View business performance metrics and analytics
 - **Customer Management**: Maintain customer database and communication history
+- **Opt-in Policy**: Dedicated policy page for customer communications
 
 ## Tech Stack
 
@@ -111,24 +113,35 @@ src/
 │   ├── DashboardPage.jsx            # Main dashboard
 │   ├── EmailTemplatesPage.jsx       # Email template management
 │   ├── ErrorPage.jsx                # Error pages (404, 500, etc.)
+│   ├── LandingPage.jsx              # Landing page with waitlist signup
 │   ├── LoginPage.jsx                # Login form
+│   ├── OptInPolicy.jsx              # Opt-in policy page
 │   ├── ProfilePage.jsx              # User profile
 │   ├── RegisterPage.jsx             # Registration form
 │   ├── ReviewPage.jsx               # Review management
 │   ├── ReviewPlatformSetupPage.jsx  # Platform configuration
 │   └── ReviewRequestPage.jsx        # Review request management
-├── api/                 # API client code (currently empty)
+├── api/                 # API client services
+│   └── WaitlistService.js           # Waitlist API integration
+├── config/              # Configuration files
+│   └── api.js                       # Centralized API endpoints
 ├── services/            # Business logic services (currently empty)
-└── utils/               # Utility functions (currently empty)
+└── utils/               # Utility functions
+    ├── auth.js                      # JWT security utilities
+    ├── logger.js                    # Logging utilities
+    ├── sanitizer.js                 # Input sanitization
+    └── validation.js                # Form validation utilities
 ```
 
 ## Routes
 
 ### Public Routes
+- `/` - Landing page with waitlist signup
 - `/login` - User login
 - `/register` - User registration
 - `/business/:id` - Public business profile page
 - `/feedback/:customerId` - Customer feedback form
+- `/opt-in-policy` - Opt-in policy page
 
 ### Protected Routes (Require Authentication)
 - `/dashboard` - Main business dashboard
@@ -148,11 +161,13 @@ src/
 ### Optional Environment Variables
 - `REACT_APP_MAINTENANCE_MODE` - Set to "true" to enable maintenance mode
 - `REACT_APP_API_BASE` - Backend API base URL (defaults to "http://localhost:8080")
+- `REACT_APP_API_URL` - Alternative API URL configuration for waitlist service
 
 ### Backend Dependencies
 - Backend API server must be running on `http://localhost:8080`
 - JWT authentication is required for protected routes
 - CORS must be configured to allow requests from `http://localhost:3000`
+- Waitlist endpoints must be available for landing page functionality
 
 ## Development Guidelines
 
@@ -165,7 +180,9 @@ src/
 ### API Communication
 - Base API URL: `http://localhost:8080/api`
 - All API calls use Axios with consistent error handling
+- Centralized API configuration in `src/config/api.js`
 - Loading states and user feedback are implemented throughout the application
+- Waitlist service handles email subscriptions and count retrieval
 
 ### Styling
 - Tailwind CSS is used for all styling

@@ -56,15 +56,24 @@ src/
 │   ├── DashboardPage.jsx        # Main dashboard (/dashboard)
 │   ├── EmailTemplatesPage.jsx   # Email template management (/email-templates)
 │   ├── ErrorPage.jsx            # Error pages (404, 500, 403, maintenance)
+│   ├── LandingPage.jsx          # Landing page with waitlist signup (/)
 │   ├── LoginPage.jsx            # Login form (/login)
+│   ├── OptInPolicy.jsx          # Opt-in policy page (/opt-in-policy)
 │   ├── ProfilePage.jsx          # User profile (/profile)
 │   ├── RegisterPage.jsx         # Registration form (/register)
 │   ├── ReviewPage.jsx           # Review management
 │   ├── ReviewPlatformSetupPage.jsx # Review platform configuration (/review-platform-setup)
 │   └── ReviewRequestPage.jsx    # Review request management (/review-requests)
-├── api/                 # API client code (currently empty)
+├── api/                 # API client services
+│   └── WaitlistService.js       # Waitlist API integration
+├── config/              # Configuration files
+│   └── api.js                   # Centralized API endpoints configuration
 ├── services/            # Business logic services (currently empty)
-└── utils/               # Utility functions (currently empty)
+└── utils/               # Utility functions
+    ├── auth.js                  # JWT security utilities
+    ├── logger.js                # Logging utilities
+    ├── sanitizer.js             # Input sanitization
+    └── validation.js            # Form validation utilities
 ```
 
 ### Key Architectural Patterns
@@ -83,6 +92,7 @@ src/
 #### API Integration
 - All API calls use axios with Authorization header: `Bearer ${token}`
 - Base URL: `http://localhost:8080/api`
+- Centralized API configuration in `src/config/api.js`
 - Key endpoints:
   - Auth: `/auth/login`, `/auth/register`
   - Users: `/users/profile`
@@ -90,12 +100,14 @@ src/
   - Reviews: `/reviews/business/{id}`, `/reviews/request`, `/reviews/manual/{id}`
   - Customers: `/customers`, `/customers/{id}/feedback-info`
   - Email Templates: `/email-templates`
+  - Waitlist: `/waitlist/add`, `/waitlist/count`
 
 #### Routing Structure
-- `/` → redirects to `/dashboard`
-- `/login`, `/register` → public routes
+- `/` → landing page with waitlist signup
+- `/login`, `/register` → public authentication routes
 - `/business/:id` → public business profile
 - `/feedback/:customerId` → customer feedback form (public)
+- `/opt-in-policy` → opt-in policy page (public)
 - `/dashboard` → main business management (protected)
 - `/customers` → customer management (protected)
 - `/email-templates` → email template management (protected)
@@ -118,6 +130,13 @@ src/
 - Form inputs: `border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500`
 
 ### Key Features
+
+#### Landing Page (LandingPage.jsx)
+- Public-facing landing page with waitlist signup
+- Real-time waitlist count display
+- Email validation and submission handling
+- Integration with waitlist API service
+- Responsive design with modern UI components
 
 #### Dashboard (DashboardPage.jsx)
 - Business cards with metrics (rating, review count, badge)
@@ -188,11 +207,13 @@ src/
 ### Optional Environment Variables
 - `REACT_APP_MAINTENANCE_MODE=true/false` - Controls maintenance mode
 - `REACT_APP_API_BASE` - Backend API base URL (defaults to "http://localhost:8080")
+- `REACT_APP_API_URL` - Alternative API URL configuration for waitlist service
 
 ### Backend Dependencies
 - Backend API must be running on http://localhost:8080
 - JWT authentication required
 - CORS configured for localhost:3000
+- Waitlist endpoints must be available for landing page functionality
 
 ## Testing Strategy
 - Component tests with React Testing Library
