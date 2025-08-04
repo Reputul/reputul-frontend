@@ -1004,7 +1004,7 @@ const LandingPage = () => {
                 </h3>
                 <p className="text-purple-100 mb-6">
                   You're now #{waitlistCount.toLocaleString()} on our early
-                  access list. Check your email to confirm your spot and get exclusive updates on our progress.
+                  access list. Check your email (and spam folder) to confirm your spot and get exclusive updates on our progress.
                 </p>
                 <div className="bg-white/10 rounded-xl p-4">
                   <div className="text-sm text-white/80">
