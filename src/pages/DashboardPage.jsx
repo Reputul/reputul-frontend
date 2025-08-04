@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { buildUrl, API_ENDPOINTS } from '../config/api';
 
 const DashboardPage = () => {
   const { token } = useAuth();
@@ -44,7 +45,7 @@ const DashboardPage = () => {
   const fetchBusinesses = useCallback(async () => {
     console.log('🔄 fetchBusinesses called');
     try {
-      const res = await axios.get("http://localhost:8080/api/dashboard", {
+      const res = await axios.get(buildUrl(API_ENDPOINTS.BUSINESS.DASHBOARD), {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log('📥 Raw API response:', res.data);
@@ -56,7 +57,7 @@ const DashboardPage = () => {
         res.data.map(async (biz) => {
           try {
             const summaryRes = await axios.get(
-              `http://localhost:8080/api/businesses/${biz.id}/review-summary`,
+              buildUrl(API_ENDPOINTS.BUSINESS.REVIEW_SUMMARY(biz.id)),
               { headers: { Authorization: `Bearer ${token}` } }
             );
             summaries[biz.id] = summaryRes.data;
@@ -76,7 +77,7 @@ const DashboardPage = () => {
         res.data.map(async (biz) => {
           try {
             const reviewRes = await axios.get(
-              `http://localhost:8080/api/reviews/business/${biz.id}`,
+              buildUrl(API_ENDPOINTS.REVIEWS.BY_BUSINESS(biz.id)),
               { headers: { Authorization: `Bearer ${token}` } }
             );
             reviewsData[biz.id] = reviewRes.data;
@@ -175,7 +176,7 @@ const DashboardPage = () => {
     async (e) => {
       e.preventDefault();
       try {
-        await axios.post("http://localhost:8080/api/businesses", newBusiness, {
+        await axios.post(buildUrl(API_ENDPOINTS.BUSINESS.LIST), newBusiness, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setNewBusiness({
@@ -212,7 +213,7 @@ const DashboardPage = () => {
       e.preventDefault();
       try {
         await axios.put(
-          `http://localhost:8080/api/businesses/${editingBusiness}`,
+          buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(editingBusiness)),
           editBusinessData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -241,7 +242,7 @@ const DashboardPage = () => {
       e.preventDefault();
       try {
         await axios.post(
-          "http://localhost:8080/api/reviews/request",
+          buildUrl(API_ENDPOINTS.REVIEWS.REQUEST),
           requestReviewsData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -276,7 +277,7 @@ const DashboardPage = () => {
         return;
       try {
         await axios.delete(
-          `http://localhost:8080/api/businesses/${businessId}`,
+          buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(businessId)),
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -397,7 +398,7 @@ const DashboardPage = () => {
 
         try {
           await axios.post(
-            `http://localhost:8080/api/reviews/manual/${businessId}`,
+            buildUrl(API_ENDPOINTS.REVIEWS.MANUAL(businessId)),
             { rating: localRating, comment: localComment },
             { headers: { Authorization: `Bearer ${token}` } }
           );
