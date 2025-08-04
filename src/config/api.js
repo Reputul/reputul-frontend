@@ -1,6 +1,9 @@
 // Centralized API configuration
 const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE || 'http://localhost:8080',
+  BASE_URL: process.env.REACT_APP_API_BASE ||
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8080'
+    : 'https://api.reputul.com'),
   ENDPOINTS: {
     // Auth endpoints
     AUTH: {
