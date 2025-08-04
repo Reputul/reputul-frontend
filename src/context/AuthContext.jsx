@@ -72,14 +72,14 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email, password) => {
-    const response = await fetch(buildUrl(API_ENDPOINTS.AUTH.LOGIN), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+  const login = async (email, password, rememberMe = false) => {
+  const response = await fetch(buildUrl(API_ENDPOINTS.AUTH.LOGIN), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password, rememberMe }),
+  });
 
     if (!response.ok) {
       const errorData = await response.text();

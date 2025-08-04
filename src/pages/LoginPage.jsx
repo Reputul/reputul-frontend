@@ -8,7 +8,8 @@ const LoginPage = () => {
 
   const [form, setForm] = useState({
     email: '',
-    password: ''
+    password: '',
+    rememberMe: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,11 @@ const LoginPage = () => {
   }, [token, navigate]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, type, checked, value } = e.target;
+    setForm({ 
+      ...form, 
+      [name]: type === 'checkbox' ? checked : value 
+    });
     // Clear error when user starts typing
     if (error) setError('');
   };
@@ -35,13 +40,17 @@ const LoginPage = () => {
     setError('');
     
     try {
-      await login(form.email, form.password);
+      await login(form.email, form.password, form.rememberMe);
       navigate('/dashboard');
     } catch (err) {
       setError('Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    navigate('/forgot-password');
   };
 
   const isFormValid = form.email && form.password;
@@ -184,6 +193,33 @@ const LoginPage = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Remember Me and Forgot Password */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="relative">
+                      <input
+                        id="rememberMe"
+                        name="rememberMe"
+                        type="checkbox"
+                        checked={form.rememberMe}
+                        onChange={handleChange}
+                        className="h-5 w-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 transition-all duration-200"
+                      />
+                    </div>
+                    <label htmlFor="rememberMe" className="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                      Remember me for 30 days
+                    </label>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </div>
 
               <button 
@@ -243,7 +279,6 @@ const LoginPage = () => {
             </div>
           </div>
 
-
           {/* Enhanced Features Preview */}
           <div className="mt-10 text-center animate-fade-in-up" style={{animationDelay: '0.6s'}}>
             <h3 className="text-2xl font-bold text-white mb-6">Why Choose Reputul?</h3>
@@ -254,8 +289,8 @@ const LoginPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <div className="text-base font-bold text-white mb-2 leading-tight">Smart Analytics</div>
-                <div className="text-blue-100 text-sm">Track reputation trends and insights</div>
+                <div className="text-base font-bold text-white mb-2 leading-tight text-center">Smart Analytics</div>
+                <div className="text-blue-100 text-sm text-center">Track reputation trends and insights</div>
               </div>
               
               <div className="group bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2">
@@ -264,8 +299,8 @@ const LoginPage = () => {
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                   </svg>
                 </div>
-                <div className="text-base font-bold text-white mb-2 leading-tight">Review Management</div>
-                <div className="text-blue-100 text-sm">Collect and showcase reviews</div>
+                <div className="text-base font-bold text-white mb-2 leading-tight text-center">Review Management</div>
+                <div className="text-blue-100 text-sm text-center">Collect and showcase reviews</div>
               </div>
               
               <div className="group bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 hover:-translate-y-2">
@@ -274,8 +309,8 @@ const LoginPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                 </div>
-                <div className="text-base font-bold text-white mb-2 leading-tight">Business Growth</div>
-                <div className="text-blue-100 text-sm">Boost trust and credibility</div>
+                <div className="text-base font-bold text-white mb-2 leading-tight text-center">Business Growth</div>
+                <div className="text-blue-100 text-sm text-center">Boost trust and credibility</div>
               </div>
             </div>
           </div>

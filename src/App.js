@@ -16,6 +16,8 @@ import CustomerManagementPage from "./pages/CustomerManagementPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivateRoute from "./components/PrivateRoute";
 import BusinessPublicPage from "./pages/BusinessPublicPage";
 import EmailTemplatesPage from "./pages/EmailTemplatesPage";
@@ -58,8 +60,8 @@ function App() {
     checkMaintenanceStatus();
   }, []);
 
-  // 👇 Determine whether to show the Navbar
-  const hideNavbarOnRoutes = ["/"];
+  // 👇 Determine whether to show the Navbar (hide on auth pages)
+  const hideNavbarOnRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
   const shouldShowNavbar = !hideNavbarOnRoutes.includes(
     window.location.pathname
   );
@@ -102,6 +104,8 @@ function App() {
                 {/* Public routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
                 <Route path="/feedback/:customerId" element={<CustomerFeedbackPage />} />
                 <Route path="/opt-in-policy" element={<OptInPolicy />} />
