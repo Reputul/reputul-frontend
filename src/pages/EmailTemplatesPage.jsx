@@ -3,7 +3,8 @@ import axios from "axios";
 import { sanitizeHtml } from "../utils/sanitizer";
 
 const EmailTemplatesPage = () => {
-  const API_BASE_URL = "http://localhost:8080/api/email-templates";
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
+  const API_BASE_URL = `${API_BASE}/api/email-templates`;
   const [templates, setTemplates] = useState([]);
   const [templateTypes, setTemplateTypes] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -30,8 +31,6 @@ const EmailTemplatesPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(""); // ADDED: Missing success state
-
-  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
   // Helper function to get auth headers
   const getAuthHeaders = () => {

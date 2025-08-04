@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 const CustomerManagementPage = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
   const [businesses, setBusinesses] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -53,13 +54,13 @@ const CustomerManagementPage = () => {
   const fetchData = useCallback(async () => {
     try {
       const [businessRes, customerRes, templateRes] = await Promise.all([
-        axios.get("http://localhost:8080/api/dashboard", {
+        axios.get(`${API_BASE}/api/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get("http://localhost:8080/api/customers", {
+        axios.get(`${API_BASE}/api/customers`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get("http://localhost:8080/api/email-templates", {
+        axios.get(`${API_BASE}/api/email-templates`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -88,7 +89,7 @@ const CustomerManagementPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/review-requests/validate-phone",
+        `${API_BASE}/api/review-requests/validate-phone`,
         { phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -119,7 +120,7 @@ const CustomerManagementPage = () => {
 
     try {
       await axios.post(
-        "http://localhost:8080/api/customers",
+        `${API_BASE}/api/customers`,
         {
           ...newCustomer,
           businessId: parseInt(newCustomer.businessId),
@@ -164,7 +165,7 @@ const CustomerManagementPage = () => {
 
     try {
       await axios.put(
-        `http://localhost:8080/api/customers/${editCustomer.id}`,
+        `${API_BASE}/api/customers/${editCustomer.id}`,
         {
           ...editCustomer,
           businessId: parseInt(editCustomer.businessId),
@@ -197,7 +198,7 @@ const CustomerManagementPage = () => {
 
       try {
         await axios.delete(
-          `http://localhost:8080/api/customers/${customerId}`,
+          `${API_BASE}/api/customers/${customerId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -241,7 +242,7 @@ const CustomerManagementPage = () => {
         }
 
         const response = await axios.post(
-          "http://localhost:8080/api/review-requests",
+          `${API_BASE}/api/review-requests`,
           requestData,
           {
             headers: { Authorization: `Bearer ${token}` },

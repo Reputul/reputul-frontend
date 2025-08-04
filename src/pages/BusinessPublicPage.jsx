@@ -4,6 +4,7 @@ import axios from "axios";
 
 const BusinessPublicPage = () => {
   const { id } = useParams();
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
   const [business, setBusiness] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,8 +18,8 @@ const BusinessPublicPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const bizRes = await axios.get(`http://localhost:8080/api/businesses/${id}`);
-        const reviewRes = await axios.get(`http://localhost:8080/api/reviews/business/${id}`);
+        const bizRes = await axios.get(`${API_BASE}/api/businesses/${id}`);
+        const reviewRes = await axios.get(`${API_BASE}/api/reviews/business/${id}`);
         setBusiness(bizRes.data);
         setReviews(reviewRes.data);
       } catch (err) {
@@ -48,7 +49,7 @@ const BusinessPublicPage = () => {
         return;
       }
 
-      await axios.post(`http://localhost:8080/api/reviews/public/${id}`, {
+      await axios.post(`${API_BASE}/api/reviews/public/${id}`, {
         rating: parseInt(newReview.rating),
         comment: newReview.comment.trim()
       });
@@ -57,8 +58,8 @@ const BusinessPublicPage = () => {
       setSuccess("Thank you for your review! It has been submitted successfully.");
 
       // Refresh reviews and business data
-      const reviewRes = await axios.get(`http://localhost:8080/api/reviews/business/${id}`);
-      const bizRes = await axios.get(`http://localhost:8080/api/businesses/${id}`);
+      const reviewRes = await axios.get(`${API_BASE}/api/reviews/business/${id}`);
+      const bizRes = await axios.get(`${API_BASE}/api/businesses/${id}`);
       setReviews(reviewRes.data);
       setBusiness(bizRes.data);
     } catch (err) {

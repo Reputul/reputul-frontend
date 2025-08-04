@@ -5,6 +5,7 @@ import axios from "axios";
 const CustomerFeedbackPage = () => {
   const { customerId } = useParams();
   const [searchParams] = useSearchParams();
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
   const [customer, setCustomer] = useState(null);
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +18,7 @@ const CustomerFeedbackPage = () => {
     const fetchCustomerData = async () => {
       try {
         // Fetch customer and associated business data
-        const response = await axios.get(`http://localhost:8080/api/customers/${customerId}/feedback-info`);
+        const response = await axios.get(`${API_BASE}/api/customers/${customerId}/feedback-info`);
         setCustomer(response.data.customer);
         setBusiness(response.data.business);
         
@@ -49,7 +50,7 @@ const CustomerFeedbackPage = () => {
         return;
       }
 
-      await axios.post(`http://localhost:8080/api/customers/${customerId}/feedback`, {
+      await axios.post(`${API_BASE}/api/customers/${customerId}/feedback`, {
         rating: parseInt(feedback.rating),
         comment: feedback.comment.trim(),
         type: feedback.type || "private"

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 const ProfilePage = () => {
   const { token } = useAuth();
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
   const [profile, setProfile] = useState({ name: '', email: '' });
   const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -26,14 +27,14 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/api/users/profile', {
+        const res = await axios.get(`${API_BASE}/api/users/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(res.data);
         setNewName(res.data.name);
         
         // Fetch account statistics
-        const dashboardRes = await axios.get('http://localhost:8080/api/dashboard', {
+        const dashboardRes = await axios.get(`${API_BASE}/api/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
@@ -112,7 +113,7 @@ const ProfilePage = () => {
       }
 
       await axios.put(
-        'http://localhost:8080/api/users/profile',
+        `${API_BASE}/api/users/profile`,
         updateData,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -133,7 +134,7 @@ const ProfilePage = () => {
 
   const handleExportData = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/users/export', {
+      const response = await axios.get(`${API_BASE}/api/users/export`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -164,7 +165,7 @@ const ProfilePage = () => {
     }
 
     try {
-      await axios.delete('http://localhost:8080/api/users/profile', {
+      await axios.delete(`${API_BASE}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
