@@ -61,3 +61,34 @@ export const renderTextOnly = (content) => {
     .replace(/'/g, '&#x27;')
     .replace(/\//g, '&#x2F;');
 };
+
+// ✅ NEW: For email template previews - allows trusted HTML to render
+export const sanitizeEmailTemplate = (content) => {
+  if (!content) return '';
+  
+  const str = content.toString();
+  
+  // For email templates, we trust the content since it comes from our backend
+  // Just do basic cleanup but preserve the HTML structure
+  
+  // Remove any script tags for basic security
+  let cleaned = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Remove any onclick, onload, etc. event handlers
+  cleaned = cleaned.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+  
+  // Remove javascript: links
+  cleaned = cleaned.replace(/javascript:/gi, '');
+  
+  // Otherwise, preserve the HTML structure for proper email rendering
+  return cleaned;
+};
+
+// ✅ NEW: For completely trusted content (like your own email templates)
+export const renderTrustedHtml = (content) => {
+  if (!content) return '';
+  
+  // For your own email templates, no sanitization needed
+  // This is the safest for previewing your own templates
+  return content.toString();
+};

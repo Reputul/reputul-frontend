@@ -27,7 +27,7 @@ const API_CONFIG = {
     // Review endpoints
     REVIEWS: {
       BY_BUSINESS: (id) => `/api/reviews/business/${id}`,
-      REQUEST: '/api/reviews/request',
+      REQUEST: '/api/review-requests',
       MANUAL: (id) => `/api/reviews/manual/${id}`
     },
     

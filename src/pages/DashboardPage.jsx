@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { buildUrl, API_ENDPOINTS } from '../config/api';
+import { buildUrl, API_ENDPOINTS } from "../config/api";
 
 const DashboardPage = () => {
   const { token } = useAuth();
@@ -43,12 +43,12 @@ const DashboardPage = () => {
   });
 
   const fetchBusinesses = useCallback(async () => {
-    console.log('🔄 fetchBusinesses called');
+    console.log("🔄 fetchBusinesses called");
     try {
       const res = await axios.get(buildUrl(API_ENDPOINTS.BUSINESS.DASHBOARD), {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('📥 Raw API response:', res.data);
+      console.log("📥 Raw API response:", res.data);
       setBusinesses(res.data);
 
       // Fetch review summaries
@@ -105,41 +105,43 @@ const DashboardPage = () => {
   // Listen for platform updates and page visibility changes
   useEffect(() => {
     const handlePlatformUpdate = () => {
-      console.log('Platform configuration updated, refreshing businesses...');
+      console.log("Platform configuration updated, refreshing businesses...");
       fetchBusinesses();
     };
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('Page became visible, refreshing businesses...');
+        console.log("Page became visible, refreshing businesses...");
         fetchBusinesses();
       }
     };
 
     const handleWindowFocus = () => {
-      console.log('Window focused, refreshing businesses...');
+      console.log("Window focused, refreshing businesses...");
       fetchBusinesses();
     };
 
     // Listen for custom platform update events
-    window.addEventListener('platformsUpdated', handlePlatformUpdate);
-    
+    window.addEventListener("platformsUpdated", handlePlatformUpdate);
+
     // Listen for page visibility changes (when user switches tabs/apps)
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     // Listen for window focus (when user returns from another page)
-    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener("focus", handleWindowFocus);
 
     return () => {
-      window.removeEventListener('platformsUpdated', handlePlatformUpdate);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener("platformsUpdated", handlePlatformUpdate);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
     };
   }, [fetchBusinesses]);
 
   // ADDITIONAL: Refresh when component mounts (important for navigation)
   useEffect(() => {
-    console.log('Dashboard component mounted, fetching latest business data...');
+    console.log(
+      "Dashboard component mounted, fetching latest business data..."
+    );
     fetchBusinesses();
   }, []); // Only run on mount
 
@@ -241,13 +243,15 @@ const DashboardPage = () => {
     async (e) => {
       e.preventDefault();
       try {
+        // Use the new direct endpoint that matches frontend data
         await axios.post(
-          buildUrl(API_ENDPOINTS.REVIEWS.REQUEST),
-          requestReviewsData,
+          buildUrl("/api/review-requests/send-direct"), // ← New endpoint
+          requestReviewsData, // ← This data structure matches what backend expects
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
+
         setRequestReviewsData({
           selectedBusiness: "",
           customerEmail: "",
@@ -276,12 +280,9 @@ const DashboardPage = () => {
       if (!window.confirm("Are you sure you want to delete this business?"))
         return;
       try {
-        await axios.delete(
-          buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(businessId)),
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        await axios.delete(buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(businessId)), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         alert("Business deleted successfully!");
         fetchBusinesses();
       } catch (err) {
