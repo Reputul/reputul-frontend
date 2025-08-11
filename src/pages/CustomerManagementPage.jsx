@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 const CustomerManagementPage = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
   const [businesses, setBusinesses] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [templates, setTemplates] = useState([]);

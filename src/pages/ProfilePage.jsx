@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 const ProfilePage = () => {
   const { token } = useAuth();
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
   const [profile, setProfile] = useState({ name: '', email: '' });
   const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');

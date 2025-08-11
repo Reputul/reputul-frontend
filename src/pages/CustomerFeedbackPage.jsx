@@ -5,7 +5,7 @@ import axios from "axios";
 const CustomerFeedbackPage = () => {
   const { customerId } = useParams();
   const [searchParams] = useSearchParams();
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
   const [customer, setCustomer] = useState(null);
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);

@@ -11,15 +11,14 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "eslintConfig": {
     "extends": [
@@ -41,9 +40,12 @@
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "nth-check": "^2.1.1",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "vite": "^7.1.1",
+    "vite-plugin-eslint": "^1.8.1"
   }
 }

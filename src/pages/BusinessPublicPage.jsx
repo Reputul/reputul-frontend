@@ -4,7 +4,7 @@ import axios from "axios";
 
 const BusinessPublicPage = () => {
   const { id } = useParams();
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
   const [business, setBusiness] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);

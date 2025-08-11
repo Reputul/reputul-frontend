@@ -44,7 +44,7 @@ function App() {
         // You can implement a real API call here to check maintenance status
         // For now, this is a placeholder that checks localStorage or env variable
         const maintenanceStatus =
-          process.env.REACT_APP_MAINTENANCE_MODE === "true" ||
+          import.meta.env.VITE_MAINTENANCE_MODE === "true" ||
           localStorage.getItem("maintenanceMode") === "true";
 
         setIsMaintenanceMode(maintenanceStatus);
