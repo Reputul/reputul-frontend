@@ -331,35 +331,73 @@ const DashboardPage = () => {
     totalBusinesses: businesses.length,
   };
 
+  // Enhanced Circular Progress Component
+  const CircularProgress = ({ rating, size = 64 }) => {
+    const radius = size / 2 - 4;
+    const circumference = 2 * Math.PI * radius;
+    const progress = (rating / 5) * circumference;
+
+    return (
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="4"
+            fill="none"
+            className="text-gray-200"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="4"
+            fill="none"
+            strokeDasharray={`${progress} ${circumference}`}
+            className="text-primary-500 transition-all duration-1000 ease-out"
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-lg font-bold text-primary-600">{rating}</span>
+        </div>
+      </div>
+    );
+  };
+
+  // Enhanced Metric Card Component
   const MetricCard = ({
     icon,
     title,
     value,
     subtitle,
     trend,
-    color = "blue",
+    color = "primary",
   }) => {
     const colorClasses = {
-      blue: "text-blue-600 bg-blue-50",
+      primary: "text-primary-600 bg-primary-50",
       yellow: "text-yellow-600 bg-yellow-50",
       green: "text-green-600 bg-green-50",
       purple: "text-purple-600 bg-purple-50",
     };
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
             <p
-              className={`text-3xl font-bold ${
+              className={`text-3xl font-bold group-hover:scale-105 transition-transform ${
                 color === "yellow"
                   ? "text-yellow-500"
                   : color === "green"
                   ? "text-green-600"
                   : color === "purple"
                   ? "text-purple-600"
-                  : "text-blue-600"
+                  : "text-primary-600"
               }`}
             >
               {value}
@@ -369,16 +407,22 @@ const DashboardPage = () => {
             )}
             {trend && (
               <div className="flex items-center mt-2">
-                <span className="text-xs text-green-600 font-medium">
-                  ↗ {trend}
-                </span>
-                <span className="text-xs text-gray-500 ml-1">
-                  vs last month
-                </span>
+                <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 rounded-full">
+                  <svg className="w-3 h-3 text-green-600 transition-transform group-hover:translate-x-0.5">
+                    <path d="M7 14l3-3 3 3M7 10l3-3 3 3" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="text-xs text-green-600 font-medium">{trend}</span>
+                </div>
+                <span className="text-xs text-gray-500 ml-2">vs last month</span>
               </div>
             )}
           </div>
-          <div className={`p-3 rounded-xl ${colorClasses[color]}`}>{icon}</div>
+          <div className="relative">
+            <div className={`p-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 group-hover:scale-110 transition-transform ${colorClasses[color]}`}>
+              {icon}
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-500 rounded-xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity"></div>
+          </div>
         </div>
       </div>
     );
@@ -431,7 +475,7 @@ const DashboardPage = () => {
               value={localRating}
               onChange={(e) => setLocalRating(e.target.value)}
               required
-              className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
             >
               <option value="">Rating</option>
               <option value="5">5 ⭐</option>
@@ -447,11 +491,11 @@ const DashboardPage = () => {
               value={localComment}
               onChange={(e) => setLocalComment(e.target.value)}
               required
-              className="col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="col-span-2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
             />
             <button
               type="submit"
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
             >
               Add Review
             </button>
@@ -461,6 +505,7 @@ const DashboardPage = () => {
     );
   });
 
+  // Enhanced Business Card Component
   const BusinessCard = React.memo(({ business }) => {
     const getBadgeColor = (badge) => {
       if (badge === "Top Rated") return "bg-green-100 text-green-800";
@@ -472,16 +517,17 @@ const DashboardPage = () => {
     const reviews = reviewsMap[business.id] || [];
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-200 group">
-        <div className="p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="relative p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-2">
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
                   {business.name}
                 </h3>
                 <span
-                  className={`px-3 py-1 text-xs font-semibold rounded-full ${getBadgeColor(
+                  className={`px-3 py-1 text-xs font-semibold rounded-full transition-all duration-200 ${getBadgeColor(
                     business.badge
                   )}`}
                 >
@@ -495,10 +541,10 @@ const DashboardPage = () => {
                 <span>{business.website}</span>
               </div>
             </div>
-            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <button
                 onClick={() => handleEditBusiness(business)}
-                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200"
               >
                 <svg
                   className="w-4 h-4"
@@ -516,7 +562,7 @@ const DashboardPage = () => {
               </button>
               <button
                 onClick={() => copyPublicLink(business.id)}
-                className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
               >
                 <svg
                   className="w-4 h-4"
@@ -534,7 +580,7 @@ const DashboardPage = () => {
               </button>
               <button
                 onClick={() => handleDeleteBusiness(business.id)}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
               >
                 <svg
                   className="w-4 h-4"
@@ -555,29 +601,31 @@ const DashboardPage = () => {
 
           {/* CONDITIONAL PLATFORM SETUP REMINDER */}
           {!business.reviewPlatformsConfigured && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <div className="bg-white/90 backdrop-blur-xl border-2 border-dashed border-amber-300 rounded-xl p-4 mb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <svg
-                    className="w-4 h-4 text-amber-600 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
-                    />
-                  </svg>
+                  <div className="p-2 bg-amber-100 rounded-full mr-3">
+                    <svg
+                      className="w-4 h-4 text-amber-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                  </div>
                   <span className="text-sm font-medium text-amber-800">
                     Platform setup needed
                   </span>
                 </div>
                 <button
                   onClick={() => navigate("/review-platform-setup")}
-                  className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-md font-medium transition-colors"
+                  className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-md font-medium transition-all duration-200 transform hover:-translate-y-0.5"
                 >
                   Configure
                 </button>
@@ -585,32 +633,24 @@ const DashboardPage = () => {
             </div>
           )}
 
-          {/* Metrics Row */}
+          {/* Enhanced Metrics Row with Circular Progress */}
           <div className="grid grid-cols-3 gap-6 mb-6">
-            <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
+            <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200 hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-center mb-2">
-                <svg
-                  className="w-6 h-6 text-yellow-500 fill-current mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-                <span className="text-2xl font-bold text-yellow-600">
-                  {summary
-                    ? summary.averageRating.toFixed(1)
-                    : business.reputationScore || "0.0"}
-                </span>
+                <CircularProgress 
+                  rating={summary ? summary.averageRating : business.reputationScore || 0} 
+                  size={48}
+                />
               </div>
               <p className="text-sm font-medium text-yellow-700">
                 Average Rating
               </p>
             </div>
 
-            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+            <div className="text-center p-4 bg-gradient-to-br from-primary-50 to-indigo-50 rounded-xl border border-primary-200 hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-center mb-2">
                 <svg
-                  className="w-6 h-6 text-blue-500 mr-2"
+                  className="w-6 h-6 text-primary-500 mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -622,14 +662,14 @@ const DashboardPage = () => {
                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                   />
                 </svg>
-                <span className="text-2xl font-bold text-blue-600">
+                <span className="text-2xl font-bold text-primary-600">
                   {summary ? summary.totalReviews : business.reviewCount || 0}
                 </span>
               </div>
-              <p className="text-sm font-medium text-blue-700">Total Reviews</p>
+              <p className="text-sm font-medium text-primary-700">Total Reviews</p>
             </div>
 
-            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-center mb-2">
                 <svg
                   className="w-6 h-6 text-purple-500 mr-2"
@@ -651,7 +691,7 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Recent Reviews */}
+          {/* Recent Reviews with enhanced styling */}
           {reviews.length > 0 && (
             <div className="mb-6">
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
@@ -659,7 +699,7 @@ const DashboardPage = () => {
               </h4>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {reviews.slice(0, 3).map((review) => (
-                  <div key={review.id} className="p-3 bg-gray-50 rounded-lg">
+                  <div key={review.id} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
@@ -685,16 +725,21 @@ const DashboardPage = () => {
           {/* Add Manual Review */}
           <ReviewForm businessId={business.id} />
 
-          {/* CONDITIONAL ACTION BUTTONS */}
+          {/* Enhanced Action Buttons with Premium Styling */}
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => window.open(`/business/${business.id}`, "_blank")}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm"
+              className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 group"
             >
-              View Analytics
+              <span className="flex items-center justify-center space-x-2">
+                <span>View Analytics</span>
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform">
+                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
             </button>
 
-            {/* CONDITIONAL BUTTON - Only show "Add Review" if platforms are configured, otherwise "Setup First" */}
+            {/* CONDITIONAL BUTTON with enhanced styling */}
             {business.reviewPlatformsConfigured ? (
               <button
                 onClick={() => {
@@ -710,14 +755,14 @@ const DashboardPage = () => {
                     reviewForm.querySelector("select").focus();
                   }
                 }}
-                className="bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm"
+                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95"
               >
                 Add Review
               </button>
             ) : (
               <button
                 onClick={() => navigate("/review-platform-setup")}
-                className="bg-gradient-to-r from-amber-600 to-amber-700 text-white py-3 px-4 rounded-xl font-semibold hover:from-amber-700 hover:to-amber-800 transition-all duration-200 shadow-sm"
+                className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95"
               >
                 Setup First
               </button>
@@ -729,16 +774,16 @@ const DashboardPage = () => {
   });
 
   const QuickActions = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200">
       <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
       <div className="space-y-3">
         <button
           onClick={() => setShowAddBusiness(true)}
-          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-blue-50 rounded-lg transition-colors group"
+          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-primary-50 rounded-lg transition-all duration-200 group"
         >
-          <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+          <div className="p-2 bg-primary-100 rounded-lg group-hover:bg-primary-200 transition-colors">
             <svg
-              className="w-5 h-5 text-blue-600"
+              className="w-5 h-5 text-primary-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -751,13 +796,13 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900">Add New Business</span>
+          <span className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">Add New Business</span>
         </button>
 
-        {/* NEW: Customer Management Link */}
+        {/* Customer Management Link */}
         <Link
           to="/customers"
-          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-indigo-50 rounded-lg transition-colors group"
+          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-indigo-50 rounded-lg transition-all duration-200 group"
         >
           <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
             <svg
@@ -774,12 +819,12 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900">Manage Customers</span>
+          <span className="font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">Manage Customers</span>
         </Link>
 
         <button
           onClick={() => setShowRequestReviews(true)}
-          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors group"
+          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-all duration-200 group"
         >
           <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
             <svg
@@ -796,12 +841,12 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900">Request Reviews</span>
+          <span className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">Request Reviews</span>
         </button>
 
         <button
           onClick={() => setShowAnalytics(true)}
-          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-purple-50 rounded-lg transition-colors group"
+          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-purple-50 rounded-lg transition-all duration-200 group"
         >
           <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
             <svg
@@ -818,7 +863,7 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900">View Analytics</span>
+          <span className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">View Analytics</span>
         </button>
       </div>
     </div>
@@ -875,7 +920,7 @@ const DashboardPage = () => {
         : mockActivity;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
         <div className="p-6 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
           <p className="text-sm text-gray-600">
@@ -887,11 +932,11 @@ const DashboardPage = () => {
             {activityData.map((activity, index) => (
               <div
                 key={index}
-                className="flex items-start space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                className="flex items-start space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-all duration-200"
               >
                 <div
                   className={`p-2 rounded-lg ${
-                    activity.type === "review" ? "bg-green-100" : "bg-blue-100"
+                    activity.type === "review" ? "bg-green-100" : "bg-primary-100"
                   }`}
                 >
                   {activity.type === "review" ? (
@@ -904,7 +949,7 @@ const DashboardPage = () => {
                     </svg>
                   ) : (
                     <svg
-                      className="w-4 h-4 text-blue-600"
+                      className="w-4 h-4 text-primary-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -964,7 +1009,7 @@ const DashboardPage = () => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
+          <button className="w-full mt-4 text-center text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors">
             View All Activity →
           </button>
         </div>
@@ -972,25 +1017,30 @@ const DashboardPage = () => {
     );
   };
 
+  // Enhanced Loading State
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-primary-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-primary-500 border-r-primary-400 border-b-primary-300 absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+            <div className="absolute inset-2 bg-gradient-to-r from-primary-500/20 to-purple-500/20 rounded-full animate-pulse left-1/2 transform -translate-x-1/2"></div>
+          </div>
+          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-primary-50">
+      {/* Enhanced Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
                 Reputul Dashboard
               </h1>
               <p className="text-gray-600 mt-1">
@@ -999,10 +1049,10 @@ const DashboardPage = () => {
             </div>
             <button
               onClick={() => setShowAddBusiness(true)}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 group"
             >
               <svg
-                className="w-5 h-5"
+                className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1021,97 +1071,109 @@ const DashboardPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <MetricCard
-            icon={
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            }
-            title="Average Rating"
-            value={metrics.averageRating}
-            subtitle="Across all businesses"
-            trend="+0.3"
-            color="yellow"
-          />
-          <MetricCard
-            icon={
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-            }
-            title="Total Reviews"
-            value={metrics.totalReviews}
-            subtitle="This month"
-            trend="+23"
-            color="blue"
-          />
-          <MetricCard
-            icon={
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-            }
-            title="Businesses"
-            value={metrics.totalBusinesses}
-            subtitle="Active listings"
-            trend="+1"
-            color="green"
-          />
-          <MetricCard
-            icon={
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            }
-            title="Response Time"
-            value={`${metrics.responseTime}h`}
-            subtitle="Average response"
-            trend="-6h"
-            color="purple"
-          />
+        {/* Enhanced Metrics Cards in Bento Grid Layout */}
+        <div className="grid grid-cols-12 gap-6 mb-8">
+          {/* Large metric card */}
+          <div className="col-span-12 md:col-span-6 lg:col-span-3">
+            <MetricCard
+              icon={
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              }
+              title="Average Rating"
+              value={metrics.averageRating}
+              subtitle="Across all businesses"
+              trend="+0.3"
+              color="yellow"
+            />
+          </div>
+          
+          <div className="col-span-12 md:col-span-6 lg:col-span-3">
+            <MetricCard
+              icon={
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+              }
+              title="Total Reviews"
+              value={metrics.totalReviews}
+              subtitle="This month"
+              trend="+23"
+              color="primary"
+            />
+          </div>
+          
+          <div className="col-span-12 md:col-span-6 lg:col-span-3">
+            <MetricCard
+              icon={
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+              }
+              title="Businesses"
+              value={metrics.totalBusinesses}
+              subtitle="Active listings"
+              trend="+1"
+              color="green"
+            />
+          </div>
+          
+          <div className="col-span-12 md:col-span-6 lg:col-span-3">
+            <MetricCard
+              icon={
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              }
+              title="Response Time"
+              value={`${metrics.responseTime}h`}
+              subtitle="Average response"
+              trend="-6h"
+              color="purple"
+            />
+          </div>
         </div>
 
-        {/* Review Platform Setup Reminder */}
+        {/* Enhanced Review Platform Setup Reminder with Glassmorphism */}
         {!setupBannerDismissed &&
           businesses.some((b) => !b.reviewPlatformsConfigured) && (
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6 mb-6">
+            <div className="bg-white/90 backdrop-blur-xl border border-yellow-200 rounded-2xl p-6 mb-6 shadow-xl">
               <div className="flex items-start justify-between">
                 <div className="flex items-center">
-                  <div className="p-3 bg-yellow-100 rounded-full mr-4">
+                  <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full mr-4 shadow-lg">
                     <svg
-                      className="w-6 h-6 text-yellow-600"
+                      className="w-6 h-6 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -1143,13 +1205,13 @@ const DashboardPage = () => {
                     <div className="flex gap-3">
                       <button
                         onClick={() => navigate("/review-platform-setup")}
-                        className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                        className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                       >
                         Configure Review Platforms
                       </button>
                       <button
                         onClick={handleRemindLater}
-                        className="text-gray-600 hover:text-gray-800 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="text-gray-600 hover:text-gray-800 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
                       >
                         Remind me in 24 hours
                       </button>
@@ -1158,7 +1220,7 @@ const DashboardPage = () => {
                 </div>
                 <button
                   onClick={handleDismissBanner}
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200"
                   title="Dismiss permanently"
                 >
                   <svg
@@ -1193,20 +1255,20 @@ const DashboardPage = () => {
               </div>
               <div className="flex space-x-3">
                 <button
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     selectedFilter === "all"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300"
+                      ? "bg-primary-500 text-white shadow-lg"
+                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300 hover:border-primary-300"
                   }`}
                   onClick={() => setSelectedFilter("all")}
                 >
                   All
                 </button>
                 <button
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     selectedFilter === "top-rated"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300"
+                      ? "bg-primary-500 text-white shadow-lg"
+                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300 hover:border-primary-300"
                   }`}
                   onClick={() => setSelectedFilter("top-rated")}
                 >
@@ -1216,32 +1278,33 @@ const DashboardPage = () => {
             </div>
 
             {businesses.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6">
-                  <svg
-                    className="w-12 h-12 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
+              // Enhanced Empty State
+              <div className="bg-gradient-to-br from-primary-50 to-purple-50 rounded-2xl border-2 border-dashed border-primary-200 p-12 text-center">
+                <div className="relative mx-auto w-32 h-32 mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
+                  <div className="relative bg-gradient-to-r from-primary-500 to-purple-600 rounded-full w-full h-full flex items-center justify-center shadow-xl">
+                    <svg
+                      className="w-16 h-16 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  No businesses yet
-                </h3>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                  Get started by adding your first business to manage its
-                  reputation and start collecting reviews.
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Ready to boost your reputation?</h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                  Add your first business and start collecting 5-star reviews that drive more customers to your door.
                 </p>
                 <button
                   onClick={() => setShowAddBusiness(true)}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-primary-500/25 transform hover:-translate-y-1 transition-all duration-300 active:scale-95"
                 >
                   Add Your First Business
                 </button>
@@ -1265,8 +1328,8 @@ const DashboardPage = () => {
             <QuickActions />
             <RecentActivity />
 
-            {/* Performance Insights */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
+            {/* Enhanced Performance Insights */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6 hover:shadow-lg transition-all duration-200">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="p-2 bg-green-100 rounded-lg">
                   <svg
@@ -1285,37 +1348,46 @@ const DashboardPage = () => {
                 </div>
                 <h3 className="text-lg font-bold text-green-900">💡 Pro Tip</h3>
               </div>
-              <p className="text-sm text-green-800 leading-relaxed">
+              <p className="text-sm text-green-800 leading-relaxed mb-4">
                 Businesses that respond to reviews within 24 hours see a 15%
                 increase in customer satisfaction and rank higher in local
                 search results.
               </p>
-              <button className="mt-4 text-sm font-semibold text-green-700 hover:text-green-800">
-                Learn More →
+              <button className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors flex items-center space-x-1 group">
+                <span>Learn More</span>
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform">
+                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add Business Modal */}
+      {/* Enhanced Add Business Modal with Glassmorphism */}
       {showAddBusiness && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-md w-full p-8 shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
               Add New Business
             </h3>
             <form onSubmit={handleCreateBusiness}>
               <div className="space-y-4">
-                <input
-                  type="text"
-                  name="name"
-                  value={newBusiness.name}
-                  onChange={handleBusinessChange}
-                  placeholder="Business Name"
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <div className="relative group">
+                  <input
+                    type="text"
+                    name="name"
+                    value={newBusiness.name}
+                    onChange={handleBusinessChange}
+                    placeholder="Business Name"
+                    required
+                    className="w-full p-4 pt-6 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 transition-all duration-200 peer placeholder-transparent"
+                  />
+                  <label className="absolute left-4 top-2 text-xs text-primary-600 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-4 peer-focus:top-2 peer-focus:text-xs peer-focus:text-primary-600">
+                    Business Name
+                  </label>
+                </div>
+                
                 <input
                   type="text"
                   name="industry"
@@ -1323,7 +1395,7 @@ const DashboardPage = () => {
                   onChange={handleBusinessChange}
                   placeholder="Industry (e.g., Plumbing, Auto Repair)"
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
                 <input
                   type="text"
@@ -1331,7 +1403,7 @@ const DashboardPage = () => {
                   value={newBusiness.phone}
                   onChange={handleBusinessChange}
                   placeholder="Phone Number"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
                 <input
                   type="url"
@@ -1339,7 +1411,7 @@ const DashboardPage = () => {
                   value={newBusiness.website}
                   onChange={handleBusinessChange}
                   placeholder="Website URL"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
                 <input
                   type="text"
@@ -1347,20 +1419,20 @@ const DashboardPage = () => {
                   value={newBusiness.address}
                   onChange={handleBusinessChange}
                   placeholder="Business Address"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
               </div>
               <div className="flex space-x-3 mt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   Create Business
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddBusiness(false)}
-                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-all duration-200"
                 >
                   Cancel
                 </button>
@@ -1370,10 +1442,10 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Edit Business Modal */}
+      {/* Enhanced Edit Business Modal */}
       {editingBusiness && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-md w-full p-8 shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
               Edit Business
             </h3>
@@ -1386,7 +1458,7 @@ const DashboardPage = () => {
                   onChange={handleEditBusinessChange}
                   placeholder="Business Name"
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
                 <input
                   type="text"
@@ -1395,7 +1467,7 @@ const DashboardPage = () => {
                   onChange={handleEditBusinessChange}
                   placeholder="Industry (e.g., Plumbing, Auto Repair)"
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
                 <input
                   type="text"
@@ -1403,7 +1475,7 @@ const DashboardPage = () => {
                   value={editBusinessData.phone}
                   onChange={handleEditBusinessChange}
                   placeholder="Phone Number"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
                 <input
                   type="url"
@@ -1411,7 +1483,7 @@ const DashboardPage = () => {
                   value={editBusinessData.website}
                   onChange={handleEditBusinessChange}
                   placeholder="Website URL"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
                 <input
                   type="text"
@@ -1419,13 +1491,13 @@ const DashboardPage = () => {
                   value={editBusinessData.address}
                   onChange={handleEditBusinessChange}
                   placeholder="Business Address"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
               </div>
               <div className="flex space-x-3 mt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   Update Business
                 </button>
@@ -1441,7 +1513,7 @@ const DashboardPage = () => {
                       address: "",
                     });
                   }}
-                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-all duration-200"
                 >
                   Cancel
                 </button>
@@ -1451,10 +1523,10 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Request Reviews Modal */}
+      {/* Enhanced Request Reviews Modal */}
       {showRequestReviews && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-md w-full p-8 shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
               Request Reviews
             </h3>
@@ -1465,7 +1537,7 @@ const DashboardPage = () => {
                   value={requestReviewsData.selectedBusiness}
                   onChange={handleRequestReviewsChange}
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                 >
                   <option value="">Select Business</option>
                   {businesses.map((business) => (
@@ -1481,7 +1553,7 @@ const DashboardPage = () => {
                   onChange={handleRequestReviewsChange}
                   placeholder="Customer Name"
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                 />
                 <input
                   type="email"
@@ -1490,7 +1562,7 @@ const DashboardPage = () => {
                   onChange={handleRequestReviewsChange}
                   placeholder="Customer Email"
                   required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
                 />
                 <textarea
                   name="message"
@@ -1498,13 +1570,13 @@ const DashboardPage = () => {
                   onChange={handleRequestReviewsChange}
                   placeholder="Personal message (optional)"
                   rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none transition-all duration-200"
                 />
               </div>
               <div className="flex space-x-3 mt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   Send Request
                 </button>
@@ -1519,7 +1591,7 @@ const DashboardPage = () => {
                       message: "",
                     });
                   }}
-                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-all duration-200"
                 >
                   Cancel
                 </button>
@@ -1529,17 +1601,17 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Analytics Modal */}
+      {/* Enhanced Analytics Modal */}
       {showAnalytics && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-bold text-gray-900">
                 Analytics Overview
               </h3>
               <button
                 onClick={() => setShowAnalytics(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
               >
                 <svg
                   className="w-6 h-6"
@@ -1558,11 +1630,11 @@ const DashboardPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
+              <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-4 rounded-xl hover:shadow-md transition-all duration-200">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-200 rounded-lg">
+                  <div className="p-2 bg-primary-200 rounded-lg">
                     <svg
-                      className="w-5 h-5 text-blue-600"
+                      className="w-5 h-5 text-primary-600"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -1570,17 +1642,17 @@ const DashboardPage = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-blue-600 font-medium">
+                    <p className="text-sm text-primary-600 font-medium">
                       Total Reviews
                     </p>
-                    <p className="text-2xl font-bold text-blue-900">
+                    <p className="text-2xl font-bold text-primary-900">
                       {metrics.totalReviews}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl hover:shadow-md transition-all duration-200">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-green-200 rounded-lg">
                     <svg
@@ -1608,7 +1680,7 @@ const DashboardPage = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl hover:shadow-md transition-all duration-200">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-purple-200 rounded-lg">
                     <svg
@@ -1636,7 +1708,7 @@ const DashboardPage = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl">
+              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl hover:shadow-md transition-all duration-200">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-yellow-200 rounded-lg">
                     <svg
@@ -1665,7 +1737,7 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            {/* Business Performance Table */}
+            {/* Enhanced Business Performance Table */}
             <div className="bg-gray-50 rounded-xl p-6">
               <h4 className="text-lg font-bold text-gray-900 mb-4">
                 Business Performance
@@ -1686,7 +1758,7 @@ const DashboardPage = () => {
                       return (
                         <tr
                           key={business.id}
-                          className="border-b border-gray-100"
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
                           <td className="py-3 font-medium text-gray-900">
                             {business.name}
@@ -1708,7 +1780,7 @@ const DashboardPage = () => {
                           </td>
                           <td className="py-3">
                             <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              className={`px-2 py-1 text-xs font-medium rounded-full transition-all duration-200 ${
                                 business.badge === "Top Rated"
                                   ? "bg-green-100 text-green-800"
                                   : business.badge === "Rising Star"

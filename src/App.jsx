@@ -31,7 +31,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ReviewRequestPage from "./pages/ReviewRequestPage";
 import ReviewPlatformSetupPage from "./pages/ReviewPlatformSetupPage";
 import CustomerFeedbackPage from "./pages/CustomerFeedbackPage";
-import OptInPolicy from './pages/OptInPolicy';
+import OptInPolicy from "./pages/OptInPolicy";
 
 function App() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -61,7 +61,13 @@ function App() {
   }, []);
 
   // 👇 Determine whether to show the Navbar (hide on auth pages)
-  const hideNavbarOnRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
+  const hideNavbarOnRoutes = [
+    "/",
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+  ];
   const shouldShowNavbar = !hideNavbarOnRoutes.includes(
     window.location.pathname
   );
@@ -72,8 +78,10 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <div className="relative mb-8">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200"></div>
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-600 border-t-transparent absolute top-0"></div>
+            <div className="relative">
+              <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-200"></div>
+              <div className="animate-spin rounded-full h-20 w-20 border-4 border-transparent border-t-primary-500 border-r-primary-400 absolute top-0"></div>
+            </div>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
             Loading Reputul
@@ -104,10 +112,16 @@ function App() {
                 {/* Public routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
-                <Route path="/feedback/:customerId" element={<CustomerFeedbackPage />} />
+                <Route
+                  path="/feedback/:customerId"
+                  element={<CustomerFeedbackPage />}
+                />
                 <Route path="/opt-in-policy" element={<OptInPolicy />} />
 
                 {/* Error routes */}

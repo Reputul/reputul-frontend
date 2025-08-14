@@ -215,7 +215,7 @@ const LoginPage = () => {
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200"
+                    className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors duration-200"
                   >
                     Forgot password?
                   </button>
@@ -269,7 +269,7 @@ const LoginPage = () => {
             <div className="text-center">
               <Link 
                 to="/register" 
-                className="group inline-flex items-center space-x-3 text-blue-600 hover:text-blue-700 font-bold text-lg transition-all duration-300 transform hover:scale-105"
+                className="group inline-flex items-center space-x-3 text-primary-600 hover:text-primary-700 font-bold text-lg transition-all duration-300 transform hover:scale-105"
               >
                 <span>Create your account</span>
                 <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

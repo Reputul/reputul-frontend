@@ -126,7 +126,7 @@ src/
 
 #### Component Patterns
 - Consistent spacing: `p-6` for cards, `space-y-4` for form fields
-- Button styles: `bg-gradient-to-r from-blue-600 to-blue-700` with hover states
+- Button styles: `bg-gradient-to-r from-primary-500 to-primary-600` with hover states
 - Form inputs: `border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500`
 
 ### Key Features

@@ -302,7 +302,7 @@ const ResetPasswordPage = () => {
             <div className="mt-8 text-center">
               <button 
                 onClick={() => navigate('/login')}
-                className="group inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-semibold transition-all duration-300"
+                className="group inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-semibold transition-all duration-300"
               >
                 <svg className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

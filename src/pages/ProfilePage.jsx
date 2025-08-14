@@ -183,8 +183,8 @@ const ProfilePage = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <div className="relative mb-8">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200"></div>
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-600 border-t-transparent absolute top-0"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-200"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-500 border-t-transparent absolute top-0"></div>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Loading Your Profile</h2>
           <p className="text-blue-200">Fetching your account information...</p>
@@ -297,7 +297,7 @@ const ProfilePage = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border border-blue-200">
+                  <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border border-primary-200">
                     <div className="flex items-center space-x-3">
                       <div className="bg-blue-600 rounded-xl p-2">
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,7 +453,7 @@ const ProfilePage = () => {
                           </svg>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-500 mt-3 bg-blue-50 rounded-xl p-3 border border-blue-200">
+                      <p className="text-sm text-gray-500 mt-3 bg-blue-50 rounded-xl p-3 border border-primary-200">
                         <svg className="w-4 h-4 text-blue-600 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -703,7 +703,7 @@ const ProfilePage = () => {
                 </div>
                 
                 <div className="space-y-6">
-                  <div className="p-6 border-2 border-blue-200 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100">
+                  <div className="p-6 border-2 border-primary-200 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100">
                     <div className="flex items-start space-x-4">
                       <div className="bg-blue-600 rounded-xl p-3">
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -717,7 +717,7 @@ const ProfilePage = () => {
                         </p>
                         <button 
                           onClick={handleExportData}
-                          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                          className="bg-primary-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                         >
                           Download Data Export
                         </button>

@@ -192,9 +192,9 @@ const ErrorPage = ({
 
             {/* Auto-redirect Notice */}
             {autoRedirect && (
-              <div className="mb-8 p-4 bg-blue-50 rounded-2xl border border-blue-200 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
+              <div className="mb-8 p-4 bg-blue-50 rounded-2xl border border-primary-200 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
                 <div className="flex items-center justify-center space-x-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-500 border-t-transparent"></div>
                   <span className="text-blue-800 font-medium">
                     Redirecting to {token ? 'dashboard' : 'homepage'} in {countdown} seconds
                   </span>

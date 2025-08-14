@@ -201,7 +201,7 @@ const ReviewPlatformSetupPage = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading businesses...</p>
         </div>
       </div>
@@ -417,7 +417,7 @@ const ReviewPlatformSetupPage = () => {
               <button
                 onClick={savePlatforms}
                 disabled={saving}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {saving ? (
                   <>
@@ -433,7 +433,7 @@ const ReviewPlatformSetupPage = () => {
             </div>
 
             {/* Updated helpful info */}
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mt-4 p-4 bg-blue-50 border border-primary-200 rounded-lg">
               <h4 className="text-sm font-semibold text-blue-800 mb-2">💡 How It Works:</h4>
               <ul className="text-sm text-blue-700 space-y-1">
                 <li>• <strong>Google Reviews:</strong> Works with or without Place ID (smart fallback included)</li>
@@ -462,7 +462,7 @@ const ReviewPlatformSetupPage = () => {
                     </a>
                     
                     {platformData.facebookPageUrl && (
-                      <a href="#" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium text-center block transition-colors w-full">
+                      <a href="#" className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium text-center block transition-colors w-full">
                         👥 Facebook Review
                       </a>
                     )}

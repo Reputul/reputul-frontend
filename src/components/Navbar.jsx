@@ -240,7 +240,7 @@ const Navbar = () => {
                     className="flex items-center space-x-3 p-2 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 group"
                   >
                     <div className="relative">
-                      <div className="bg-gradient-to-br from-blue-500 to-purple-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                      <div className="bg-gradient-to-br from-primary-500 to-purple-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                         <span className="text-white text-sm font-bold">
                           {user?.name?.charAt(0)?.toUpperCase() || "U"}
                         </span>
@@ -251,7 +251,7 @@ const Navbar = () => {
                       <div className="font-bold text-white text-sm">
                         {user?.name || "User"}
                       </div>
-                      <div className="text-blue-200 text-xs">Online</div>
+                      <div className="text-primary-200 text-xs">Online</div>
                     </div>
                     <svg
                       className={`w-4 h-4 text-white/60 transition-transform duration-200 ${
@@ -275,7 +275,7 @@ const Navbar = () => {
                     <div className="absolute right-0 top-full mt-2 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-2 animate-fade-in-up">
                       <div className="px-4 py-3 border-b border-gray-200/50">
                         <div className="flex items-center space-x-3">
-                          <div className="bg-gradient-to-br from-blue-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
+                          <div className="bg-gradient-to-br from-primary-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
                             <span className="text-white font-bold">
                               {user?.name?.charAt(0)?.toUpperCase() || "U"}
                             </span>
@@ -298,7 +298,7 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
                         >
                           <svg
-                            className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                            className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -321,7 +321,7 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
                         >
                           <svg
-                            className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                            className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -344,7 +344,7 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
                         >
                           <svg
-                            className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                            className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -367,7 +367,7 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
                         >
                           <svg
-                            className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                            className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -390,7 +390,7 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
                         >
                           <svg
-                            className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                            className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -413,7 +413,7 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100/50 transition-colors group"
                         >
                           <svg
-                            className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors"
+                            className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -467,7 +467,7 @@ const Navbar = () => {
                   </Link>
                   <Link
                     to="/register"
-                    className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-r from-primary-500 via-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                   >
                     Get Started
                   </Link>
@@ -517,7 +517,7 @@ const Navbar = () => {
                   {/* Enhanced Mobile User Info */}
                   <div className="flex items-center space-x-4 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
                     <div className="relative">
-                      <div className="bg-gradient-to-br from-blue-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
+                      <div className="bg-gradient-to-br from-primary-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
                         <span className="text-white font-bold">
                           {user?.name?.charAt(0)?.toUpperCase() || "U"}
                         </span>
@@ -528,7 +528,7 @@ const Navbar = () => {
                       <div className="font-bold text-white">
                         {user?.name || "User"}
                       </div>
-                      <div className="text-blue-200 text-sm">
+                      <div className="text-primary-200 text-sm">
                         {user?.email || ""}
                       </div>
                     </div>
@@ -735,7 +735,7 @@ const Navbar = () => {
                   </Link>
                   <Link
                     to="/register"
-                    className="flex items-center space-x-3 p-4 rounded-xl font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white shadow-lg"
+                    className="flex items-center space-x-3 p-4 rounded-xl font-semibold bg-gradient-to-r from-primary-500 via-purple-600 to-indigo-600 text-white shadow-lg"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <svg

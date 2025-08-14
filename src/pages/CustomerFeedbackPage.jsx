@@ -100,7 +100,7 @@ const CustomerFeedbackPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">Loading your feedback form...</p>
         </div>
       </div>
@@ -327,7 +327,7 @@ const CustomerFeedbackPage = () => {
                   className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all ${
                     submitting || !feedback.rating
                       ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                      : 'bg-primary-500 hover:bg-primary-600 text-white shadow-lg hover:shadow-xl'
                   }`}
                 >
                   {submitting ? (

@@ -492,7 +492,7 @@ const CustomerManagementPage = () => {
       <div className="flex space-x-2">
         <button
           onClick={() => openReviewRequestModal(customer)}
-          className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="flex-1 bg-primary-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors"
         >
           Send Review Request
         </button>
@@ -512,7 +512,7 @@ const CustomerManagementPage = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading customers...</p>
         </div>
       </div>
@@ -555,7 +555,7 @@ const CustomerManagementPage = () => {
               </button>
               <button
                 onClick={() => setShowAddCustomer(true)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg"
+                className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-primary-600 hover:to-primary-700 transition-all duration-200 shadow-lg"
               >
                 <svg
                   className="w-5 h-5"
@@ -827,7 +827,7 @@ const CustomerManagementPage = () => {
                 setSelectedBusiness("all");
                 setFilterStatus("all");
               }}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors"
             >
               Clear Filters
             </button>
@@ -983,7 +983,7 @@ const CustomerManagementPage = () => {
                   (deliveryMethod === 'EMAIL' && !selectedTemplate) ||
                   (deliveryMethod === 'SMS' && (!showReviewRequestModal.phone || !phoneValidation.valid))
                 }
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50"
               >
                 {sendingReview ? "Sending..." : `Send ${deliveryMethod} Review Request`}
               </button>
@@ -1148,7 +1148,7 @@ const CustomerManagementPage = () => {
               <div className="flex space-x-3 mt-6">
                 <button
                   onClick={handleAddCustomer}
-                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
                 >
                   Add Customer
                 </button>
@@ -1320,7 +1320,7 @@ const CustomerManagementPage = () => {
               <div className="flex space-x-3 mt-6">
                 <button
                   onClick={handleUpdateCustomer}
-                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
                 >
                   Update Customer
                 </button>
@@ -1465,7 +1465,7 @@ const CustomerManagementPage = () => {
                     setShowCustomerDetails(null);
                     openReviewRequestModal(showCustomerDetails);
                   }}
-                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
                 >
                   Send Review Request
                 </button>

@@ -527,7 +527,7 @@ const EmailTemplatesPage = () => {
         <div className="mb-6">
           <button
             onClick={openCreateModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg"
           >
             Create New Template
           </button>
@@ -713,7 +713,7 @@ const EmailTemplatesPage = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50"
                   >
                     {loading ? "Creating..." : "Create Template"}
                   </button>
@@ -858,7 +858,7 @@ const EmailTemplatesPage = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50"
                   >
                     {loading ? "Updating..." : "Update Template"}
                   </button>
@@ -909,7 +909,7 @@ const EmailTemplatesPage = () => {
                     ))}
                     <button
                       onClick={() => handlePreviewTemplate(selectedTemplate)}
-                      className="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
+                      className="w-full bg-primary-500 text-white px-3 py-2 rounded text-sm hover:bg-primary-600"
                     >
                       Update Preview
                     </button>
@@ -971,7 +971,7 @@ const EmailTemplatesPage = () => {
                   </div>
                   
                   {/* Instructions */}
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-primary-200">
                     <div className="flex items-start space-x-2">
                       <div className="text-blue-500 mt-0.5">💡</div>
                       <div className="text-sm text-blue-800">
