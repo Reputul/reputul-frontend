@@ -1,4 +1,4 @@
-// src/App.js
+// src/App.jsx
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -13,6 +13,7 @@ import Toast from "./components/Toast";
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import CustomerManagementPage from "./pages/CustomerManagementPage";
+import ContactsPage from "./pages/ContactsPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import RegisterPage from "./pages/RegisterPage";
@@ -31,6 +32,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ReviewRequestPage from "./pages/ReviewRequestPage";
 import ReviewPlatformSetupPage from "./pages/ReviewPlatformSetupPage";
 import CustomerFeedbackPage from "./pages/CustomerFeedbackPage";
+import FeedbackGatePage from "./pages/FeedbackGatePage";
 import OptInPolicy from "./pages/OptInPolicy";
 
 function App() {
@@ -60,7 +62,7 @@ function App() {
     checkMaintenanceStatus();
   }, []);
 
-  // 👇 Determine whether to show the Navbar (hide on auth pages)
+  // Determine whether to show the Navbar (hide on auth pages AND customer-facing pages)
   const hideNavbarOnRoutes = [
     "/",
     "/login",
@@ -68,9 +70,14 @@ function App() {
     "/forgot-password",
     "/reset-password",
   ];
-  const shouldShowNavbar = !hideNavbarOnRoutes.includes(
-    window.location.pathname
-  );
+  
+  // Also hide navbar on customer-facing feedback pages
+  const currentPath = window.location.pathname;
+  const isCustomerFeedbackRoute = currentPath.startsWith("/feedback/") || 
+                                  currentPath.startsWith("/feedback-gate/");
+  
+  const shouldShowNavbar = !hideNavbarOnRoutes.includes(currentPath) && 
+                          !isCustomerFeedbackRoute;
 
   // Show loading while checking maintenance status
   if (!maintenanceChecked) {
@@ -118,10 +125,19 @@ function App() {
                 />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
+                
+                {/* Feedback Gate Route - Google Compliant Rating Interface */}
+                <Route
+                  path="/feedback-gate/:customerId"
+                  element={<FeedbackGatePage />}
+                />
+                
+                {/* Private Feedback Route - Now works with feedback gate flow */}
                 <Route
                   path="/feedback/:customerId"
                   element={<CustomerFeedbackPage />}
                 />
+                
                 <Route path="/opt-in-policy" element={<OptInPolicy />} />
 
                 {/* Error routes */}
@@ -143,6 +159,14 @@ function App() {
                   element={
                     <PrivateRoute>
                       <CustomerManagementPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/contacts"
+                  element={
+                    <PrivateRoute>
+                      <ContactsPage />
                     </PrivateRoute>
                   }
                 />

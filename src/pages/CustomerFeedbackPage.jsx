@@ -14,6 +14,10 @@ const CustomerFeedbackPage = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // NEW: Check if customer came from feedback gate
+  const fromGate = searchParams.get('from') === 'gate';
+  const suggestedRating = searchParams.get('rating');
+
   useEffect(() => {
     const fetchCustomerData = async () => {
       try {
@@ -22,8 +26,12 @@ const CustomerFeedbackPage = () => {
         setCustomer(response.data.customer);
         setBusiness(response.data.business);
         
-        // Auto-set to private feedback since they clicked the private feedback link
-        setFeedback(prev => ({ ...prev, type: "private" }));
+        // Auto-set to private feedback and pre-fill rating if coming from gate
+        setFeedback(prev => ({ 
+          ...prev, 
+          type: "private",
+          rating: suggestedRating || "" // Pre-fill rating from gate if available
+        }));
         
       } catch (err) {
         console.error("Error fetching customer data:", err);
@@ -36,7 +44,7 @@ const CustomerFeedbackPage = () => {
     if (customerId) {
       fetchCustomerData();
     }
-  }, [customerId]);
+  }, [customerId, suggestedRating]);
 
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
@@ -57,7 +65,7 @@ const CustomerFeedbackPage = () => {
       });
 
       setSuccess("Thank you for your feedback! We truly appreciate your time and insights.");
-      setFeedback({ rating: "", comment: "", type: "private" }); // Keep type as private
+      setFeedback({ rating: "", comment: "", type: "private" });
     } catch (err) {
       console.error("Error submitting feedback:", err);
       setError("Failed to submit feedback. Please try again.");
@@ -87,6 +95,11 @@ const CustomerFeedbackPage = () => {
       urls.facebook = business.facebookPageUrl.endsWith('/') 
         ? `${business.facebookPageUrl}reviews`
         : `${business.facebookPageUrl}/reviews`;
+    }
+
+    // Yelp URL
+    if (business.yelpPageUrl) {
+      urls.yelp = business.yelpPageUrl;
     }
     
     return urls;
@@ -140,11 +153,20 @@ const CustomerFeedbackPage = () => {
             <p className="text-gray-500">
               Service Date: {customer?.serviceDate ? new Date(customer.serviceDate).toLocaleDateString() : 'Recent'}
             </p>
+            
+            {/* NEW: Show notice if coming from feedback gate */}
+            {fromGate && (
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800 text-sm">
+                  💬 You've been directed to our private feedback form. Your input helps us improve our service.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Show Platform Choice only if no type is selected */}
-        {!feedback.type && (
+        {/* Show Platform Choice only if no type is selected AND not coming from feedback gate */}
+        {!feedback.type && !fromGate && (
           <div className="bg-white rounded-3xl shadow-xl p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               Share Your Experience
@@ -193,6 +215,21 @@ const CustomerFeedbackPage = () => {
                   </div>
                 </a>
               )}
+
+              {/* Yelp Review Button */}
+              {externalUrls.yelp && (
+                <a
+                  href={externalUrls.yelp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-white hover:bg-gray-50 text-gray-700 px-6 py-4 rounded-xl font-semibold text-center transition-colors w-full text-lg border border-gray-300 hover:border-gray-400"
+                >
+                  <div className="flex items-center justify-center space-x-3">
+                    <span className="text-red-500 text-2xl">⭐</span>
+                    <span>Review on Yelp</span>
+                  </div>
+                </a>
+              )}
               
               {/* Private Feedback Button */}
               <button
@@ -209,22 +246,24 @@ const CustomerFeedbackPage = () => {
           </div>
         )}
 
-        {/* Private Feedback Form - Shows automatically when type is "private" */}
-        {feedback.type === "private" && (
+        {/* Private Feedback Form - Shows automatically when type is "private" OR coming from gate */}
+        {(feedback.type === "private" || fromGate) && (
           <div className="bg-white rounded-3xl shadow-xl p-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
                 Private Feedback for {business?.name}
               </h2>
-              <button
-                onClick={showPlatformChoice}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Other Review Options
-              </button>
+              {!fromGate && (
+                <button
+                  onClick={showPlatformChoice}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Other Review Options
+                </button>
+              )}
             </div>
             
             {error && (
@@ -253,15 +292,17 @@ const CustomerFeedbackPage = () => {
                   >
                     Leave another review →
                   </button>
-                  <div className="text-sm text-gray-600">
-                    or{" "}
-                    <button 
-                      onClick={showPlatformChoice}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      explore other review platforms
-                    </button>
-                  </div>
+                  {!fromGate && (
+                    <div className="text-sm text-gray-600">
+                      or{" "}
+                      <button 
+                        onClick={showPlatformChoice}
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        explore other review platforms
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -305,6 +346,12 @@ const CustomerFeedbackPage = () => {
                       </button>
                     ))}
                   </div>
+                  {/* NEW: Show message if rating was pre-filled from gate */}
+                  {suggestedRating && feedback.rating === suggestedRating && (
+                    <p className="text-center text-sm text-blue-600 mt-2">
+                      Rating pre-filled from your initial selection. You can change it if needed.
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -314,7 +361,10 @@ const CustomerFeedbackPage = () => {
                   <textarea
                     value={feedback.comment}
                     onChange={(e) => setFeedback({...feedback, comment: e.target.value})}
-                    placeholder="Please share your thoughts about our service. Your feedback helps us improve and serve you better."
+                    placeholder={fromGate && parseInt(suggestedRating) <= 3 
+                      ? "We're sorry your experience wasn't perfect. Please let us know what went wrong and how we can improve." 
+                      : "Please share your thoughts about our service. Your feedback helps us improve and serve you better."
+                    }
                     required
                     rows={5}
                     className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
@@ -341,6 +391,32 @@ const CustomerFeedbackPage = () => {
                 </button>
               </form>
             )}
+
+            {/* NEW: Show Google compliance notice */}
+            <div className="mt-6 text-center">
+              <p className="text-xs text-gray-400">
+                ✅ Google Compliant: All review options are always available to all customers
+              </p>
+              {fromGate && !success && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600 mb-2">Also available for public review:</p>
+                  <div className="flex justify-center space-x-4 text-xs">
+                    {externalUrls.google && (
+                      <a href={externalUrls.google} target="_blank" rel="noopener noreferrer" 
+                         className="text-blue-600 hover:text-blue-800">Google</a>
+                    )}
+                    {externalUrls.facebook && (
+                      <a href={externalUrls.facebook} target="_blank" rel="noopener noreferrer" 
+                         className="text-blue-600 hover:text-blue-800">Facebook</a>
+                    )}
+                    {externalUrls.yelp && (
+                      <a href={externalUrls.yelp} target="_blank" rel="noopener noreferrer" 
+                         className="text-blue-600 hover:text-blue-800">Yelp</a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

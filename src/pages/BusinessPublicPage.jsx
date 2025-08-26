@@ -18,9 +18,8 @@ const BusinessPublicPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use public endpoints that don't require authentication
-        const bizRes = await axios.get(`${API_BASE}/api/public/businesses/${id}`);
-        const reviewRes = await axios.get(`${API_BASE}/api/public/reviews/business/${id}`);
+        const bizRes = await axios.get(`${API_BASE}/api/businesses/${id}`);
+        const reviewRes = await axios.get(`${API_BASE}/api/reviews/business/${id}`);
         setBusiness(bizRes.data);
         setReviews(reviewRes.data);
       } catch (err) {
@@ -50,17 +49,17 @@ const BusinessPublicPage = () => {
         return;
       }
 
-      await axios.post(`${API_BASE}/api/public/reviews/${id}`, {
-        rating: parseInt(newReview.rating),
+      await axios.post(`${API_BASE}/api/reviews/public/${id}`, {
+        rating: parseInt(newReview.rating, 10),
         comment: newReview.comment.trim()
       });
 
       setNewReview({ rating: "", comment: "" });
       setSuccess("Thank you for your review! It has been submitted successfully.");
 
-      // Refresh reviews and business data using public endpoints
-      const reviewRes = await axios.get(`${API_BASE}/api/public/reviews/business/${id}`);
-      const bizRes = await axios.get(`${API_BASE}/api/public/businesses/${id}`);
+      // Refresh reviews and business data
+      const reviewRes = await axios.get(`${API_BASE}/api/reviews/business/${id}`);
+      const bizRes = await axios.get(`${API_BASE}/api/businesses/${id}`);
       setReviews(reviewRes.data);
       setBusiness(bizRes.data);
     } catch (err) {
@@ -72,7 +71,7 @@ const BusinessPublicPage = () => {
   };
 
   const getFilteredAndSortedReviews = () => {
-    let filtered = reviews;
+    let filtered = [...reviews];
     
     if (filterBy) {
       filtered = filtered.filter(review => review.rating >= parseInt(filterBy));
@@ -104,7 +103,8 @@ const BusinessPublicPage = () => {
   const getRatingDistribution = () => {
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     reviews.forEach(review => {
-      distribution[review.rating]++;
+      const r = Number(review.rating);
+      if (r >= 1 && r <= 5) distribution[r] += 1;
     });
     return distribution;
   };
@@ -121,7 +121,7 @@ const BusinessPublicPage = () => {
 
   const getRandomColor = (index) => {
     const colors = [
-      'bg-gradient-to-br from-primary-500 to-primary-600',
+      'bg-gradient-to-br from-blue-500 to-blue-600',
       'bg-gradient-to-br from-purple-500 to-purple-600', 
       'bg-gradient-to-br from-green-500 to-green-600',
       'bg-gradient-to-br from-red-500 to-red-600',
@@ -133,17 +133,15 @@ const BusinessPublicPage = () => {
     return colors[index % colors.length];
   };
 
-  // Enhanced loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-primary-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="relative mb-8">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-200 mx-auto"></div>
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-500 border-t-transparent absolute top-0 left-1/2 transform -translate-x-1/2"></div>
-            <div className="absolute inset-2 bg-gradient-to-r from-primary-500/20 to-purple-500/20 rounded-full animate-pulse left-1/2 transform -translate-x-1/2"></div>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-600 border-t-transparent absolute top-0"></div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Business Profile</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mt-6 mb-2">Loading Business Profile</h2>
           <p className="text-gray-600">Fetching the latest reviews and information...</p>
         </div>
       </div>
@@ -152,7 +150,7 @@ const BusinessPublicPage = () => {
 
   if (error && !business) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-primary-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
           <div className="bg-red-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
             <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +161,7 @@ const BusinessPublicPage = () => {
           <p className="text-gray-600 mb-6">{error}</p>
           <button 
             onClick={() => window.history.back()}
-            className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Go Back
           </button>
@@ -176,16 +174,16 @@ const BusinessPublicPage = () => {
   const averageRating = getAverageRating();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-primary-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Enhanced Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900 via-primary-800 to-indigo-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900"></div>
         <div className="absolute inset-0 bg-black/20"></div>
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-full">
           <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
           <div className="absolute bottom-20 right-10 w-48 h-48 bg-indigo-400/20 rounded-full blur-xl"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
         </div>
         
         <div className="relative max-w-6xl mx-auto px-4 py-16 lg:py-24">
@@ -205,7 +203,7 @@ const BusinessPublicPage = () => {
               {business.name}
             </h1>
             
-            <div className="flex items-center justify-center space-x-8 text-xl text-primary-100 mb-8">
+            <div className="flex items-center justify-center space-x-8 text-xl text-blue-100 mb-8">
               <span className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-6 py-3">
                 <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -227,13 +225,13 @@ const BusinessPublicPage = () => {
                 ))}
               </div>
               <div className="text-white/90 font-semibold">Average Rating</div>
-              <div className="text-primary-200 text-sm mt-1">Based on {reviews.length} reviews</div>
+              <div className="text-blue-200 text-sm mt-1">Based on {reviews.length} reviews</div>
             </div>
             
             <div className="bg-white/15 backdrop-blur-lg rounded-2xl p-8 text-center border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 shadow-2xl">
               <div className="text-5xl font-black text-white mb-4">{reviews.length}</div>
               <div className="text-white/90 font-semibold">Customer Reviews</div>
-              <div className="text-primary-200 text-sm mt-1">Verified feedback</div>
+              <div className="text-blue-200 text-sm mt-1">Verified feedback</div>
             </div>
             
             <div className="bg-white/15 backdrop-blur-lg rounded-2xl p-8 text-center border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 shadow-2xl">
@@ -241,7 +239,7 @@ const BusinessPublicPage = () => {
                 {reviews.length > 0 ? Math.round((reviews.filter(r => r.rating >= 4).length / reviews.length) * 100) : 100}%
               </div>
               <div className="text-white/90 font-semibold">Recommended</div>
-              <div className="text-primary-200 text-sm mt-1">4+ star ratings</div>
+              <div className="text-blue-200 text-sm mt-1">4+ star ratings</div>
             </div>
           </div>
         </div>
@@ -251,7 +249,7 @@ const BusinessPublicPage = () => {
         {/* Enhanced Business Information */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-10 mb-12 hover:shadow-3xl transition-all duration-300">
           <div className="flex items-center mb-8">
-            <div className="bg-gradient-to-r from-primary-600 to-indigo-600 rounded-full p-3 mr-4">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full p-3 mr-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -262,8 +260,8 @@ const BusinessPublicPage = () => {
           <div className="grid md:grid-cols-2 gap-10">
             <div className="space-y-6">
               <div className="flex items-start space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors">
-                <div className="bg-primary-100 rounded-lg p-3">
-                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-blue-100 rounded-lg p-3">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </div>
@@ -282,7 +280,7 @@ const BusinessPublicPage = () => {
                 <div>
                   <div className="font-bold text-gray-900 text-lg">Website</div>
                   {business.website ? (
-                    <a href={business.website} target="_blank" rel="noreferrer" className="text-primary-600 hover:text-primary-800 underline text-lg transition-colors">
+                    <a href={business.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 underline text-lg transition-colors">
                       {business.website}
                     </a>
                   ) : (
@@ -373,7 +371,7 @@ const BusinessPublicPage = () => {
               <select
                 value={filterBy}
                 onChange={(e) => setFilterBy(e.target.value)}
-                className="px-6 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-lg font-medium"
+                className="px-6 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-lg font-medium"
               >
                 <option value="">All ratings</option>
                 <option value="5">5★ only</option>
@@ -383,7 +381,7 @@ const BusinessPublicPage = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-6 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-lg font-medium"
+                className="px-6 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-lg font-medium"
               >
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
@@ -406,7 +404,7 @@ const BusinessPublicPage = () => {
           ) : (
             <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2">
               {getFilteredAndSortedReviews().map((review, index) => (
-                <div key={review.id} className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-100 rounded-2xl p-8 hover:shadow-xl hover:border-primary-200 transition-all duration-300 transform hover:-translate-y-1">
+                <div key={review.id} className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-100 rounded-2xl p-8 hover:shadow-xl hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-1">
                   <div className="flex items-start space-x-6">
                     {/* Customer Avatar */}
                     <div className={`w-16 h-16 rounded-2xl ${getRandomColor(index)} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
@@ -430,11 +428,7 @@ const BusinessPublicPage = () => {
                         </div>
                         <div className="text-right">
                           <span className="text-sm font-medium text-gray-500">
-                            {new Date(review.createdAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
+                            {review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : '—'}
                           </span>
                         </div>
                       </div>
@@ -445,7 +439,7 @@ const BusinessPublicPage = () => {
                         <div className="flex justify-between items-center">
                           <span className={`inline-flex items-center px-4 py-2 text-sm font-bold rounded-full shadow-sm ${
                             review.source === 'manual' 
-                              ? 'bg-primary-100 text-primary-800 border border-primary-200' 
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200' 
                               : 'bg-green-100 text-green-800 border border-green-200'
                           }`}>
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

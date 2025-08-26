@@ -50,6 +50,52 @@ const CustomerManagementPage = () => {
     notes: "",
   });
 
+  // Function to close review request modal and reset state
+  const closeReviewRequestModal = useCallback(() => {
+    setShowReviewRequestModal(null);
+    setSelectedTemplate("");
+    setDeliveryMethod("EMAIL");
+    setPhoneValidation({ valid: true, message: "" });
+  }, []);
+
+  // Function to close add customer modal and reset state
+  const closeAddCustomerModal = useCallback(() => {
+    setShowAddCustomer(false);
+    setNewCustomer({
+      businessId: "",
+      name: "",
+      email: "",
+      phone: "",
+      serviceDate: "",
+      serviceType: "",
+      status: "COMPLETED",
+      tags: [],
+      notes: "",
+    });
+  }, []);
+
+  // Function to close edit customer modal and reset state
+  const closeEditCustomerModal = useCallback(() => {
+    setShowEditCustomer(null);
+    setEditCustomer({
+      id: "",
+      businessId: "",
+      name: "",
+      email: "",
+      phone: "",
+      serviceDate: "",
+      serviceType: "",
+      status: "COMPLETED",
+      tags: [],
+      notes: "",
+    });
+  }, []);
+
+  // Function to close customer details modal
+  const closeCustomerDetailsModal = useCallback(() => {
+    setShowCustomerDetails(null);
+  }, []);
+
   // Fetch businesses, customers, and templates
   const fetchData = useCallback(async () => {
     try {
@@ -132,25 +178,14 @@ const CustomerManagementPage = () => {
         }
       );
 
-      setNewCustomer({
-        businessId: "",
-        name: "",
-        email: "",
-        phone: "",
-        serviceDate: "",
-        serviceType: "",
-        status: "COMPLETED",
-        tags: [],
-        notes: "",
-      });
-      setShowAddCustomer(false);
+      closeAddCustomerModal();
       alert("Customer added successfully!");
       fetchData();
     } catch (err) {
       console.error("Error adding customer:", err);
       alert("Failed to add customer");
     }
-  }, [newCustomer, token, fetchData]);
+  }, [newCustomer, token, fetchData, closeAddCustomerModal]);
 
   const handleUpdateCustomer = useCallback(async () => {
     if (
@@ -177,14 +212,14 @@ const CustomerManagementPage = () => {
         }
       );
 
-      setShowEditCustomer(null);
+      closeEditCustomerModal();
       alert("Customer updated successfully!");
       fetchData();
     } catch (err) {
       console.error("Error updating customer:", err);
       alert("Failed to update customer");
     }
-  }, [editCustomer, token, fetchData]);
+  }, [editCustomer, token, fetchData, closeEditCustomerModal]);
 
   const handleDeleteCustomer = useCallback(
     async (customerId) => {
@@ -262,9 +297,7 @@ const CustomerManagementPage = () => {
           );
         }
 
-        setShowReviewRequestModal(null);
-        setSelectedTemplate("");
-        setDeliveryMethod("EMAIL");
+        closeReviewRequestModal();
       } catch (err) {
         console.error("Error sending review request:", err);
         alert("Failed to send review request");
@@ -272,7 +305,7 @@ const CustomerManagementPage = () => {
         setSendingReview(false);
       }
     },
-    [deliveryMethod, phoneValidation.valid, selectedTemplate, token]
+    [deliveryMethod, phoneValidation.valid, selectedTemplate, token, closeReviewRequestModal]
   );
 
   const handleCustomerChange = useCallback((e) => {
@@ -835,15 +868,46 @@ const CustomerManagementPage = () => {
         )}
       </div>
 
-      {/* UPDATED: Review Request Modal with SMS Support */}
+      {/* FIXED: Review Request Modal with SMS Support - Now with proper scrolling and close functionality */}
       {showReviewRequestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Send Review Request to {showReviewRequestModal.name}
-            </h3>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            // Close modal when clicking outside (on backdrop)
+            if (e.target === e.currentTarget) {
+              closeReviewRequestModal();
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Fixed Header with Close Button */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-xl font-bold text-gray-900">
+                Send Review Request to {showReviewRequestModal.name}
+              </h3>
+              <button
+                onClick={closeReviewRequestModal}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                title="Close modal"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
 
-            <div className="mb-6">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
               <div className="bg-gray-50 p-4 rounded-lg mb-4">
                 <p className="text-sm text-gray-600">
                   <strong>Customer:</strong> {showReviewRequestModal.name} (
@@ -915,11 +979,11 @@ const CustomerManagementPage = () => {
 
               {/* Email Template Selection (only show for email delivery) */}
               {deliveryMethod === 'EMAIL' && (
-                <div>
+                <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Select Email Template
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
                     {templates.map((template) => (
                       <label
                         key={template.id}
@@ -952,7 +1016,7 @@ const CustomerManagementPage = () => {
 
               {/* SMS Preview (only show for SMS delivery) */}
               {deliveryMethod === 'SMS' && (
-                <div>
+                <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     SMS Message Preview
                   </label>
@@ -969,37 +1033,66 @@ const CustomerManagementPage = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-3">
+            {/* Fixed Footer with Action Buttons */}
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <button
-                onClick={() => setShowReviewRequestModal(null)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                onClick={closeReviewRequestModal}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
               >
-                Cancel
+                Close
               </button>
-              <button
-                onClick={() => handleSendReviewRequest(showReviewRequestModal)}
-                disabled={
-                  sendingReview || 
-                  (deliveryMethod === 'EMAIL' && !selectedTemplate) ||
-                  (deliveryMethod === 'SMS' && (!showReviewRequestModal.phone || !phoneValidation.valid))
-                }
-                className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50"
-              >
-                {sendingReview ? "Sending..." : `Send ${deliveryMethod} Review Request`}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={closeReviewRequestModal}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSendReviewRequest(showReviewRequestModal)}
+                  disabled={
+                    sendingReview || 
+                    (deliveryMethod === 'EMAIL' && !selectedTemplate) ||
+                    (deliveryMethod === 'SMS' && (!showReviewRequestModal.phone || !phoneValidation.valid))
+                  }
+                  className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                >
+                  {sendingReview ? "Sending..." : `Send ${deliveryMethod} Review Request`}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Customer Modal */}
+      {/* FIXED: Add Customer Modal */}
       {showAddCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Add New Customer
-            </h3>
-            <div>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeAddCustomerModal();
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Fixed Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-xl font-bold text-gray-900">
+                Add New Customer
+              </h3>
+              <button
+                onClick={closeAddCustomerModal}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1144,17 +1237,26 @@ const CustomerManagementPage = () => {
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="flex space-x-3 mt-6">
+            {/* Fixed Footer */}
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <button
+                onClick={closeAddCustomerModal}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                Close
+              </button>
+              <div className="flex space-x-3">
                 <button
                   onClick={handleAddCustomer}
-                  className="flex-1 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
+                  className="px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-colors"
                 >
                   Add Customer
                 </button>
                 <button
-                  onClick={() => setShowAddCustomer(false)}
-                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                  onClick={closeAddCustomerModal}
+                  className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1164,14 +1266,34 @@ const CustomerManagementPage = () => {
         </div>
       )}
 
-      {/* Edit Customer Modal */}
+      {/* FIXED: Edit Customer Modal */}
       {showEditCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Edit Customer
-            </h3>
-            <div>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeEditCustomerModal();
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Fixed Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-xl font-bold text-gray-900">
+                Edit Customer
+              </h3>
+              <button
+                onClick={closeEditCustomerModal}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1316,17 +1438,26 @@ const CustomerManagementPage = () => {
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="flex space-x-3 mt-6">
+            {/* Fixed Footer */}
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <button
+                onClick={closeEditCustomerModal}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                Close
+              </button>
+              <div className="flex space-x-3">
                 <button
                   onClick={handleUpdateCustomer}
-                  className="flex-1 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
+                  className="px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-colors"
                 >
                   Update Customer
                 </button>
                 <button
-                  onClick={() => setShowEditCustomer(null)}
-                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                  onClick={closeEditCustomerModal}
+                  className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1336,151 +1467,161 @@ const CustomerManagementPage = () => {
         </div>
       )}
 
-      {/* Customer Details Modal */}
+      {/* FIXED: Customer Details Modal */}
       {showCustomerDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeCustomerDetailsModal();
+            }
+          }}
+        >
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Fixed Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
               <h3 className="text-xl font-bold text-gray-900">
                 Customer Details
               </h3>
               <button
-                onClick={() => setShowCustomerDetails(null)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                onClick={closeCustomerDetailsModal}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">
-                    Name
-                  </label>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {showCustomerDetails.name}
-                  </p>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">
+                      Name
+                    </label>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {showCustomerDetails.name}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">
+                      Business
+                    </label>
+                    <p className="text-lg text-gray-900">
+                      {showCustomerDetails.business?.name}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">
+                      Email
+                    </label>
+                    <p className="text-lg text-gray-900">
+                      {showCustomerDetails.email}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">
+                      Phone
+                    </label>
+                    <p className="text-lg text-gray-900">
+                      {showCustomerDetails.phone || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">
+                      Service Date
+                    </label>
+                    <p className="text-lg text-gray-900">
+                      {showCustomerDetails.serviceDate}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">
+                      Status
+                    </label>
+                    <span
+                      className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(
+                        showCustomerDetails.status
+                      )}`}
+                    >
+                      {showCustomerDetails.status.toLowerCase()}
+                    </span>
+                  </div>
                 </div>
+
                 <div>
                   <label className="text-sm font-medium text-gray-600">
-                    Business
+                    Service Type
                   </label>
                   <p className="text-lg text-gray-900">
-                    {showCustomerDetails.business?.name}
+                    {showCustomerDetails.serviceType}
                   </p>
                 </div>
+
                 <div>
                   <label className="text-sm font-medium text-gray-600">
-                    Email
+                    Tags
                   </label>
-                  <p className="text-lg text-gray-900">
-                    {showCustomerDetails.email}
-                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {showCustomerDetails.tags &&
+                      showCustomerDetails.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className={`px-3 py-1 text-sm font-medium rounded-full ${getTagColor(
+                            tag
+                          )}`}
+                        >
+                          {tag.replace("_", " ").toLowerCase()}
+                        </span>
+                      ))}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">
-                    Phone
-                  </label>
-                  <p className="text-lg text-gray-900">
-                    {showCustomerDetails.phone || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">
-                    Service Date
-                  </label>
-                  <p className="text-lg text-gray-900">
-                    {showCustomerDetails.serviceDate}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">
-                    Status
-                  </label>
-                  <span
-                    className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(
-                      showCustomerDetails.status
-                    )}`}
-                  >
-                    {showCustomerDetails.status.toLowerCase()}
-                  </span>
-                </div>
+
+                {showCustomerDetails.notes && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">
+                      Notes
+                    </label>
+                    <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-2">
+                      {showCustomerDetails.notes}
+                    </p>
+                  </div>
+                )}
               </div>
+            </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-600">
-                  Service Type
-                </label>
-                <p className="text-lg text-gray-900">
-                  {showCustomerDetails.serviceType}
-                </p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-600">
-                  Tags
-                </label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {showCustomerDetails.tags &&
-                    showCustomerDetails.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className={`px-3 py-1 text-sm font-medium rounded-full ${getTagColor(
-                          tag
-                        )}`}
-                      >
-                        {tag.replace("_", " ").toLowerCase()}
-                      </span>
-                    ))}
-                </div>
-              </div>
-
-              {showCustomerDetails.notes && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600">
-                    Notes
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-2">
-                    {showCustomerDetails.notes}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
+            {/* Fixed Footer */}
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <button
+                onClick={closeCustomerDetailsModal}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                Close
+              </button>
+              <div className="flex space-x-3">
                 <button
                   onClick={() => {
-                    setShowCustomerDetails(null);
+                    closeCustomerDetailsModal();
                     openReviewRequestModal(showCustomerDetails);
                   }}
-                  className="flex-1 bg-primary-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
+                  className="px-6 py-3 bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-600 transition-colors"
                 >
                   Send Review Request
                 </button>
                 <button
                   onClick={() => {
-                    setShowCustomerDetails(null);
+                    closeCustomerDetailsModal();
                     openEditModal(showCustomerDetails);
                   }}
-                  className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
                 >
                   Edit Customer
                 </button>
                 <button
                   onClick={() => {
-                    setShowCustomerDetails(null);
+                    closeCustomerDetailsModal();
                     handleDeleteCustomer(showCustomerDetails.id);
                   }}
                   className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

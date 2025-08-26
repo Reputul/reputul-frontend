@@ -21,6 +21,7 @@ const DashboardPage = () => {
   const [showAddBusiness, setShowAddBusiness] = useState(false);
   const [reviewSummaries, setReviewSummaries] = useState({});
   const [setupBannerDismissed, setSetupBannerDismissed] = useState(false);
+  const [contactsCount, setContactsCount] = useState(0);
 
   // Add state for editing
   const [editingBusiness, setEditingBusiness] = useState(null);
@@ -48,7 +49,7 @@ const DashboardPage = () => {
       const res = await axios.get(buildUrl(API_ENDPOINTS.BUSINESS.DASHBOARD), {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("📥 Raw API response:", res.data);
+      console.log("🔥 Raw API response:", res.data);
       setBusinesses(res.data);
 
       // Fetch review summaries
@@ -98,9 +99,23 @@ const DashboardPage = () => {
     }
   }, [token]);
 
+  // Fetch contacts count for dashboard metrics
+  const fetchContactsCount = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/contacts', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { page: 0, size: 1 } // Just get count, not data
+      });
+      setContactsCount(response.data.totalElements || 0);
+    } catch (err) {
+      console.error("Error fetching contacts count:", err);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchBusinesses();
-  }, [fetchBusinesses]);
+    fetchContactsCount();
+  }, [fetchBusinesses, fetchContactsCount]);
 
   // Listen for platform updates and page visibility changes
   useEffect(() => {
@@ -329,6 +344,7 @@ const DashboardPage = () => {
         : "0.0",
     responseTime: 18,
     totalBusinesses: businesses.length,
+    totalContacts: contactsCount,
   };
 
   // Enhanced Circular Progress Component
@@ -822,6 +838,29 @@ const DashboardPage = () => {
           <span className="font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">Manage Customers</span>
         </Link>
 
+        {/* Contacts CRM Link */}
+        <Link
+          to="/contacts"
+          className="w-full flex items-center space-x-3 p-3 text-left hover:bg-purple-50 rounded-lg transition-all duration-200 group"
+        >
+          <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+            <svg
+              className="w-5 h-5 text-purple-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+          </div>
+          <span className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">Contact Database</span>
+        </Link>
+
         <button
           onClick={() => setShowRequestReviews(true)}
           className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-all duration-200 group"
@@ -1152,14 +1191,14 @@ const DashboardPage = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                   />
                 </svg>
               }
-              title="Response Time"
-              value={`${metrics.responseTime}h`}
-              subtitle="Average response"
-              trend="-6h"
+              title="Total Contacts"
+              value={metrics.totalContacts}
+              subtitle="In your database"
+              trend="+12"
               color="purple"
             />
           </div>
@@ -1727,10 +1766,10 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-yellow-600 font-medium">
-                      Response Time
+                      Total Contacts
                     </p>
                     <p className="text-2xl font-bold text-yellow-900">
-                      {metrics.responseTime}h
+                      {metrics.totalContacts}
                     </p>
                   </div>
                 </div>

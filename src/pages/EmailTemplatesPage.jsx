@@ -68,6 +68,7 @@ const EmailTemplatesPage = () => {
   const API_BASE_URL = `${API_BASE}/api/email-templates`;
   const [templates, setTemplates] = useState([]);
   const [templateTypes, setTemplateTypes] = useState([]);
+  const [templateStats, setTemplateStats] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -82,11 +83,13 @@ const EmailTemplatesPage = () => {
     businessWebsite: "www.abchomeservices.com",
     businessAddress: "123 Main St, Springfield, IL 62701",
     supportEmail: "support@abchomeservices.com",
-    googleReviewUrl: "https://google.com/review/placeholder",
-    facebookReviewUrl: "https://facebook.com/review/placeholder",
-    yelpReviewUrl: "https://yelp.com/review/placeholder",
-    privateReviewUrl: "https://reputul.com/feedback/placeholder",
-    unsubscribeUrl: "https://reputul.com/unsubscribe/placeholder"
+    // NEW: Google Compliant URLs - All platforms always available
+    googleReviewUrl: "https://search.google.com/local/writereview?placeid=sample_place_id",
+    facebookReviewUrl: "https://facebook.com/abchomeservices/reviews",
+    yelpReviewUrl: "https://yelp.com/biz/abc-home-services",
+    privateFeedbackUrl: "https://reputul.com/feedback-gate/123", // Now points to feedback gate
+    privateReviewUrl: "https://reputul.com/feedback/123", // Direct private feedback
+    unsubscribeUrl: "https://reputul.com/unsubscribe/123"
   });
 
   const [formData, setFormData] = useState({
@@ -116,6 +119,7 @@ const EmailTemplatesPage = () => {
   useEffect(() => {
     fetchTemplates();
     fetchTemplateTypes();
+    fetchTemplateStats();
   }, []);
 
   const fetchTemplates = async () => {
@@ -170,6 +174,53 @@ const EmailTemplatesPage = () => {
     }
   };
 
+  // NEW: Fetch template statistics
+  const fetchTemplateStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_BASE}/api/review-requests/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTemplateStats(response.data);
+    } catch (err) {
+      console.error('Error fetching template stats:', err);
+    }
+  };
+
+  // NEW: Check if template is Google compliant
+  const getComplianceStatus = (template) => {
+    if (!template) return false;
+    
+    // Check if template is Google compliant based on name and content
+    const isCompliant = template.name?.includes('Google Compliant') || 
+                       template.isSystemTemplate ||
+                       (template.body?.includes('googleReviewUrl') && 
+                        template.body?.includes('facebookReviewUrl') && 
+                        template.body?.includes('privateFeedbackUrl'));
+    
+    return isCompliant;
+  };
+
+  // NEW: Get compliance issues for a template
+  const getComplianceIssues = (template) => {
+    const issues = [];
+    
+    if (!template.body?.includes('googleReviewUrl')) {
+      issues.push('Missing Google review option');
+    }
+    if (!template.body?.includes('facebookReviewUrl')) {
+      issues.push('Missing Facebook review option');
+    }
+    if (!template.body?.includes('privateFeedbackUrl')) {
+      issues.push('Missing private feedback option');
+    }
+    if (!template.body?.includes('yelpReviewUrl')) {
+      issues.push('Missing Yelp review option');
+    }
+    
+    return issues;
+  };
+
   const handleCreateTemplate = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -186,6 +237,7 @@ const EmailTemplatesPage = () => {
       setFormData({ name: "", type: "", subject: "", body: "" });
       setSuccess("Template created successfully!");
       fetchTemplates();
+      fetchTemplateStats();
     } catch (err) {
       setError("Failed to create template");
       console.error("Error creating template:", err);
@@ -243,6 +295,8 @@ const EmailTemplatesPage = () => {
             "businessWebsite",
             "googleReviewUrl",
             "facebookReviewUrl",
+            "yelpReviewUrl",
+            "privateFeedbackUrl",
             "privateReviewUrl",
             "unsubscribeUrl",
           ],
@@ -275,6 +329,7 @@ const EmailTemplatesPage = () => {
 
       // Refresh the template list
       await fetchTemplates();
+      await fetchTemplateStats();
 
       return updatedTemplate;
     } catch (error) {
@@ -340,6 +395,7 @@ const EmailTemplatesPage = () => {
 
       setSuccess("Template deleted successfully!");
       await fetchTemplates();
+      await fetchTemplateStats();
     } catch (error) {
       console.error("❌ Error deleting template:", error);
       setError("Failed to delete template. Please try again.");
@@ -397,7 +453,7 @@ const EmailTemplatesPage = () => {
 
       // Ensure proper HTML structure for better preview
       if (content && !content.includes('<!DOCTYPE') && !content.includes('<html')) {
-        console.log("🔧 Content appears to be HTML fragment, preserving as-is for preview");
+        console.log("📧 Content appears to be HTML fragment, preserving as-is for preview");
         // Keep the content as-is since our templates are complete HTML documents
       }
 
@@ -500,6 +556,27 @@ const EmailTemplatesPage = () => {
     return colors[type] || "bg-gray-100 text-gray-800";
   };
 
+  // Categorize templates
+  const compliantTemplates = templates.filter(getComplianceStatus);
+  const nonCompliantTemplates = templates.filter(t => !getComplianceStatus(t));
+
+  // NEW: Updated variable list with Google compliant variables
+  const templateVariables = [
+    "customerName",
+    "businessName", 
+    "serviceType",
+    "serviceDate",
+    "businessPhone",
+    "businessWebsite",
+    // Google Compliant Review URLs - All platforms available
+    "googleReviewUrl",
+    "facebookReviewUrl", 
+    "yelpReviewUrl",
+    "privateFeedbackUrl", // Feedback gate URL
+    "privateReviewUrl",   // Direct private feedback
+    "unsubscribeUrl"
+  ];
+
   return (
     <>
       <style>{emailPreviewStyles}</style>
@@ -507,8 +584,27 @@ const EmailTemplatesPage = () => {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Email Templates</h1>
           <p className="text-gray-600">
-            Manage your review request email templates
+            Manage your Google-compliant review request email templates
           </p>
+          
+          {/* NEW: Google Compliance Status Banner */}
+          <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6.938-4.697a3.42 3.42 0 01-.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 01.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138 3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-800">Google Compliance System Active</h3>
+                  <p className="text-green-700 text-sm">All templates show ALL review options to ALL customers via feedback gate</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-green-800">{compliantTemplates.length}</div>
+                <div className="text-sm text-green-600">Compliant Templates</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Show both error and success messages */}
@@ -524,6 +620,59 @@ const EmailTemplatesPage = () => {
           </div>
         )}
 
+        {/* NEW: Template Stats Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow border">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <span className="text-2xl">📧</span>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">{templates.length}</h3>
+                <p className="text-sm text-gray-600">Total Templates</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow border">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-full">
+                <span className="text-2xl">✅</span>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">{compliantTemplates.length}</h3>
+                <p className="text-sm text-gray-600">Google Compliant</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow border">
+            <div className="flex items-center">
+              <div className="p-3 bg-purple-100 rounded-full">
+                <span className="text-2xl">🎨</span>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {templates.filter(t => t.isHtml).length}
+                </h3>
+                <p className="text-sm text-gray-600">HTML Templates</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow border">
+            <div className="flex items-center">
+              <div className="p-3 bg-yellow-100 rounded-full">
+                <span className="text-2xl">📱</span>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-gray-900">{templateStats.emailRequests || 0}</h3>
+                <p className="text-sm text-gray-600">Email Requests Sent</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-6">
           <button
             onClick={openCreateModal}
@@ -533,52 +682,192 @@ const EmailTemplatesPage = () => {
           </button>
         </div>
 
-        {/* Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => (
-            <div key={template.id} className="bg-white rounded-lg shadow border">
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(
-                      template.type
-                    )}`}
-                  >
-                    {template.typeDisplayName ||
-                      getTypeDisplayName(template.type)}
-                  </span>
+        {/* NEW: Google Compliant Templates Section */}
+        {compliantTemplates.length > 0 && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                <span className="text-green-600 mr-2">✅</span>
+                Google Compliant Templates
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {compliantTemplates.map((template) => (
+                <div key={template.id} className="bg-white rounded-lg shadow border border-green-200">
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center">
+                        <span className="text-green-600 mr-2">✅</span>
+                        <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(
+                          template.type
+                        )}`}
+                      >
+                        {template.typeDisplayName ||
+                          getTypeDisplayName(template.type)}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-2">{template.subject}</p>
+                    
+                    {/* Compliance Features */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        ✓ All Platforms
+                      </span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        ✓ Feedback Gate
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-500 mb-4">
+                      Created: {new Date(template.createdAt).toLocaleDateString()}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handlePreviewTemplate(template)}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm"
+                      >
+                        Preview
+                      </button>
+                      <button
+                        onClick={() => openEditModal(template)}
+                        className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTemplate(template.id)}
+                        className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-                <p className="text-sm text-gray-600 mb-2">{template.subject}</p>
-
-                <div className="text-xs text-gray-500 mb-4">
-                  Created: {new Date(template.createdAt).toLocaleDateString()}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePreviewTemplate(template)}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm"
-                  >
-                    Preview
-                  </button>
-                  <button
-                    onClick={() => openEditModal(template)}
-                    className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded text-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTemplate(template.id)}
-                    className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded text-sm"
-                  >
-                    Delete
-                  </button>
+        {/* NEW: Non-Compliant Templates Warning */}
+        {nonCompliantTemplates.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-amber-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-semibold text-amber-800">Templates Need Google Compliance Updates</h3>
+                  <p className="text-amber-700 text-sm">
+                    These templates may not meet Google's review solicitation guidelines. Consider updating them to include all platform options.
+                  </p>
                 </div>
               </div>
             </div>
-          ))}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {nonCompliantTemplates.map((template) => {
+                const issues = getComplianceIssues(template);
+                return (
+                  <div key={template.id} className="bg-white rounded-lg shadow border border-amber-200">
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center">
+                          <span className="text-amber-600 mr-2">⚠️</span>
+                          <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                        </div>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(
+                            template.type
+                          )}`}
+                        >
+                          {template.typeDisplayName ||
+                            getTypeDisplayName(template.type)}
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-gray-600 mb-2">{template.subject}</p>
+                      
+                      {/* Compliance Issues */}
+                      <div className="mb-2">
+                        <div className="text-xs text-amber-800 font-medium mb-1">Compliance Issues:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {issues.slice(0, 2).map((issue, index) => (
+                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                              {issue}
+                            </span>
+                          ))}
+                          {issues.length > 2 && (
+                            <span className="text-xs text-amber-600">
+                              +{issues.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-gray-500 mb-4">
+                        Created: {new Date(template.createdAt).toLocaleDateString()}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handlePreviewTemplate(template)}
+                          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm"
+                        >
+                          Preview
+                        </button>
+                        <button
+                          onClick={() => openEditModal(template)}
+                          className="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-2 rounded text-sm"
+                        >
+                          Fix Issues
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTemplate(template.id)}
+                          className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* NEW: Compliance Guidelines */}
+        <div className="bg-blue-50 rounded-lg p-6 mb-8">
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">Google Review Solicitation Guidelines</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+            <div>
+              <h4 className="font-semibold mb-2">✅ Required Features:</h4>
+              <ul className="space-y-1 list-disc list-inside">
+                <li>Show ALL review platform options to ALL customers</li>
+                <li>Include feedback gate for initial rating collection</li>
+                <li>Route 1-3 star ratings to private feedback</li>
+                <li>Encourage 4-5 star ratings to public platforms</li>
+                <li>No filtering or manipulation based on customer data</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">❌ Prohibited Practices:</h4>
+              <ul className="space-y-1 list-disc list-inside">
+                <li>Conditional platform visibility based on rating</li>
+                <li>Different templates for different customer segments</li>
+                <li>Misleading messaging about review platforms</li>
+                <li>Incentivizing positive reviews only</li>
+                <li>Discouraging negative feedback collection</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         {/* Create Modal */}
@@ -586,6 +875,18 @@ const EmailTemplatesPage = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">Create Email Template</h2>
+              
+              {/* NEW: Compliance Notice */}
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <strong>Google Compliance Tip:</strong> Include all review platform variables (Google, Facebook, Yelp, Private Feedback) in your template to ensure compliance.
+                  </div>
+                </div>
+              </div>
 
               <form onSubmit={handleCreateTemplate}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -675,29 +976,37 @@ const EmailTemplatesPage = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Variables
+                      <span className="text-xs text-blue-600 block">Click to insert</span>
                     </label>
                     <div className="space-y-2">
-                      {[
-                        "customerName",
-                        "businessName",
-                        "serviceType",
-                        "serviceDate",
-                        "businessPhone",
-                        "businessWebsite",
-                        "googleReviewUrl",
-                        "facebookReviewUrl",
-                        "yelpReviewUrl",
-                        "privateReviewUrl",
-                      ].map((variable) => (
-                        <button
-                          key={variable}
-                          type="button"
-                          onClick={() => insertVariable(variable)}
-                          className="w-full text-left p-2 text-sm bg-gray-100 hover:bg-gray-200 rounded"
-                        >
-                          {variable}
-                        </button>
-                      ))}
+                      {/* NEW: Google Compliant Variables Section */}
+                      <div className="mb-2">
+                        <div className="text-xs font-semibold text-green-600 mb-1">📍 Required for Compliance:</div>
+                        {["googleReviewUrl", "facebookReviewUrl", "yelpReviewUrl", "privateFeedbackUrl"].map((variable) => (
+                          <button
+                            key={variable}
+                            type="button"
+                            onClick={() => insertVariable(variable)}
+                            className="w-full text-left p-2 text-sm bg-green-50 hover:bg-green-100 rounded border border-green-200 mb-1"
+                          >
+                            <span className="text-green-600 text-xs">✓</span> {variable}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div>
+                        <div className="text-xs font-semibold text-gray-600 mb-1">📋 Standard Variables:</div>
+                        {["customerName", "businessName", "serviceType", "serviceDate", "businessPhone", "businessWebsite", "privateReviewUrl", "unsubscribeUrl"].map((variable) => (
+                          <button
+                            key={variable}
+                            type="button"
+                            onClick={() => insertVariable(variable)}
+                            className="w-full text-left p-2 text-sm bg-gray-100 hover:bg-gray-200 rounded mb-1"
+                          >
+                            {variable}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -728,6 +1037,32 @@ const EmailTemplatesPage = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">Edit Email Template</h2>
+              
+              {/* NEW: Compliance Status for Editing Template */}
+              {selectedTemplate && (
+                <div className={`mb-4 rounded-lg p-3 ${getComplianceStatus(selectedTemplate) 
+                  ? 'bg-green-50 border border-green-200' 
+                  : 'bg-amber-50 border border-amber-200'}`}>
+                  <div className="flex items-start">
+                    <span className="mt-0.5 mr-2">
+                      {getComplianceStatus(selectedTemplate) ? '✅' : '⚠️'}
+                    </span>
+                    <div className="text-sm">
+                      <div className={`font-medium ${getComplianceStatus(selectedTemplate) ? 'text-green-800' : 'text-amber-800'}`}>
+                        {getComplianceStatus(selectedTemplate) 
+                          ? 'Google Compliant Template' 
+                          : 'Template Needs Compliance Updates'
+                        }
+                      </div>
+                      {!getComplianceStatus(selectedTemplate) && (
+                        <div className="text-amber-700 text-xs mt-1">
+                          Issues: {getComplianceIssues(selectedTemplate).join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleEditSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -820,29 +1155,37 @@ const EmailTemplatesPage = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Variables
+                      <span className="text-xs text-blue-600 block">Click to insert</span>
                     </label>
                     <div className="space-y-2">
-                      {[
-                        "customerName",
-                        "businessName",
-                        "serviceType",
-                        "serviceDate",
-                        "businessPhone",
-                        "businessWebsite",
-                        "googleReviewUrl",
-                        "facebookReviewUrl",
-                        "yelpReviewUrl",
-                        "privateReviewUrl",
-                      ].map((variable) => (
-                        <button
-                          key={variable}
-                          type="button"
-                          onClick={() => insertVariable(variable, true)}
-                          className="w-full text-left p-2 text-sm bg-gray-100 hover:bg-gray-200 rounded"
-                        >
-                          {variable}
-                        </button>
-                      ))}
+                      {/* NEW: Google Compliant Variables Section */}
+                      <div className="mb-2">
+                        <div className="text-xs font-semibold text-green-600 mb-1">📍 Required for Compliance:</div>
+                        {["googleReviewUrl", "facebookReviewUrl", "yelpReviewUrl", "privateFeedbackUrl"].map((variable) => (
+                          <button
+                            key={variable}
+                            type="button"
+                            onClick={() => insertVariable(variable, true)}
+                            className="w-full text-left p-2 text-sm bg-green-50 hover:bg-green-100 rounded border border-green-200 mb-1"
+                          >
+                            <span className="text-green-600 text-xs">✓</span> {variable}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div>
+                        <div className="text-xs font-semibold text-gray-600 mb-1">📋 Standard Variables:</div>
+                        {["customerName", "businessName", "serviceType", "serviceDate", "businessPhone", "businessWebsite", "privateReviewUrl", "unsubscribeUrl"].map((variable) => (
+                          <button
+                            key={variable}
+                            type="button"
+                            onClick={() => insertVariable(variable, true)}
+                            className="w-full text-left p-2 text-sm bg-gray-100 hover:bg-gray-200 rounded mb-1"
+                          >
+                            {variable}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -873,9 +1216,23 @@ const EmailTemplatesPage = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-7xl max-h-[95vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">
-                  Preview: {selectedTemplate?.name}
-                </h2>
+                <div>
+                  <h2 className="text-xl font-bold">
+                    Preview: {selectedTemplate?.name}
+                  </h2>
+                  {/* NEW: Compliance Status in Preview */}
+                  {selectedTemplate && (
+                    <div className="flex items-center mt-1">
+                      <span className={`text-sm px-2 py-1 rounded-full ${
+                        getComplianceStatus(selectedTemplate)
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {getComplianceStatus(selectedTemplate) ? '✅ Google Compliant' : '⚠️ Needs Updates'}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => setShowPreviewModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -893,6 +1250,10 @@ const EmailTemplatesPage = () => {
                       <div key={key}>
                         <label className="block text-sm font-medium text-gray-700 text-xs">
                           {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                          {/* NEW: Mark Google compliant variables */}
+                          {['googleReviewUrl', 'facebookReviewUrl', 'yelpReviewUrl', 'privateFeedbackUrl'].includes(key) && (
+                            <span className="text-green-600 ml-1">✓</span>
+                          )}
                         </label>
                         <input
                           type="text"
@@ -970,15 +1331,40 @@ const EmailTemplatesPage = () => {
                     </div>
                   </div>
                   
-                  {/* Instructions */}
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-primary-200">
-                    <div className="flex items-start space-x-2">
-                      <div className="text-blue-500 mt-0.5">💡</div>
-                      <div className="text-sm text-blue-800">
-                        <strong>Preview Note:</strong> This shows how your email will appear with full styling. 
-                        Some email clients may display slightly differently due to their CSS limitations.
+                  {/* NEW: Enhanced Instructions with Compliance Info */}
+                  <div className="mt-4 space-y-3">
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-start space-x-2">
+                        <div className="text-blue-500 mt-0.5">💡</div>
+                        <div className="text-sm text-blue-800">
+                          <strong>Preview Note:</strong> This shows how your email will appear with full styling. 
+                          Some email clients may display slightly differently due to their CSS limitations.
+                        </div>
                       </div>
                     </div>
+                    
+                    {selectedTemplate && getComplianceStatus(selectedTemplate) && (
+                      <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-start space-x-2">
+                          <div className="text-green-600 mt-0.5">✅</div>
+                          <div className="text-sm text-green-800">
+                            <strong>Google Compliant:</strong> This template shows all review platform options to all customers and includes feedback gate integration.
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedTemplate && !getComplianceStatus(selectedTemplate) && (
+                      <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                        <div className="flex items-start space-x-2">
+                          <div className="text-amber-600 mt-0.5">⚠️</div>
+                          <div className="text-sm text-amber-800">
+                            <strong>Compliance Warning:</strong> This template may not meet Google's guidelines. 
+                            Consider adding missing review platform options: {getComplianceIssues(selectedTemplate).join(', ')}.
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

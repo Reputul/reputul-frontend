@@ -171,6 +171,12 @@ const ReviewPlatformSetupPage = () => {
     }
   };
 
+  const handleBackToDashboard = () => {
+    // Navigate back to dashboard - you can modify this based on your routing setup
+    window.location.href = '/dashboard';
+    // Or if using React Router: navigate('/dashboard');
+  };
+
   const getValidationIcon = (isValid) => {
     if (isValid === null) return null;
     return isValid ? (
@@ -210,7 +216,20 @@ const ReviewPlatformSetupPage = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
+      {/* Navigation Header */}
       <div className="mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={handleBackToDashboard}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Dashboard
+          </button>
+        </div>
+        
         <h1 className="text-2xl font-bold text-gray-900">Review Platform Setup</h1>
         <p className="text-gray-600">Configure where customers can leave reviews for your business</p>
       </div>
@@ -458,7 +477,7 @@ const ReviewPlatformSetupPage = () => {
                   
                   <div className="space-y-3 max-w-xs mx-auto">
                     <a href="#" className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium text-center block transition-colors w-full">
-                      📍 Google Review
+                      🔍 Google Review
                     </a>
                     
                     {platformData.facebookPageUrl && (
