@@ -6,6 +6,7 @@ const ImportModal = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState(1); // 1: Upload, 2: Preview, 3: Processing
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState({ headers: [], rows: [] });
+  const [prepareResponse, setPrepareResponse] = useState(null);
   const [mapping, setMapping] = useState({});
   const [options, setOptions] = useState({
     skipDuplicates: true,
@@ -16,7 +17,7 @@ const ImportModal = ({ isOpen, onClose, onSuccess }) => {
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
-  // Available field mappings
+  // Available field mappings - matches backend expectations
   const availableFields = [
     { key: 'name', label: 'Name', required: true },
     { key: 'email', label: 'Email', required: false },
@@ -43,45 +44,60 @@ const ImportModal = ({ isOpen, onClose, onSuccess }) => {
 
     setFile(selectedFile);
     setError('');
+    setProcessing(true);
 
-    // Read and preview file
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const csvText = e.target.result;
-        const previewData = parseCSVPreview(csvText, 5);
-        setPreview(previewData);
-        
-        // Auto-map common field names
-        const autoMapping = {};
-        previewData.headers.forEach((header, index) => {
-          const lowerHeader = header.toLowerCase().trim();
+    try {
+      // Step 1: Upload to backend for preparation
+      const response = await contactsApi.prepareCsvImport(selectedFile);
+      setPrepareResponse(response.data);
+
+      // Step 2: Also parse locally for immediate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const csvText = e.target.result;
+          const previewData = parseCSVPreview(csvText, 5);
+          setPreview(previewData);
           
-          if (lowerHeader.includes('name') || lowerHeader === 'customer') {
-            autoMapping[index] = 'name';
-          } else if (lowerHeader.includes('email') || lowerHeader.includes('mail')) {
-            autoMapping[index] = 'email';
-          } else if (lowerHeader.includes('phone') || lowerHeader.includes('tel') || lowerHeader.includes('mobile')) {
-            autoMapping[index] = 'phone';
-          } else if (lowerHeader.includes('date') || lowerHeader.includes('last') || lowerHeader.includes('job')) {
-            autoMapping[index] = 'lastJobDate';
-          } else if (lowerHeader.includes('tag') || lowerHeader.includes('category')) {
-            autoMapping[index] = 'tags';
-          } else if (lowerHeader.includes('sms')) {
-            autoMapping[index] = 'smsConsent';
-          } else if (lowerHeader.includes('email') && lowerHeader.includes('consent')) {
-            autoMapping[index] = 'emailConsent';
-          }
-        });
-        
-        setMapping(autoMapping);
-        setStep(2);
-      } catch (err) {
-        setError('Error reading CSV file. Please check the format.');
-      }
-    };
-    
-    reader.readAsText(selectedFile);
+          // Auto-map common field names using backend headers if available
+          const headersToMap = response.data.headers || previewData.headers;
+          const autoMapping = {};
+          
+          headersToMap.forEach((header, index) => {
+            const lowerHeader = header.toLowerCase().trim();
+            
+            if (lowerHeader.includes('name') || lowerHeader === 'customer') {
+              autoMapping[index] = 'name';
+            } else if (lowerHeader.includes('email') || lowerHeader.includes('mail')) {
+              autoMapping[index] = 'email';
+            } else if (lowerHeader.includes('phone') || lowerHeader.includes('tel') || lowerHeader.includes('mobile')) {
+              autoMapping[index] = 'phone';
+            } else if (lowerHeader.includes('date') || lowerHeader.includes('last') || lowerHeader.includes('job')) {
+              autoMapping[index] = 'lastJobDate';
+            } else if (lowerHeader.includes('tag') || lowerHeader.includes('category')) {
+              autoMapping[index] = 'tags';
+            } else if (lowerHeader.includes('sms')) {
+              autoMapping[index] = 'smsConsent';
+            } else if (lowerHeader.includes('email') && lowerHeader.includes('consent')) {
+              autoMapping[index] = 'emailConsent';
+            }
+          });
+          
+          setMapping(autoMapping);
+          setStep(2);
+          setProcessing(false);
+        } catch (err) {
+          setError('Error reading CSV file. Please check the format.');
+          setProcessing(false);
+        }
+      };
+      
+      reader.readAsText(selectedFile);
+
+    } catch (err) {
+      setError(handleApiError(err));
+      setProcessing(false);
+    }
   };
 
   const handleMappingChange = (headerIndex, field) => {
@@ -120,22 +136,21 @@ const ImportModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const handleImport = async () => {
-    if (!validateMapping()) return;
+    if (!validateMapping() || !prepareResponse) return;
     
     setProcessing(true);
     setError('');
     setStep(3);
     
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('mapping', JSON.stringify(mapping));
-      formData.append('options', JSON.stringify(options));
+      // Step 2: Commit the import using backend's commit endpoint
+      const commitRequest = {
+        importId: prepareResponse.importId,
+        mapping: mapping,
+        options: options
+      };
       
-      const response = await contactsApi.importContacts(file, {
-        mapping: JSON.stringify(mapping),
-        ...options
-      });
+      const response = await contactsApi.commitCsvImport(commitRequest);
       
       onSuccess(response.data);
     } catch (err) {
@@ -150,6 +165,7 @@ const ImportModal = ({ isOpen, onClose, onSuccess }) => {
     setStep(1);
     setFile(null);
     setPreview({ headers: [], rows: [] });
+    setPrepareResponse(null);
     setMapping({});
     setError('');
     setProcessing(false);
@@ -224,39 +240,49 @@ const ImportModal = ({ isOpen, onClose, onSuccess }) => {
           {/* Step 1: File Upload */}
           {step === 1 && (
             <div className="text-center py-8">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 hover:border-primary-400 transition-colors">
-                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                </svg>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Upload CSV File</h4>
-                <p className="text-gray-600 mb-6">
-                  Select a CSV file containing your contacts. Maximum file size: 10MB
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  Choose CSV File
-                </button>
-              </div>
-              
-              <div className="mt-8 text-left">
-                <h5 className="font-semibold text-gray-900 mb-3">CSV Format Guidelines:</h5>
-                <ul className="text-sm text-gray-600 space-y-2">
-                  <li>• First row should contain column headers</li>
-                  <li>• Required: Name column</li>
-                  <li>• Optional: Email, Phone, Last Job Date, Tags</li>
-                  <li>• Tags should be comma-separated in a single column</li>
-                  <li>• Consent fields can use Y/N/Yes/No or leave empty for unknown</li>
-                </ul>
-              </div>
+              {processing ? (
+                <div>
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Uploading and parsing CSV...</h4>
+                  <p className="text-gray-600">Please wait while we process your file.</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 hover:border-primary-400 transition-colors">
+                    <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Upload CSV File</h4>
+                    <p className="text-gray-600 mb-6">
+                      Select a CSV file containing your contacts. Maximum file size: 10MB
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                      Choose CSV File
+                    </button>
+                  </div>
+                  
+                  <div className="mt-8 text-left">
+                    <h5 className="font-semibold text-gray-900 mb-3">CSV Format Guidelines:</h5>
+                    <ul className="text-sm text-gray-600 space-y-2">
+                      <li>• First row should contain column headers</li>
+                      <li>• Required: Name column</li>
+                      <li>• Optional: Email, Phone, Last Job Date, Tags</li>
+                      <li>• Tags should be comma-separated in a single column</li>
+                      <li>• Consent fields can use Y/N/Yes/No or leave empty for unknown</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -267,6 +293,16 @@ const ImportModal = ({ isOpen, onClose, onSuccess }) => {
               <p className="text-gray-600 mb-6">
                 Match your CSV columns to the contact fields below:
               </p>
+              
+              {/* Show import summary from backend */}
+              {prepareResponse && (
+                <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                  <h5 className="font-semibold text-blue-900 mb-2">Import Summary</h5>
+                  <p className="text-blue-800">
+                    Found {prepareResponse.totalRows} total rows with {prepareResponse.headers?.length || preview.headers.length} columns
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-4 mb-6">
                 {preview.headers.map((header, index) => (
