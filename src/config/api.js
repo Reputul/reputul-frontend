@@ -1,3 +1,4 @@
+// src/config/api.js - Updated with billing endpoints
 // Centralized API configuration
 const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE ||
@@ -50,6 +51,27 @@ const API_CONFIG = {
     WAITLIST: {
       ADD: '/api/waitlist/add',
       COUNT: '/api/waitlist/count'
+    },
+
+    // NEW: Billing endpoints (matching BillingController exactly)
+    BILLING: {
+      CHECKOUT_SESSION: '/api/billing/checkout-session',
+      PORTAL_SESSION: '/api/billing/portal-session',
+      SUBSCRIPTION: '/api/billing/subscription',
+      PLANS: '/api/billing/plans',
+      CHECK_ENTITLEMENT: '/api/billing/check-entitlement',
+      BUSINESS_STATUS: (businessId) => `/api/billing/business/${businessId}/status`,
+      WEBHOOK: '/api/billing/webhook'
+    },
+
+    // Contacts endpoints
+    CONTACTS: {
+      LIST: '/api/contacts',
+      BY_ID: (id) => `/api/contacts/${id}`,
+      STATS: '/api/contacts/stats',
+      EXPORT_CSV: '/api/contacts/export.csv',
+      BULK_IMPORT_PREPARE: '/api/contacts/bulk/import/prepare',
+      BULK_IMPORT_COMMIT: '/api/contacts/bulk/import/commit'
     }
   }
 };
@@ -66,6 +88,70 @@ export const getAuthHeaders = () => {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
+};
+
+// Helper function to get auth headers for multipart/form-data
+export const getAuthHeadersMultipart = () => {
+  const token = localStorage.getItem('token');
+  return {
+    // Don't set Content-Type for FormData - let browser set it with boundary
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+};
+
+// Helper function to check if user is authenticated
+export const isAuthenticated = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return false;
+  
+  try {
+    // Basic token validation - check if it's expired
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp > Date.now() / 1000;
+  } catch (error) {
+    console.warn('Invalid token format:', error);
+    return false;
+  }
+};
+
+// Helper function to get current user ID from token
+export const getCurrentUserId = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub || payload.userId || null;
+  } catch (error) {
+    console.warn('Could not extract user ID from token:', error);
+    return null;
+  }
+};
+
+// Helper function for handling API errors consistently
+export const handleApiError = (error) => {
+  if (error.response?.data?.error) {
+    return error.response.data.error;
+  }
+  if (error.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error.response?.status === 401) {
+    return 'Authentication required. Please log in.';
+  }
+  if (error.response?.status === 403) {
+    return 'Access denied.';
+  }
+  if (error.response?.status === 404) {
+    return 'Resource not found.';
+  }
+  if (error.response?.status === 429) {
+    return 'Too many requests. Please try again later.';
+  }
+  if (error.response?.status >= 500) {
+    return 'Server error. Please try again later.';
+  }
+  return error.message || 'An unexpected error occurred.';
 };
 
 // Export endpoints for easy access

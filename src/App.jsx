@@ -34,6 +34,9 @@ import ReviewPlatformSetupPage from "./pages/ReviewPlatformSetupPage";
 import CustomerFeedbackPage from "./pages/CustomerFeedbackPage";
 import FeedbackGatePage from "./pages/FeedbackGatePage";
 import OptInPolicy from "./pages/OptInPolicy";
+import PricingPage from "./pages/PricingPage";
+import AccountBillingPage from "./pages/AccountBillingPage";
+import CheckoutPages from "./pages/CheckoutPages";
 
 function App() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -70,14 +73,15 @@ function App() {
     "/forgot-password",
     "/reset-password",
   ];
-  
+
   // Also hide navbar on customer-facing feedback pages
   const currentPath = window.location.pathname;
-  const isCustomerFeedbackRoute = currentPath.startsWith("/feedback/") || 
-                                  currentPath.startsWith("/feedback-gate/");
-  
-  const shouldShowNavbar = !hideNavbarOnRoutes.includes(currentPath) && 
-                          !isCustomerFeedbackRoute;
+  const isCustomerFeedbackRoute =
+    currentPath.startsWith("/feedback/") ||
+    currentPath.startsWith("/feedback-gate/");
+
+  const shouldShowNavbar =
+    !hideNavbarOnRoutes.includes(currentPath) && !isCustomerFeedbackRoute;
 
   // Show loading while checking maintenance status
   if (!maintenanceChecked) {
@@ -125,19 +129,44 @@ function App() {
                 />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
-                
+
+                {/* NEW: Billing routes */}
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route
+                  path="/checkout/success"
+                  element={<CheckoutPages.Success />}
+                />
+                <Route
+                  path="/checkout/error"
+                  element={<CheckoutPages.Error />}
+                />
+
+                {/* NEW: Protected billing routes */}
+                <Route
+                  path="/account/billing"
+                  element={
+                    <PrivateRoute>
+                      <AccountBillingPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/account"
+                  element={<Navigate to="/account/billing" replace />}
+                />
+
                 {/* Feedback Gate Route - Google Compliant Rating Interface */}
                 <Route
                   path="/feedback-gate/:customerId"
                   element={<FeedbackGatePage />}
                 />
-                
+
                 {/* Private Feedback Route - Now works with feedback gate flow */}
                 <Route
                   path="/feedback/:customerId"
                   element={<CustomerFeedbackPage />}
                 />
-                
+
                 <Route path="/opt-in-policy" element={<OptInPolicy />} />
 
                 {/* Error routes */}

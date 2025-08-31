@@ -57,7 +57,7 @@ export const contactsApi = {
     return api.delete(buildUrl(`/api/contacts/${id}`));
   },
 
-  // CSV Import - Prepare step
+  // CSV Import - Prepare step (matches backend /api/contacts/bulk/import/prepare)
   prepareCsvImport: (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -69,7 +69,7 @@ export const contactsApi = {
     });
   },
 
-  // CSV Import - Commit step
+  // CSV Import - Commit step (matches backend /api/contacts/bulk/import/commit)
   commitCsvImport: (commitData) => {
     return api.post(buildUrl('/api/contacts/bulk/import/commit'), commitData);
   },
@@ -86,6 +86,80 @@ export const contactsApi = {
   getContactStats: () => {
     return api.get(buildUrl('/api/contacts/stats'));
   },
+};
+
+// CSV parsing utility for client-side preview
+export const parseCSVPreview = (csvText, maxRows = 5) => {
+  try {
+    const lines = csvText.trim().split('\n');
+    
+    if (lines.length === 0) {
+      return { headers: [], rows: [] };
+    }
+    
+    // Parse headers (first line)
+    const headers = parseCSVLine(lines[0]);
+    
+    // Parse data rows
+    const rows = [];
+    const dataLines = lines.slice(1, Math.min(lines.length, maxRows + 1));
+    
+    for (const line of dataLines) {
+      if (line.trim()) { // Skip empty lines
+        const row = parseCSVLine(line);
+        // Pad row to match headers length
+        while (row.length < headers.length) {
+          row.push('');
+        }
+        rows.push(row);
+      }
+    }
+    
+    return { headers, rows };
+  } catch (error) {
+    console.error('Error parsing CSV:', error);
+    throw new Error('Invalid CSV format');
+  }
+};
+
+// Helper function to parse a single CSV line
+const parseCSVLine = (line) => {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  let i = 0;
+  
+  while (i < line.length) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i += 2;
+        continue;
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // End of field
+      result.push(current.trim());
+      current = '';
+      i++;
+      continue;
+    } else {
+      current += char;
+    }
+    
+    i++;
+  }
+  
+  // Add the last field
+  result.push(current.trim());
+  
+  return result;
 };
 
 // Utility functions for handling API responses
