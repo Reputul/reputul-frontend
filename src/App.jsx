@@ -37,6 +37,8 @@ import OptInPolicy from "./pages/OptInPolicy";
 import PricingPage from "./pages/PricingPage";
 import AccountBillingPage from "./pages/AccountBillingPage";
 import CheckoutPages from "./pages/CheckoutPages";
+import SmsSignupPage from './pages/SmsSignupPage';
+import TwilioProofPage from './pages/TwilioProofPage';
 
 function App() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -129,6 +131,9 @@ function App() {
                 />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
+                <Route path="/sms-signup" element={<SmsSignupPage />} />
+                <Route path="/sms-signup/:businessId" element={<SmsSignupPage />} />
+                <Route path="/twilio-proof" element={<TwilioProofPage />} />
 
                 {/* NEW: Billing routes */}
                 <Route path="/pricing" element={<PricingPage />} />
