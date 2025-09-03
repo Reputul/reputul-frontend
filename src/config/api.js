@@ -1,4 +1,4 @@
-// src/config/api.js - Updated with billing endpoints
+// src/config/api.js - Updated with billing endpoints and dashboard metrics
 // Centralized API configuration
 const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE ||
@@ -20,6 +20,7 @@ const API_CONFIG = {
     // Business endpoints
     BUSINESS: {
       DASHBOARD: '/api/dashboard',
+      DASHBOARD_METRICS: '/api/dashboard/metrics', // NEW: Dashboard metrics endpoint
       LIST: '/api/businesses',
       BY_ID: (id) => `/api/businesses/${id}`,
       REVIEW_SUMMARY: (id) => `/api/businesses/${id}/review-summary`
@@ -53,7 +54,7 @@ const API_CONFIG = {
       COUNT: '/api/waitlist/count'
     },
 
-    // NEW: Billing endpoints (matching BillingController exactly)
+    // Billing endpoints (matching BillingController exactly)
     BILLING: {
       CHECKOUT_SESSION: '/api/billing/checkout-session',
       PORTAL_SESSION: '/api/billing/portal-session',
