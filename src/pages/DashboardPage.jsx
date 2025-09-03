@@ -23,6 +23,11 @@ const DashboardPage = () => {
   const [setupBannerDismissed, setSetupBannerDismissed] = useState(false);
   const [contactsCount, setContactsCount] = useState(0);
 
+  // NEW: Real-time metrics state
+  const [metrics, setMetrics] = useState(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [metricsPeriod, setMetricsPeriod] = useState(30);
+
   // Add state for editing
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [editBusinessData, setEditBusinessData] = useState({
@@ -42,6 +47,37 @@ const DashboardPage = () => {
     customerName: "",
     message: "",
   });
+
+  // NEW: Fetch dashboard metrics
+  const fetchMetrics = useCallback(async () => {
+    if (!token) return;
+    
+    setMetricsLoading(true);
+    try {
+      const response = await axios.get(
+        buildUrl(`${API_ENDPOINTS.BUSINESS.DASHBOARD_METRICS}?days=${metricsPeriod}`),
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMetrics(response.data);
+      console.log("📊 Dashboard metrics loaded:", response.data);
+    } catch (err) {
+      console.error("Error fetching dashboard metrics:", err);
+      // Set fallback metrics on error
+      setMetrics({
+        sent: 0,
+        delivered: 0,
+        failed: 0,
+        completed: 0,
+        totalReviewsInPeriod: 0,
+        averageRatingInPeriod: 0.0,
+        activeBusinesses: 0,
+        totalBusinesses: 0,
+        byDay: []
+      });
+    } finally {
+      setMetricsLoading(false);
+    }
+  }, [token, metricsPeriod]);
 
   const fetchBusinesses = useCallback(async () => {
     console.log("🔄 fetchBusinesses called");
@@ -115,7 +151,13 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchBusinesses();
     fetchContactsCount();
-  }, [fetchBusinesses, fetchContactsCount]);
+    fetchMetrics(); // NEW: Fetch metrics on load
+  }, [fetchBusinesses, fetchContactsCount, fetchMetrics]);
+
+  // NEW: Refetch metrics when period changes
+  useEffect(() => {
+    fetchMetrics();
+  }, [fetchMetrics, metricsPeriod]);
 
   // Listen for platform updates and page visibility changes
   useEffect(() => {
@@ -206,12 +248,13 @@ const DashboardPage = () => {
         setShowAddBusiness(false);
         alert("Business created successfully!");
         fetchBusinesses();
+        fetchMetrics(); // NEW: Refresh metrics after adding business
       } catch (err) {
         console.error("Error creating business:", err);
         alert("Failed to create business");
       }
     },
-    [newBusiness, token, fetchBusinesses]
+    [newBusiness, token, fetchBusinesses, fetchMetrics]
   );
 
   const handleEditBusiness = useCallback((business) => {
@@ -275,12 +318,13 @@ const DashboardPage = () => {
         });
         setShowRequestReviews(false);
         alert("Review request sent successfully!");
+        fetchMetrics(); // NEW: Refresh metrics after sending request
       } catch (err) {
         console.error("Error sending review request:", err);
         alert("Failed to send review request");
       }
     },
-    [requestReviewsData, token]
+    [requestReviewsData, token, fetchMetrics]
   );
 
   const handleRequestReviewsChange = useCallback((e) => {
@@ -300,12 +344,13 @@ const DashboardPage = () => {
         });
         alert("Business deleted successfully!");
         fetchBusinesses();
+        fetchMetrics(); // NEW: Refresh metrics after deleting business
       } catch (err) {
         console.error("Error deleting business:", err);
         alert("Failed to delete business");
       }
     },
-    [token, fetchBusinesses]
+    [token, fetchBusinesses, fetchMetrics]
   );
 
   const handleDismissBanner = () => {
@@ -327,8 +372,31 @@ const DashboardPage = () => {
     alert("Public link copied to clipboard!");
   }, []);
 
-  // Calculate metrics
-  const metrics = {
+  // NEW: Period selector component
+  const PeriodSelector = () => (
+    <div className="flex items-center space-x-2 mb-6">
+      <span className="text-sm font-medium text-gray-700">Time Period:</span>
+      <select
+        value={metricsPeriod}
+        onChange={(e) => setMetricsPeriod(parseInt(e.target.value))}
+        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+      >
+        <option value={7}>Last 7 days</option>
+        <option value={30}>Last 30 days</option>
+        <option value={90}>Last 90 days</option>
+      </select>
+    </div>
+  );
+
+  // NEW: Calculate completion rate for trend
+  const getCompletionRateTrend = () => {
+    if (!metrics || !metrics.sent) return null;
+    const rate = (metrics.completed / metrics.sent * 100).toFixed(1);
+    return `${rate}%`;
+  };
+
+  // Calculate static metrics as fallback
+  const staticMetrics = {
     totalReviews: businesses.reduce(
       (sum, biz) => sum + (biz.reviewCount || 0),
       0
@@ -384,60 +452,60 @@ const DashboardPage = () => {
     );
   };
 
-  // Enhanced Metric Card Component
-  const MetricCard = ({
-    icon,
-    title,
-    value,
-    subtitle,
-    trend,
-    color = "primary",
+  // NEW: Enhanced Metric Card Component with real data
+  const MetricCard = ({ 
+    icon, 
+    title, 
+    value, 
+    subtitle, 
+    trend, 
+    color = "primary", 
+    loading = false 
   }) => {
     const colorClasses = {
-      primary: "text-primary-600 bg-primary-50",
-      yellow: "text-yellow-600 bg-yellow-50",
-      green: "text-green-600 bg-green-50",
-      purple: "text-purple-600 bg-purple-50",
+      primary: "from-blue-500 to-blue-600",
+      yellow: "from-yellow-500 to-yellow-600", 
+      green: "from-green-500 to-green-600",
+      purple: "from-purple-500 to-purple-600",
+      red: "from-red-500 to-red-600",
+    };
+
+    const bgColorClasses = {
+      primary: "bg-blue-50",
+      yellow: "bg-yellow-50",
+      green: "bg-green-50", 
+      purple: "bg-purple-50",
+      red: "bg-red-50",
     };
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
+      <div className={`${bgColorClasses[color]} rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer`}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-            <p
-              className={`text-3xl font-bold group-hover:scale-105 transition-transform ${
-                color === "yellow"
-                  ? "text-yellow-500"
-                  : color === "green"
-                  ? "text-green-600"
-                  : color === "purple"
-                  ? "text-purple-600"
-                  : "text-primary-600"
-              }`}
-            >
-              {value}
-            </p>
-            {subtitle && (
-              <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-            )}
-            {trend && (
-              <div className="flex items-center mt-2">
-                <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 rounded-full">
-                  <svg className="w-3 h-3 text-green-600 transition-transform group-hover:translate-x-0.5">
-                    <path d="M7 14l3-3 3 3M7 10l3-3 3 3" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span className="text-xs text-green-600 font-medium">{trend}</span>
-                </div>
-                <span className="text-xs text-gray-500 ml-2">vs last month</span>
+            {loading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-gray-200 rounded w-16 mb-1"></div>
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
               </div>
+            ) : (
+              <>
+                <p className={`text-3xl font-bold group-hover:scale-105 transition-transform text-gray-900`}>
+                  {value}
+                </p>
+                <p className="text-sm text-gray-500">{subtitle}</p>
+                {trend && (
+                  <p className={`text-xs font-medium mt-1 ${
+                    trend.startsWith('+') ? 'text-green-600' : trend.startsWith('-') ? 'text-red-600' : 'text-gray-600'
+                  }`}>
+                    {trend} from last period
+                  </p>
+                )}
+              </>
             )}
           </div>
-          <div className="relative">
-            <div className={`p-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 group-hover:scale-110 transition-transform ${colorClasses[color]}`}>
-              {icon}
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-500 rounded-xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity"></div>
+          <div className={`p-3 bg-gradient-to-r ${colorClasses[color]} rounded-lg shadow-sm group-hover:scale-110 transition-transform`}>
+            {icon}
           </div>
         </div>
       </div>
@@ -468,12 +536,13 @@ const DashboardPage = () => {
           setLocalComment("");
           alert("Review added successfully!");
           fetchBusinesses();
+          fetchMetrics(); // NEW: Refresh metrics after adding review
         } catch (err) {
           console.error("Error submitting review:", err);
           alert("Failed to add review");
         }
       },
-      [businessId, localRating, localComment, token, fetchBusinesses]
+      [businessId, localRating, localComment, token, fetchBusinesses, fetchMetrics]
     );
 
     return (
@@ -1057,7 +1126,7 @@ const DashboardPage = () => {
   };
 
   // Enhanced Loading State
-  if (loading) {
+  if (loading && (!businesses.length)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-primary-50">
         <div className="text-center">
@@ -1110,9 +1179,45 @@ const DashboardPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Enhanced Metrics Cards in Bento Grid Layout */}
+        {/* NEW: Period Selector */}
+        <PeriodSelector />
+
+        {/* Enhanced Metrics Cards with Real-time Data */}
         <div className="grid grid-cols-12 gap-6 mb-8">
-          {/* Large metric card */}
+          {/* Review Requests Sent */}
+          <div className="col-span-12 md:col-span-6 lg:col-span-3">
+            <MetricCard
+              icon={
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              }
+              title="Requests Sent"
+              value={metrics?.sent || 0}
+              subtitle={`Last ${metricsPeriod} days`}
+              color="primary"
+              loading={metricsLoading}
+            />
+          </div>
+          
+          {/* Completion Rate */}
+          <div className="col-span-12 md:col-span-6 lg:col-span-3">
+            <MetricCard
+              icon={
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+              title="Completed"
+              value={metrics?.completed || 0}
+              subtitle="Reviews submitted"
+              trend={getCompletionRateTrend()}
+              color="green"
+              loading={metricsLoading}
+            />
+          </div>
+          
+          {/* Average Rating (Period) */}
           <div className="col-span-12 md:col-span-6 lg:col-span-3">
             <MetricCard
               icon={
@@ -1120,89 +1225,74 @@ const DashboardPage = () => {
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
               }
-              title="Average Rating"
-              value={metrics.averageRating}
-              subtitle="Across all businesses"
-              trend="+0.3"
+              title="Avg Rating"
+              value={metrics?.averageRatingInPeriod?.toFixed(1) || staticMetrics.averageRating}
+              subtitle={`Last ${metricsPeriod} days`}
               color="yellow"
+              loading={metricsLoading}
             />
           </div>
           
+          {/* Total Contacts */}
           <div className="col-span-12 md:col-span-6 lg:col-span-3">
             <MetricCard
               icon={
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-              }
-              title="Total Reviews"
-              value={metrics.totalReviews}
-              subtitle="This month"
-              trend="+23"
-              color="primary"
-            />
-          </div>
-          
-          <div className="col-span-12 md:col-span-6 lg:col-span-3">
-            <MetricCard
-              icon={
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-              }
-              title="Businesses"
-              value={metrics.totalBusinesses}
-              subtitle="Active listings"
-              trend="+1"
-              color="green"
-            />
-          </div>
-          
-          <div className="col-span-12 md:col-span-6 lg:col-span-3">
-            <MetricCard
-              icon={
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               }
               title="Total Contacts"
-              value={metrics.totalContacts}
+              value={staticMetrics.totalContacts}
               subtitle="In your database"
-              trend="+12"
               color="purple"
+              loading={false}
             />
           </div>
         </div>
+
+        {/* NEW: Time Series Chart */}
+        {metrics?.byDay && metrics.byDay.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Over Time</h3>
+            <div className="h-64 flex items-end space-x-2">
+              {metrics.byDay.map((day, index) => {
+                const maxValue = Math.max(...metrics.byDay.map(d => Math.max(d.requestsSent, d.reviewsReceived)));
+                const requestHeight = maxValue > 0 ? (day.requestsSent / maxValue) * 200 : 0;
+                const reviewHeight = maxValue > 0 ? (day.reviewsReceived / maxValue) * 200 : 0;
+                
+                return (
+                  <div key={day.date} className="flex-1 flex flex-col items-center">
+                    <div className="relative w-full max-w-16 mb-2">
+                      <div 
+                        className="bg-blue-500 rounded-t mx-1"
+                        style={{ height: `${requestHeight}px` }}
+                        title={`${day.requestsSent} requests sent`}
+                      />
+                      <div 
+                        className="bg-green-500 rounded-t mx-1"
+                        style={{ height: `${reviewHeight}px` }}
+                        title={`${day.reviewsReceived} reviews received`}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 transform -rotate-45 origin-center">
+                      {new Date(day.date).getMonth() + 1}/{new Date(day.date).getDate()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-center space-x-6 mt-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                <span className="text-sm text-gray-600">Requests Sent</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded"></div>
+                <span className="text-sm text-gray-600">Reviews Received</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Enhanced Review Platform Setup Reminder with Glassmorphism */}
         {!setupBannerDismissed &&
@@ -1403,6 +1493,7 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* All modals remain the same - keeping existing functionality */}
       {/* Enhanced Add Business Modal with Glassmorphism */}
       {showAddBusiness && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -1640,7 +1731,7 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Enhanced Analytics Modal */}
+      {/* Enhanced Analytics Modal with Real Metrics */}
       {showAnalytics && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
@@ -1682,10 +1773,10 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-primary-600 font-medium">
-                      Total Reviews
+                      Requests Sent
                     </p>
                     <p className="text-2xl font-bold text-primary-900">
-                      {metrics.totalReviews}
+                      {metrics?.sent || 0}
                     </p>
                   </div>
                 </div>
@@ -1710,10 +1801,10 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-green-600 font-medium">
-                      Avg Rating
+                      Completed
                     </p>
                     <p className="text-2xl font-bold text-green-900">
-                      {metrics.averageRating}
+                      {metrics?.completed || 0}
                     </p>
                   </div>
                 </div>
@@ -1741,7 +1832,7 @@ const DashboardPage = () => {
                       Businesses
                     </p>
                     <p className="text-2xl font-bold text-purple-900">
-                      {metrics.totalBusinesses}
+                      {staticMetrics.totalBusinesses}
                     </p>
                   </div>
                 </div>
@@ -1766,10 +1857,10 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-yellow-600 font-medium">
-                      Total Contacts
+                      Avg Rating (Period)
                     </p>
                     <p className="text-2xl font-bold text-yellow-900">
-                      {metrics.totalContacts}
+                      {metrics?.averageRatingInPeriod?.toFixed(1) || staticMetrics.averageRating}
                     </p>
                   </div>
                 </div>
