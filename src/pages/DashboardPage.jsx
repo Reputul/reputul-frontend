@@ -3,6 +3,8 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { buildUrl, API_ENDPOINTS } from "../config/api";
+import WilsonRating from "../components/WilsonRating";
+import ReputationBreakdown from "../components/ReputationBreakdown";
 
 const DashboardPage = () => {
   const { token } = useAuth();
@@ -48,14 +50,24 @@ const DashboardPage = () => {
     message: "",
   });
 
-  // NEW: Fetch dashboard metrics
+  //  Wilson Score state
+  const [wilsonBreakdowns, setWilsonBreakdowns] = useState({});
+  const [showReputationModal, setShowReputationModal] = useState(false);
+  const [selectedBusinessForReputation, setSelectedBusinessForReputation] =
+    useState(null);
+  const [reputationBreakdownData, setReputationBreakdownData] = useState(null);
+  
+
+  // Fetch dashboard metrics
   const fetchMetrics = useCallback(async () => {
     if (!token) return;
-    
+
     setMetricsLoading(true);
     try {
       const response = await axios.get(
-        buildUrl(`${API_ENDPOINTS.BUSINESS.DASHBOARD_METRICS}?days=${metricsPeriod}`),
+        buildUrl(
+          `${API_ENDPOINTS.BUSINESS.DASHBOARD_METRICS}?days=${metricsPeriod}`
+        ),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMetrics(response.data);
@@ -72,7 +84,7 @@ const DashboardPage = () => {
         averageRatingInPeriod: 0.0,
         activeBusinesses: 0,
         totalBusinesses: 0,
-        byDay: []
+        byDay: [],
       });
     } finally {
       setMetricsLoading(false);
@@ -138,9 +150,9 @@ const DashboardPage = () => {
   // Fetch contacts count for dashboard metrics
   const fetchContactsCount = useCallback(async () => {
     try {
-      const response = await axios.get('/api/contacts', {
+      const response = await axios.get("/api/contacts", {
         headers: { Authorization: `Bearer ${token}` },
-        params: { page: 0, size: 1 } // Just get count, not data
+        params: { page: 0, size: 1 }, // Just get count, not data
       });
       setContactsCount(response.data.totalElements || 0);
     } catch (err) {
@@ -148,11 +160,77 @@ const DashboardPage = () => {
     }
   }, [token]);
 
+  // Fetch Wilson Score breakdown for businesses
+  const fetchWilsonBreakdowns = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const breakdowns = {};
+      await Promise.all(
+        businesses.map(async (business) => {
+          try {
+            const response = await axios.get(
+              buildUrl(`/api/reputation/business/${business.id}/breakdown`),
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            breakdowns[business.id] = response.data;
+          } catch (err) {
+            console.error(
+              `Error fetching Wilson breakdown for business ${business.id}:`,
+              err
+            );
+          }
+        })
+      );
+      setWilsonBreakdowns(breakdowns);
+    } catch (err) {
+      console.error("Error fetching Wilson breakdowns:", err);
+    }
+  }, [token, businesses]);
+
+  // Fetch detailed reputation breakdown for modal
+  const fetchReputationBreakdown = useCallback(
+    async (businessId) => {
+      if (!token) return;
+
+      try {
+        const response = await axios.get(
+          buildUrl(`/api/reputation/business/${businessId}/detailed`),
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setReputationBreakdownData(response.data);
+      } catch (err) {
+        console.error(
+          `Error fetching detailed reputation for business ${businessId}:`,
+          err
+        );
+        // Set fallback data
+        setReputationBreakdownData({
+          reputulRating: 0.0,
+          compositeScore: 0,
+          qualityScore: 0,
+          velocityScore: 0,
+          responsivenessScore: 0,
+          totalReviews: 0,
+          positiveReviews: 0,
+          reviewsLast90d: 0,
+        });
+      }
+    },
+    [token]
+  );
+
   useEffect(() => {
     fetchBusinesses();
     fetchContactsCount();
     fetchMetrics(); // NEW: Fetch metrics on load
   }, [fetchBusinesses, fetchContactsCount, fetchMetrics]);
+
+  useEffect(() => {
+    if (businesses.length > 0) {
+      fetchWilsonBreakdowns();
+    }
+  }, [businesses, fetchWilsonBreakdowns]);
 
   // NEW: Refetch metrics when period changes
   useEffect(() => {
@@ -334,6 +412,37 @@ const DashboardPage = () => {
     }));
   }, []);
 
+  // Handle reputation modal
+  const handleShowReputationBreakdown = useCallback(
+    async (business) => {
+      setSelectedBusinessForReputation(business);
+      setShowReputationModal(true);
+      await fetchReputationBreakdown(business.id);
+    },
+    [fetchReputationBreakdown]
+  );
+
+  const handleRecalculateReputation = useCallback(
+    async (businessId) => {
+      try {
+        await axios.post(
+          buildUrl(`/api/reputation/business/${businessId}/recalculate`),
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Refresh data
+        await fetchReputationBreakdown(businessId);
+        await fetchWilsonBreakdowns();
+        alert("Reputation score recalculated successfully!");
+      } catch (err) {
+        console.error("Error recalculating reputation:", err);
+        alert("Failed to recalculate reputation score");
+      }
+    },
+    [token, fetchReputationBreakdown, fetchWilsonBreakdowns]
+  );
+
   const handleDeleteBusiness = useCallback(
     async (businessId) => {
       if (!window.confirm("Are you sure you want to delete this business?"))
@@ -391,7 +500,7 @@ const DashboardPage = () => {
   // NEW: Calculate completion rate for trend
   const getCompletionRateTrend = () => {
     if (!metrics || !metrics.sent) return null;
-    const rate = (metrics.completed / metrics.sent * 100).toFixed(1);
+    const rate = ((metrics.completed / metrics.sent) * 100).toFixed(1);
     return `${rate}%`;
   };
 
@@ -453,18 +562,18 @@ const DashboardPage = () => {
   };
 
   // NEW: Enhanced Metric Card Component with real data
-  const MetricCard = ({ 
-    icon, 
-    title, 
-    value, 
-    subtitle, 
-    trend, 
-    color = "primary", 
-    loading = false 
+  const MetricCard = ({
+    icon,
+    title,
+    value,
+    subtitle,
+    trend,
+    color = "primary",
+    loading = false,
   }) => {
     const colorClasses = {
       primary: "from-blue-500 to-blue-600",
-      yellow: "from-yellow-500 to-yellow-600", 
+      yellow: "from-yellow-500 to-yellow-600",
       green: "from-green-500 to-green-600",
       purple: "from-purple-500 to-purple-600",
       red: "from-red-500 to-red-600",
@@ -473,13 +582,15 @@ const DashboardPage = () => {
     const bgColorClasses = {
       primary: "bg-blue-50",
       yellow: "bg-yellow-50",
-      green: "bg-green-50", 
+      green: "bg-green-50",
       purple: "bg-purple-50",
       red: "bg-red-50",
     };
 
     return (
-      <div className={`${bgColorClasses[color]} rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer`}>
+      <div
+        className={`${bgColorClasses[color]} rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer`}
+      >
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
@@ -490,21 +601,31 @@ const DashboardPage = () => {
               </div>
             ) : (
               <>
-                <p className={`text-3xl font-bold group-hover:scale-105 transition-transform text-gray-900`}>
+                <p
+                  className={`text-3xl font-bold group-hover:scale-105 transition-transform text-gray-900`}
+                >
                   {value}
                 </p>
                 <p className="text-sm text-gray-500">{subtitle}</p>
                 {trend && (
-                  <p className={`text-xs font-medium mt-1 ${
-                    trend.startsWith('+') ? 'text-green-600' : trend.startsWith('-') ? 'text-red-600' : 'text-gray-600'
-                  }`}>
+                  <p
+                    className={`text-xs font-medium mt-1 ${
+                      trend.startsWith("+")
+                        ? "text-green-600"
+                        : trend.startsWith("-")
+                        ? "text-red-600"
+                        : "text-gray-600"
+                    }`}
+                  >
                     {trend} from last period
                   </p>
                 )}
               </>
             )}
           </div>
-          <div className={`p-3 bg-gradient-to-r ${colorClasses[color]} rounded-lg shadow-sm group-hover:scale-110 transition-transform`}>
+          <div
+            className={`p-3 bg-gradient-to-r ${colorClasses[color]} rounded-lg shadow-sm group-hover:scale-110 transition-transform`}
+          >
             {icon}
           </div>
         </div>
@@ -542,7 +663,14 @@ const DashboardPage = () => {
           alert("Failed to add review");
         }
       },
-      [businessId, localRating, localComment, token, fetchBusinesses, fetchMetrics]
+      [
+        businessId,
+        localRating,
+        localComment,
+        token,
+        fetchBusinesses,
+        fetchMetrics,
+      ]
     );
 
     return (
@@ -718,17 +846,31 @@ const DashboardPage = () => {
             </div>
           )}
 
-          {/* Enhanced Metrics Row with Circular Progress */}
+          {/* Enhanced Metrics Row with Wilson Score */}
           <div className="grid grid-cols-3 gap-6 mb-6">
             <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200 hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-center mb-2">
-                <CircularProgress 
-                  rating={summary ? summary.averageRating : business.reputationScore || 0} 
-                  size={48}
-                />
+                {wilsonBreakdowns[business.id] ? (
+                  <WilsonRating
+                    rating={wilsonBreakdowns[business.id].reputulRating}
+                    totalReviews={wilsonBreakdowns[business.id].totalReviews}
+                    size="md"
+                    showNumber={true}
+                    showConfidence={true}
+                  />
+                ) : (
+                  <CircularProgress
+                    rating={
+                      summary
+                        ? summary.averageRating
+                        : business.reputationScore || 0
+                    }
+                    size={48}
+                  />
+                )}
               </div>
               <p className="text-sm font-medium text-yellow-700">
-                Average Rating
+                Customer Rating
               </p>
             </div>
 
@@ -751,24 +893,21 @@ const DashboardPage = () => {
                   {summary ? summary.totalReviews : business.reviewCount || 0}
                 </span>
               </div>
-              <p className="text-sm font-medium text-primary-700">Total Reviews</p>
+              <p className="text-sm font-medium text-primary-700">
+                Total Reviews
+              </p>
             </div>
 
             <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 hover:shadow-md transition-all duration-200">
               <div className="flex items-center justify-center mb-2">
-                <svg
-                  className="w-6 h-6 text-purple-500 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                  />
-                </svg>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {wilsonBreakdowns[business.id]
+                      ? Math.round(wilsonBreakdowns[business.id].compositeScore)
+                      : business.reputationScore || 0}
+                  </div>
+                  <div className="text-xs text-purple-500">Score</div>
+                </div>
               </div>
               <p className="text-sm font-medium text-purple-700">
                 {business.badge || "Unranked"}
@@ -784,7 +923,10 @@ const DashboardPage = () => {
               </h4>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {reviews.slice(0, 3).map((review) => (
-                  <div key={review.id} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div
+                    key={review.id}
+                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
@@ -810,25 +952,37 @@ const DashboardPage = () => {
           {/* Add Manual Review */}
           <ReviewForm businessId={business.id} />
 
-          {/* Enhanced Action Buttons with Premium Styling */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Enhanced Action Buttons with Reputation Details */}
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => window.open(`/business/${business.id}`, "_blank")}
               className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 group"
             >
               <span className="flex items-center justify-center space-x-2">
-                <span>View Analytics</span>
+                <span>Analytics</span>
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform">
-                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M9 5l7 7-7 7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </span>
             </button>
 
-            {/* CONDITIONAL BUTTON with enhanced styling */}
+            <button
+              onClick={() => handleShowReputationBreakdown(business)}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95"
+            >
+              Reputation
+            </button>
+
             {business.reviewPlatformsConfigured ? (
               <button
                 onClick={() => {
-                  // Scroll to the manual review form in this business card
                   const reviewForm = document.querySelector(
                     `#review-form-${business.id}`
                   );
@@ -881,7 +1035,9 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">Add New Business</span>
+          <span className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">
+            Add New Business
+          </span>
         </button>
 
         {/* Customer Management Link */}
@@ -904,7 +1060,9 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">Manage Customers</span>
+          <span className="font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+            Manage Customers
+          </span>
         </Link>
 
         {/* Contacts CRM Link */}
@@ -927,7 +1085,9 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">Contact Database</span>
+          <span className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">
+            Contact Database
+          </span>
         </Link>
 
         <button
@@ -949,7 +1109,9 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">Request Reviews</span>
+          <span className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">
+            Request Reviews
+          </span>
         </button>
 
         <button
@@ -971,7 +1133,9 @@ const DashboardPage = () => {
               />
             </svg>
           </div>
-          <span className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">View Analytics</span>
+          <span className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">
+            View Analytics
+          </span>
         </button>
       </div>
     </div>
@@ -1044,7 +1208,9 @@ const DashboardPage = () => {
               >
                 <div
                   className={`p-2 rounded-lg ${
-                    activity.type === "review" ? "bg-green-100" : "bg-primary-100"
+                    activity.type === "review"
+                      ? "bg-green-100"
+                      : "bg-primary-100"
                   }`}
                 >
                   {activity.type === "review" ? (
@@ -1126,7 +1292,7 @@ const DashboardPage = () => {
   };
 
   // Enhanced Loading State
-  if (loading && (!businesses.length)) {
+  if (loading && !businesses.length) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-primary-50">
         <div className="text-center">
@@ -1188,8 +1354,18 @@ const DashboardPage = () => {
           <div className="col-span-12 md:col-span-6 lg:col-span-3">
             <MetricCard
               icon={
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
                 </svg>
               }
               title="Requests Sent"
@@ -1199,13 +1375,23 @@ const DashboardPage = () => {
               loading={metricsLoading}
             />
           </div>
-          
+
           {/* Completion Rate */}
           <div className="col-span-12 md:col-span-6 lg:col-span-3">
             <MetricCard
               icon={
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               }
               title="Completed"
@@ -1216,29 +1402,46 @@ const DashboardPage = () => {
               loading={metricsLoading}
             />
           </div>
-          
+
           {/* Average Rating (Period) */}
           <div className="col-span-12 md:col-span-6 lg:col-span-3">
             <MetricCard
               icon={
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
               }
               title="Avg Rating"
-              value={metrics?.averageRatingInPeriod?.toFixed(1) || staticMetrics.averageRating}
+              value={
+                metrics?.averageRatingInPeriod?.toFixed(1) ||
+                staticMetrics.averageRating
+              }
               subtitle={`Last ${metricsPeriod} days`}
               color="yellow"
               loading={metricsLoading}
             />
           </div>
-          
+
           {/* Total Contacts */}
           <div className="col-span-12 md:col-span-6 lg:col-span-3">
             <MetricCard
               icon={
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
                 </svg>
               }
               title="Total Contacts"
@@ -1253,29 +1456,41 @@ const DashboardPage = () => {
         {/* NEW: Time Series Chart */}
         {metrics?.byDay && metrics.byDay.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Over Time</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Activity Over Time
+            </h3>
             <div className="h-64 flex items-end space-x-2">
               {metrics.byDay.map((day, index) => {
-                const maxValue = Math.max(...metrics.byDay.map(d => Math.max(d.requestsSent, d.reviewsReceived)));
-                const requestHeight = maxValue > 0 ? (day.requestsSent / maxValue) * 200 : 0;
-                const reviewHeight = maxValue > 0 ? (day.reviewsReceived / maxValue) * 200 : 0;
-                
+                const maxValue = Math.max(
+                  ...metrics.byDay.map((d) =>
+                    Math.max(d.requestsSent, d.reviewsReceived)
+                  )
+                );
+                const requestHeight =
+                  maxValue > 0 ? (day.requestsSent / maxValue) * 200 : 0;
+                const reviewHeight =
+                  maxValue > 0 ? (day.reviewsReceived / maxValue) * 200 : 0;
+
                 return (
-                  <div key={day.date} className="flex-1 flex flex-col items-center">
+                  <div
+                    key={day.date}
+                    className="flex-1 flex flex-col items-center"
+                  >
                     <div className="relative w-full max-w-16 mb-2">
-                      <div 
+                      <div
                         className="bg-blue-500 rounded-t mx-1"
                         style={{ height: `${requestHeight}px` }}
                         title={`${day.requestsSent} requests sent`}
                       />
-                      <div 
+                      <div
                         className="bg-green-500 rounded-t mx-1"
                         style={{ height: `${reviewHeight}px` }}
                         title={`${day.reviewsReceived} reviews received`}
                       />
                     </div>
                     <div className="text-xs text-gray-500 transform -rotate-45 origin-center">
-                      {new Date(day.date).getMonth() + 1}/{new Date(day.date).getDate()}
+                      {new Date(day.date).getMonth() + 1}/
+                      {new Date(day.date).getDate()}
                     </div>
                   </div>
                 );
@@ -1427,9 +1642,12 @@ const DashboardPage = () => {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Ready to boost your reputation?</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  Ready to boost your reputation?
+                </h3>
                 <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
-                  Add your first business and start collecting 5-star reviews that drive more customers to your door.
+                  Add your first business and start collecting 5-star reviews
+                  that drive more customers to your door.
                 </p>
                 <button
                   onClick={() => setShowAddBusiness(true)}
@@ -1485,7 +1703,14 @@ const DashboardPage = () => {
               <button className="text-sm font-semibold text-green-700 hover:text-green-800 transition-colors flex items-center space-x-1 group">
                 <span>Learn More</span>
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform">
-                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M9 5l7 7-7 7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -1517,7 +1742,7 @@ const DashboardPage = () => {
                     Business Name
                   </label>
                 </div>
-                
+
                 <input
                   type="text"
                   name="industry"
@@ -1860,7 +2085,8 @@ const DashboardPage = () => {
                       Avg Rating (Period)
                     </p>
                     <p className="text-2xl font-bold text-yellow-900">
-                      {metrics?.averageRatingInPeriod?.toFixed(1) || staticMetrics.averageRating}
+                      {metrics?.averageRatingInPeriod?.toFixed(1) ||
+                        staticMetrics.averageRating}
                     </p>
                   </div>
                 </div>
@@ -1927,6 +2153,62 @@ const DashboardPage = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Reputation Breakdown Modal */}
+      {showReputationModal && selectedBusinessForReputation && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {selectedBusinessForReputation.name}
+                </h3>
+                <p className="text-gray-600">Wilson Score Analysis</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() =>
+                    handleRecalculateReputation(
+                      selectedBusinessForReputation.id
+                    )
+                  }
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                >
+                  Recalculate
+                </button>
+                <button
+                  onClick={() => {
+                    setShowReputationModal(false);
+                    setSelectedBusinessForReputation(null);
+                    setReputationBreakdownData(null);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <ReputationBreakdown
+                businessId={selectedBusinessForReputation.id}
+                breakdown={reputationBreakdownData}
+              />
             </div>
           </div>
         </div>
