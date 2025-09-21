@@ -37,8 +37,9 @@ import OptInPolicy from "./pages/OptInPolicy";
 import PricingPage from "./pages/PricingPage";
 import AccountBillingPage from "./pages/AccountBillingPage";
 import CheckoutPages from "./pages/CheckoutPages";
-import SmsSignupPage from './pages/SmsSignupPage';
-import TwilioProofPage from './pages/TwilioProofPage';
+import SmsSignupPage from "./pages/SmsSignupPage";
+import TwilioProofPage from "./pages/TwilioProofPage";
+import AutomationPage from "./pages/AutomationPage";
 
 function App() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -132,7 +133,10 @@ function App() {
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
                 <Route path="/sms-signup" element={<SmsSignupPage />} />
-                <Route path="/sms-signup/:businessId" element={<SmsSignupPage />} />
+                <Route
+                  path="/sms-signup/:businessId"
+                  element={<SmsSignupPage />}
+                />
                 <Route path="/twilio-proof" element={<TwilioProofPage />} />
 
                 {/* NEW: Billing routes */}
@@ -233,6 +237,14 @@ function App() {
                   element={
                     <PrivateRoute>
                       <ReviewPlatformSetupPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/automation"
+                  element={
+                    <PrivateRoute>
+                      <AutomationPage />
                     </PrivateRoute>
                   }
                 />
