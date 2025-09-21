@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import CustomerAutomationStatus from "../components/automation/CustomerAutomationStatus";
 import CustomerTimelineCard from "../components/automation/CustomerTimelineCard";
 import { buildUrl } from "../config/api";
+import TriggerWorkflowModal from "../components/automation/TriggerWorkflowModal";
+import QuickActionButtons from "../components/automation/QuickActionButtons";
 
 const CustomerManagementPage = () => {
   const { token } = useAuth();
@@ -23,6 +25,10 @@ const CustomerManagementPage = () => {
   const [sendingReview, setSendingReview] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [showTimeline, setShowTimeline] = useState(null);
+  const [selectedCustomers, setSelectedCustomers] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showTriggerModal, setShowTriggerModal] = useState(false);
+  const [workflows, setWorkflows] = useState([]);
 
   // SMS delivery state
   const [deliveryMethod, setDeliveryMethod] = useState("EMAIL");
@@ -64,21 +70,26 @@ const CustomerManagementPage = () => {
   // Fetch businesses, customers, and templates
   const fetchData = useCallback(async () => {
     try {
-      const [businessRes, customerRes, templateRes] = await Promise.all([
-        axios.get(buildUrl("/api/dashboard"), {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(buildUrl("/api/customers"), {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(buildUrl("/api/email-templates"), {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      const [businessRes, customerRes, templateRes, workflowRes] =
+        await Promise.all([
+          axios.get(buildUrl("/api/dashboard"), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(buildUrl("/api/customers"), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(buildUrl("/api/email-templates"), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(buildUrl("/api/automation/workflows"), {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
       setBusinesses(businessRes.data);
       setCustomers(customerRes.data);
       setTemplates(templateRes.data);
+      setWorkflows(workflowRes.data);
     } catch (err) {
       console.error("Error fetching data:", err);
       alert("Failed to load data");
@@ -300,6 +311,28 @@ const CustomerManagementPage = () => {
     [deliveryMethod, phoneValidation.valid, selectedTemplate, token]
   );
 
+  const handleSelectCustomer = (customer, isSelected) => {
+    setSelectedCustomers((prev) => {
+      if (isSelected) {
+        return [...prev, customer];
+      } else {
+        return prev.filter((c) => c.id !== customer.id);
+      }
+    });
+  };
+
+  const handleSelectAll = (isSelected) => {
+    if (isSelected) {
+      setSelectedCustomers(filteredCustomers);
+    } else {
+      setSelectedCustomers([]);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedCustomers([]);
+  };
+
   // NEW: Handle SMS consent update
   const handleUpdateSmsConsent = useCallback(
     async (customer, optIn) => {
@@ -471,27 +504,43 @@ const CustomerManagementPage = () => {
 
   const CustomerCard = ({ customer }) => {
     const smsStatus = getSmsConsentStatus(customer);
+    const isSelected = selectedCustomers.some((c) => c.id === customer.id);
 
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {customer.name}
-              </h3>
-              <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                  customer.status
-                )}`}
-              >
-                {customer.status.toLowerCase()}
-              </span>
+      <div
+        className={`bg-white rounded-xl border p-6 hover:shadow-lg transition-all duration-200 ${
+          isSelected
+            ? "border-blue-300 ring-2 ring-blue-100"
+            : "border-gray-200"
+        }`}
+      >
+        {/* Selection Checkbox */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => handleSelectCustomer(customer, e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {customer.name}
+                </h3>
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                    customer.status
+                  )}`}
+                >
+                  {customer.status.toLowerCase()}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-1">
+                {customer.business?.name}
+              </p>
+              <p className="text-sm text-gray-500">{customer.serviceType}</p>
             </div>
-            <p className="text-sm text-gray-600 mb-1">
-              {customer.business?.name}
-            </p>
-            <p className="text-sm text-gray-500">{customer.serviceType}</p>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -540,6 +589,7 @@ const CustomerManagementPage = () => {
           </div>
         </div>
 
+        {/* Customer Info */}
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-gray-600">
             <svg
@@ -607,6 +657,7 @@ const CustomerManagementPage = () => {
           />
         </div>
 
+        {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
           {customer.tags &&
             customer.tags.map((tag) => (
@@ -621,13 +672,17 @@ const CustomerManagementPage = () => {
             ))}
         </div>
 
-        <div className="flex space-x-2">
-          <button
-            onClick={() => openReviewRequestModal(customer)}
-            className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            Send Review Request
-          </button>
+        {/* Quick Actions */}
+        <div className="mb-4">
+          <QuickActionButtons
+            customer={customer}
+            userToken={token}
+            onActionComplete={fetchData}
+          />
+        </div>
+
+        {/* Standard Actions */}
+        <div className="flex space-x-2 pt-4 border-t border-gray-200">
           <button
             onClick={() => openEditModal(customer)}
             className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
@@ -828,6 +883,44 @@ const CustomerManagementPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Bulk Actions Bar */}
+        {selectedCustomers.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <span className="text-blue-900 font-medium">
+                  {selectedCustomers.length} customer
+                  {selectedCustomers.length > 1 ? "s" : ""} selected
+                </span>
+                <button
+                  onClick={clearSelection}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  Clear selection
+                </button>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setShowTriggerModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Trigger Automation
+                </button>
+                <button
+                  onClick={() => {
+                    const customerIds = selectedCustomers.map((c) => c.id);
+                    // Handle bulk review request sending
+                    console.log("Bulk review request for:", customerIds);
+                  }}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                >
+                  Send Review Requests
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -1929,6 +2022,19 @@ const CustomerManagementPage = () => {
           </div>
         </div>
       )}
+      
+      {/* Trigger Workflow Modal */}
+      <TriggerWorkflowModal
+        isOpen={showTriggerModal}
+        onClose={() => setShowTriggerModal(false)}
+        selectedCustomers={selectedCustomers}
+        availableWorkflows={workflows}
+        userToken={token}
+        onSuccess={() => {
+          fetchData();
+          clearSelection();
+        }}
+      />
     </div>
   );
 };
