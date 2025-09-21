@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { buildUrl } from "../config/api";
 import AutomationMetricsCards from "../components/automation/AutomationMetricsCards";
 import CustomerJourneyOverview from "../components/automation/CustomerJourneyOverview";
-import WorkflowGrid from '../components/automation/WorkflowGrid';
+import WorkflowGrid from "../components/automation/WorkflowGrid";
+import ExecutionsFeed from "../components/automation/ExecutionsFeed";
 import axios from "axios";
 
 const AutomationPage = () => {
@@ -17,7 +19,6 @@ const AutomationPage = () => {
     avgResponseTime: "0 hours",
   });
   const [workflows, setWorkflows] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
     fetchAutomationData();
@@ -29,7 +30,7 @@ const AutomationPage = () => {
 
       // Fetch workflows
       const workflowsResponse = await axios.get(
-        "http://localhost:8080/api/automation/workflows",
+        buildUrl("/api/automation/workflows"),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -38,7 +39,7 @@ const AutomationPage = () => {
 
       // Fetch execution metrics
       const metricsResponse = await axios.get(
-        "http://localhost:8080/api/automation/monitoring/metrics?hoursBack=168",
+        buildUrl("/api/automation/monitoring/metrics?hoursBack=168"),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -52,15 +53,6 @@ const AutomationPage = () => {
         reviewsGenerated: Math.round((apiMetrics.totalExecutions || 0) * 0.35), // Estimated conversion
         avgResponseTime: "2.3 hours", // Placeholder
       });
-
-      // Fetch recent activity
-      const activityResponse = await axios.get(
-        "http://localhost:8080/api/automation/monitoring/executions?hoursBack=24&limit=10",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setRecentActivity(activityResponse.data.executions || []);
     } catch (error) {
       console.error("Error fetching automation data:", error);
       showToast("Failed to load automation data", "error");
@@ -153,70 +145,9 @@ const AutomationPage = () => {
             <CustomerJourneyOverview workflows={workflows} />
           </div>
 
-          {/* Recent Activity */}
+          {/* Recent Executions Feed */}
           <div>
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Recent Activity
-            </h2>
-            <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-              {recentActivity.length > 0 ? (
-                <div className="space-y-3">
-                  {recentActivity.slice(0, 8).map((activity, index) => (
-                    <div
-                      key={activity.id || index}
-                      className="flex items-center space-x-3 p-3 bg-white/5 rounded-xl"
-                    >
-                      <div className="flex-shrink-0">
-                        {activity.status === "COMPLETED" && (
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                        )}
-                        {activity.status === "PENDING" && (
-                          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                        )}
-                        {activity.status === "FAILED" && (
-                          <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">
-                          {activity.workflowName || "Workflow"}
-                        </p>
-                        <p className="text-blue-200 text-xs truncate">
-                          {activity.customerName || "Unknown Customer"}
-                        </p>
-                      </div>
-                      <div className="text-xs text-blue-300">
-                        {activity.createdAt
-                          ? new Date(activity.createdAt).toLocaleDateString()
-                          : "Recent"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-blue-300 mb-2">
-                    <svg
-                      className="w-8 h-8 mx-auto"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-blue-200 text-sm">No recent activity</p>
-                  <p className="text-blue-300 text-xs mt-1">
-                    Automation events will appear here
-                  </p>
-                </div>
-              )}
-            </div>
+            <ExecutionsFeed userToken={token} />
           </div>
         </div>
       </div>
