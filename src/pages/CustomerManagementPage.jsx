@@ -2,6 +2,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import CustomerAutomationStatus from "../components/automation/CustomerAutomationStatus";
+import CustomerTimelineCard from "../components/automation/CustomerTimelineCard";
+import { buildUrl } from "../config/api";
 
 const CustomerManagementPage = () => {
   const { token } = useAuth();
@@ -19,10 +22,14 @@ const CustomerManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [sendingReview, setSendingReview] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("");
-  
+  const [showTimeline, setShowTimeline] = useState(null);
+
   // SMS delivery state
   const [deliveryMethod, setDeliveryMethod] = useState("EMAIL");
-  const [phoneValidation, setPhoneValidation] = useState({ valid: true, message: "" });
+  const [phoneValidation, setPhoneValidation] = useState({
+    valid: true,
+    message: "",
+  });
 
   // SMS consent state
   const [showSmsConsentModal, setShowSmsConsentModal] = useState(null);
@@ -58,13 +65,13 @@ const CustomerManagementPage = () => {
   const fetchData = useCallback(async () => {
     try {
       const [businessRes, customerRes, templateRes] = await Promise.all([
-        axios.get("http://localhost:8080/api/dashboard", {
+        axios.get(buildUrl("/api/dashboard"), {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get("http://localhost:8080/api/customers", {
+        axios.get(buildUrl("/api/customers"), {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get("http://localhost:8080/api/email-templates", {
+        axios.get(buildUrl("/api/email-templates"), {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -85,30 +92,33 @@ const CustomerManagementPage = () => {
   }, [fetchData]);
 
   // Validate phone number when delivery method changes
-  const validatePhoneNumber = useCallback(async (phone) => {
-    if (!phone || deliveryMethod !== "SMS") {
-      setPhoneValidation({ valid: true, message: "" });
-      return;
-    }
+  const validatePhoneNumber = useCallback(
+    async (phone) => {
+      if (!phone || deliveryMethod !== "SMS") {
+        setPhoneValidation({ valid: true, message: "" });
+        return;
+      }
 
-    try {
-      const response = await axios.post(
-        "http://localhost:8080/api/review-requests/validate-phone",
-        { phone },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      try {
+        const response = await axios.post(
+          buildUrl("/api/review-requests/validate-phone"),
+          { phone },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-      setPhoneValidation({
-        valid: response.data.valid,
-        message: response.data.message
-      });
-    } catch (err) {
-      setPhoneValidation({
-        valid: false,
-        message: "Error validating phone number"
-      });
-    }
-  }, [deliveryMethod, token]);
+        setPhoneValidation({
+          valid: response.data.valid,
+          message: response.data.message,
+        });
+      } catch (err) {
+        setPhoneValidation({
+          valid: false,
+          message: "Error validating phone number",
+        });
+      }
+    },
+    [deliveryMethod, token]
+  );
 
   const handleAddCustomer = useCallback(async () => {
     if (
@@ -129,7 +139,7 @@ const CustomerManagementPage = () => {
         tags: newCustomer.tags.length > 0 ? newCustomer.tags : ["NEW_CUSTOMER"],
       };
 
-      await axios.post("http://localhost:8080/api/customers", customerData, {
+      await axios.post(buildUrl("/api/customers"), customerData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -169,11 +179,12 @@ const CustomerManagementPage = () => {
       const customerData = {
         ...editCustomer,
         businessId: parseInt(editCustomer.businessId),
-        tags: editCustomer.tags.length > 0 ? editCustomer.tags : ["NEW_CUSTOMER"],
+        tags:
+          editCustomer.tags.length > 0 ? editCustomer.tags : ["NEW_CUSTOMER"],
       };
 
       await axios.put(
-        `http://localhost:8080/api/customers/${editCustomer.id}`,
+        buildUrl(`/api/customers/${editCustomer.id}`),
         customerData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -198,12 +209,9 @@ const CustomerManagementPage = () => {
       }
 
       try {
-        await axios.delete(
-          `http://localhost:8080/api/customers/${customerId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        await axios.delete(buildUrl(`/api/customers/${customerId}`), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         alert("Customer deleted successfully!");
         fetchData();
       } catch (err) {
@@ -229,11 +237,15 @@ const CustomerManagementPage = () => {
         }
         // NEW: Check SMS consent
         if (!customer.smsOptIn) {
-          alert("Customer has not consented to receive SMS messages. Please update their consent first.");
+          alert(
+            "Customer has not consented to receive SMS messages. Please update their consent first."
+          );
           return;
         }
         if (customer.smsOptOut) {
-          alert("Customer has opted out of SMS messages and cannot receive SMS until they opt back in.");
+          alert(
+            "Customer has opted out of SMS messages and cannot receive SMS until they opt back in."
+          );
           return;
         }
       }
@@ -243,7 +255,7 @@ const CustomerManagementPage = () => {
       try {
         const requestData = {
           customerId: customer.id,
-          deliveryMethod: deliveryMethod
+          deliveryMethod: deliveryMethod,
         };
 
         // Add template ID for email delivery (SMS uses built-in templates)
@@ -252,7 +264,7 @@ const CustomerManagementPage = () => {
         }
 
         const response = await axios.post(
-          "http://localhost:8080/api/review-requests",
+          buildUrl("/api/review-requests"),
           requestData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -261,9 +273,12 @@ const CustomerManagementPage = () => {
 
         if (response.data.status === "SENT") {
           const method = response.data.deliveryMethod || deliveryMethod;
-          const recipient = response.data.recipient || 
-                           (method === "SMS" ? customer.phone : customer.email);
-          alert(`Review request sent successfully via ${method} to ${customer.name} (${recipient})!`);
+          const recipient =
+            response.data.recipient ||
+            (method === "SMS" ? customer.phone : customer.email);
+          alert(
+            `Review request sent successfully via ${method} to ${customer.name} (${recipient})!`
+          );
         } else {
           alert(
             `Failed to send review request: ${
@@ -286,42 +301,45 @@ const CustomerManagementPage = () => {
   );
 
   // NEW: Handle SMS consent update
-  const handleUpdateSmsConsent = useCallback(async (customer, optIn) => {
-    try {
-      const updateData = {
-        ...customer,
-        smsOptIn: optIn,
-        smsOptOut: false // Clear opt-out when opting in
-      };
+  const handleUpdateSmsConsent = useCallback(
+    async (customer, optIn) => {
+      try {
+        const updateData = {
+          ...customer,
+          smsOptIn: optIn,
+          smsOptOut: false, // Clear opt-out when opting in
+        };
 
-      await axios.put(
-        `http://localhost:8080/api/customers/${customer.id}`,
-        updateData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+        await axios.put(buildUrl(`/api/customers/${customer.id}`), updateData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      alert(`SMS consent ${optIn ? 'enabled' : 'disabled'} for ${customer.name}`);
-      setShowSmsConsentModal(null);
-      fetchData(); // Refresh customer data
-    } catch (err) {
-      console.error("Error updating SMS consent:", err);
-      alert("Failed to update SMS consent");
-    }
-  }, [token, fetchData]);
+        alert(
+          `SMS consent ${optIn ? "enabled" : "disabled"} for ${customer.name}`
+        );
+        setShowSmsConsentModal(null);
+        fetchData(); // Refresh customer data
+      } catch (err) {
+        console.error("Error updating SMS consent:", err);
+        alert("Failed to update SMS consent");
+      }
+    },
+    [token, fetchData]
+  );
 
   const handleCustomerChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    setNewCustomer((prev) => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setNewCustomer((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
     }));
   }, []);
 
   const handleEditCustomerChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    setEditCustomer((prev) => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setEditCustomer((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
     }));
   }, []);
 
@@ -369,25 +387,44 @@ const CustomerManagementPage = () => {
   };
 
   // Handle delivery method change and validate phone
-  const handleDeliveryMethodChange = useCallback((method) => {
-    setDeliveryMethod(method);
-    if (method === "SMS" && showReviewRequestModal?.phone) {
-      validatePhoneNumber(showReviewRequestModal.phone);
-    }
-  }, [showReviewRequestModal?.phone, validatePhoneNumber]);
+  const handleDeliveryMethodChange = useCallback(
+    (method) => {
+      setDeliveryMethod(method);
+      if (method === "SMS" && showReviewRequestModal?.phone) {
+        validatePhoneNumber(showReviewRequestModal.phone);
+      }
+    },
+    [showReviewRequestModal?.phone, validatePhoneNumber]
+  );
 
   // NEW: Get SMS consent status for display
   const getSmsConsentStatus = (customer) => {
     if (!customer.phone) {
-      return { status: 'no-phone', label: 'No Phone', color: 'bg-gray-100 text-gray-800' };
+      return {
+        status: "no-phone",
+        label: "No Phone",
+        color: "bg-gray-100 text-gray-800",
+      };
     }
     if (customer.smsOptOut) {
-      return { status: 'opted-out', label: 'SMS Opted Out', color: 'bg-red-100 text-red-800' };
+      return {
+        status: "opted-out",
+        label: "SMS Opted Out",
+        color: "bg-red-100 text-red-800",
+      };
     }
     if (customer.smsOptIn) {
-      return { status: 'opted-in', label: 'SMS Enabled', color: 'bg-green-100 text-green-800' };
+      return {
+        status: "opted-in",
+        label: "SMS Enabled",
+        color: "bg-green-100 text-green-800",
+      };
     }
-    return { status: 'consent-needed', label: 'SMS Consent Needed', color: 'bg-yellow-100 text-yellow-800' };
+    return {
+      status: "consent-needed",
+      label: "SMS Consent Needed",
+      color: "bg-yellow-100 text-yellow-800",
+    };
   };
 
   const filteredCustomers = customers.filter((customer) => {
@@ -434,7 +471,7 @@ const CustomerManagementPage = () => {
 
   const CustomerCard = ({ customer }) => {
     const smsStatus = getSmsConsentStatus(customer);
-    
+
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200">
         <div className="flex justify-between items-start mb-4">
@@ -456,30 +493,51 @@ const CustomerManagementPage = () => {
             </p>
             <p className="text-sm text-gray-500">{customer.serviceType}</p>
           </div>
-          <button
-            onClick={() => setShowCustomerDetails(customer)}
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowTimeline(customer)}
+              className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+              title="View automation timeline"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => setShowCustomerDetails(customer)}
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2 mb-4">
@@ -516,8 +574,9 @@ const CustomerManagementPage = () => {
               </svg>
               {customer.phone || "No phone"}
             </div>
-            {/* NEW: SMS consent status */}
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${smsStatus.color}`}>
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${smsStatus.color}`}
+            >
               {smsStatus.label}
             </span>
           </div>
@@ -537,6 +596,15 @@ const CustomerManagementPage = () => {
             </svg>
             Service Date: {customer.serviceDate}
           </div>
+        </div>
+
+        {/* Automation Status */}
+        <div className="mb-4">
+          <CustomerAutomationStatus
+            customer={customer}
+            userToken={token}
+            onStatusUpdate={fetchData}
+          />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -566,15 +634,24 @@ const CustomerManagementPage = () => {
           >
             Edit Customer
           </button>
-          {/* NEW: SMS consent quick action */}
           {customer.phone && (
             <button
               onClick={() => setShowSmsConsentModal(customer)}
               className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors"
               title="Manage SMS Consent"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10m0 0v10l-5-5-5 5V8z" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 8h10m0 0v10l-5-5-5 5V8z"
+                />
               </svg>
             </button>
           )}
@@ -607,7 +684,8 @@ const CustomerManagementPage = () => {
                 Customer Management
               </h1>
               <p className="text-gray-600 mt-1">
-                Manage customers and send targeted review requests via email or SMS
+                Manage customers and send targeted review requests via email or
+                SMS
               </p>
             </div>
             <div className="flex gap-3">
@@ -829,7 +907,11 @@ const CustomerManagementPage = () => {
                   SMS Eligible
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {customers.filter((c) => c.phone && c.smsOptIn && !c.smsOptOut).length}
+                  {
+                    customers.filter(
+                      (c) => c.phone && c.smsOptIn && !c.smsOptOut
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -927,7 +1009,8 @@ const CustomerManagementPage = () => {
                   {showReviewRequestModal.email})
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>Phone:</strong> {showReviewRequestModal.phone || "Not provided"}
+                  <strong>Phone:</strong>{" "}
+                  {showReviewRequestModal.phone || "Not provided"}
                 </p>
                 <p className="text-sm text-gray-600">
                   <strong>Service:</strong> {showReviewRequestModal.serviceType}{" "}
@@ -938,7 +1021,11 @@ const CustomerManagementPage = () => {
                   <span className="text-sm text-gray-600">
                     <strong>SMS Status:</strong>{" "}
                   </span>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSmsConsentStatus(showReviewRequestModal).color}`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      getSmsConsentStatus(showReviewRequestModal).color
+                    }`}
+                  >
                     {getSmsConsentStatus(showReviewRequestModal).label}
                   </span>
                 </div>
@@ -951,60 +1038,98 @@ const CustomerManagementPage = () => {
                 </label>
                 <div className="flex space-x-4">
                   <label className="flex items-center">
-                    <input 
-                      type="radio" 
-                      name="deliveryMethod" 
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
                       value="EMAIL"
-                      checked={deliveryMethod === 'EMAIL'}
-                      onChange={(e) => handleDeliveryMethodChange(e.target.value)}
+                      checked={deliveryMethod === "EMAIL"}
+                      onChange={(e) =>
+                        handleDeliveryMethodChange(e.target.value)
+                      }
                       className="mr-2"
                     />
                     <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
                       </svg>
                       Email
                     </span>
                   </label>
                   <label className="flex items-center">
-                    <input 
-                      type="radio" 
-                      name="deliveryMethod" 
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
                       value="SMS"
-                      checked={deliveryMethod === 'SMS'}
-                      onChange={(e) => handleDeliveryMethodChange(e.target.value)}
-                      disabled={!showReviewRequestModal.phone || !showReviewRequestModal.smsOptIn || showReviewRequestModal.smsOptOut}
+                      checked={deliveryMethod === "SMS"}
+                      onChange={(e) =>
+                        handleDeliveryMethodChange(e.target.value)
+                      }
+                      disabled={
+                        !showReviewRequestModal.phone ||
+                        !showReviewRequestModal.smsOptIn ||
+                        showReviewRequestModal.smsOptOut
+                      }
                       className="mr-2"
                     />
                     <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10m0 0v10l-5-5-5 5V8z" />
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 8h10m0 0v10l-5-5-5 5V8z"
+                        />
                       </svg>
                       SMS
                     </span>
                   </label>
                 </div>
-                
+
                 {/* SMS eligibility feedback */}
-                {deliveryMethod === 'SMS' && (
+                {deliveryMethod === "SMS" && (
                   <div className="mt-2">
                     {!showReviewRequestModal.phone ? (
-                      <p className="text-sm text-red-600">Customer phone number required for SMS delivery</p>
+                      <p className="text-sm text-red-600">
+                        Customer phone number required for SMS delivery
+                      </p>
                     ) : !showReviewRequestModal.smsOptIn ? (
-                      <p className="text-sm text-red-600">Customer has not consented to receive SMS messages</p>
+                      <p className="text-sm text-red-600">
+                        Customer has not consented to receive SMS messages
+                      </p>
                     ) : showReviewRequestModal.smsOptOut ? (
-                      <p className="text-sm text-red-600">Customer has opted out of SMS messages</p>
+                      <p className="text-sm text-red-600">
+                        Customer has opted out of SMS messages
+                      </p>
                     ) : !phoneValidation.valid ? (
-                      <p className="text-sm text-red-600">{phoneValidation.message}</p>
+                      <p className="text-sm text-red-600">
+                        {phoneValidation.message}
+                      </p>
                     ) : (
-                      <p className="text-sm text-green-600">Valid for SMS delivery</p>
+                      <p className="text-sm text-green-600">
+                        Valid for SMS delivery
+                      </p>
                     )}
                   </div>
                 )}
               </div>
 
               {/* Email Template Selection (only show for email delivery) */}
-              {deliveryMethod === 'EMAIL' && (
+              {deliveryMethod === "EMAIL" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Select Email Template
@@ -1041,18 +1166,21 @@ const CustomerManagementPage = () => {
               )}
 
               {/* SMS Preview (only show for SMS delivery) */}
-              {deliveryMethod === 'SMS' && (
+              {deliveryMethod === "SMS" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     SMS Message Preview
                   </label>
                   <div className="bg-gray-50 p-3 rounded-lg border">
                     <p className="text-sm text-gray-700">
-                      Hi {showReviewRequestModal.name.split(' ')[0]}! Thanks for choosing your business for your {showReviewRequestModal.serviceType}. 
-                      Share your experience: [Review Link] Reply STOP to opt out.
+                      Hi {showReviewRequestModal.name.split(" ")[0]}! Thanks for
+                      choosing your business for your{" "}
+                      {showReviewRequestModal.serviceType}. Share your
+                      experience: [Review Link] Reply STOP to opt out.
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
-                      SMS messages are automatically optimized for mobile delivery
+                      SMS messages are automatically optimized for mobile
+                      delivery
                     </p>
                   </div>
                 </div>
@@ -1069,13 +1197,19 @@ const CustomerManagementPage = () => {
               <button
                 onClick={() => handleSendReviewRequest(showReviewRequestModal)}
                 disabled={
-                  sendingReview || 
-                  (deliveryMethod === 'EMAIL' && !selectedTemplate) ||
-                  (deliveryMethod === 'SMS' && (!showReviewRequestModal.phone || !phoneValidation.valid || !showReviewRequestModal.smsOptIn || showReviewRequestModal.smsOptOut))
+                  sendingReview ||
+                  (deliveryMethod === "EMAIL" && !selectedTemplate) ||
+                  (deliveryMethod === "SMS" &&
+                    (!showReviewRequestModal.phone ||
+                      !phoneValidation.valid ||
+                      !showReviewRequestModal.smsOptIn ||
+                      showReviewRequestModal.smsOptOut))
                 }
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
               >
-                {sendingReview ? "Sending..." : `Send ${deliveryMethod} Review Request`}
+                {sendingReview
+                  ? "Sending..."
+                  : `Send ${deliveryMethod} Review Request`}
               </button>
             </div>
           </div>
@@ -1089,7 +1223,7 @@ const CustomerManagementPage = () => {
             <h3 className="text-xl font-bold text-gray-900 mb-4">
               SMS Consent Management
             </h3>
-            
+
             <div className="mb-6">
               <div className="bg-gray-50 p-4 rounded-lg mb-4">
                 <p className="text-sm text-gray-600">
@@ -1102,7 +1236,11 @@ const CustomerManagementPage = () => {
                   <span className="text-sm text-gray-600">
                     <strong>Current Status:</strong>{" "}
                   </span>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSmsConsentStatus(showSmsConsentModal).color}`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      getSmsConsentStatus(showSmsConsentModal).color
+                    }`}
+                  >
                     {getSmsConsentStatus(showSmsConsentModal).label}
                   </span>
                 </div>
@@ -1113,31 +1251,40 @@ const CustomerManagementPage = () => {
                   Update SMS consent for review request notifications:
                 </p>
 
-                {!showSmsConsentModal.smsOptIn && !showSmsConsentModal.smsOptOut && (
-                  <button
-                    onClick={() => handleUpdateSmsConsent(showSmsConsentModal, true)}
-                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    Enable SMS Consent
-                  </button>
-                )}
+                {!showSmsConsentModal.smsOptIn &&
+                  !showSmsConsentModal.smsOptOut && (
+                    <button
+                      onClick={() =>
+                        handleUpdateSmsConsent(showSmsConsentModal, true)
+                      }
+                      className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Enable SMS Consent
+                    </button>
+                  )}
 
-                {showSmsConsentModal.smsOptIn && !showSmsConsentModal.smsOptOut && (
-                  <button
-                    onClick={() => handleUpdateSmsConsent(showSmsConsentModal, false)}
-                    className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    Disable SMS Consent
-                  </button>
-                )}
+                {showSmsConsentModal.smsOptIn &&
+                  !showSmsConsentModal.smsOptOut && (
+                    <button
+                      onClick={() =>
+                        handleUpdateSmsConsent(showSmsConsentModal, false)
+                      }
+                      className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Disable SMS Consent
+                    </button>
+                  )}
 
                 {showSmsConsentModal.smsOptOut && (
                   <div>
                     <p className="text-sm text-red-600 mb-2">
-                      Customer has opted out of SMS. They can only opt back in by replying START to an SMS or through this interface.
+                      Customer has opted out of SMS. They can only opt back in
+                      by replying START to an SMS or through this interface.
                     </p>
                     <button
-                      onClick={() => handleUpdateSmsConsent(showSmsConsentModal, true)}
+                      onClick={() =>
+                        handleUpdateSmsConsent(showSmsConsentModal, true)
+                      }
                       className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
                     >
                       Re-enable SMS Consent
@@ -1146,7 +1293,8 @@ const CustomerManagementPage = () => {
                 )}
 
                 <p className="text-xs text-gray-500">
-                  SMS consent is required for SMS review requests. Customers can always opt out by replying STOP to any SMS.
+                  SMS consent is required for SMS review requests. Customers can
+                  always opt out by replying STOP to any SMS.
                 </p>
               </div>
             </div>
@@ -1222,7 +1370,10 @@ const CustomerManagementPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone <span className="text-sm text-gray-500">(for SMS reviews)</span>
+                    Phone{" "}
+                    <span className="text-sm text-gray-500">
+                      (for SMS reviews)
+                    </span>
                   </label>
                   <input
                     type="tel"
@@ -1292,11 +1443,14 @@ const CustomerManagementPage = () => {
                     />
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Customer consents to receive SMS messages for review requests
+                        Customer consents to receive SMS messages for review
+                        requests
                       </label>
                       <p className="text-xs text-gray-500 mt-1">
-                        Required for SMS delivery. Customer can opt out anytime by replying STOP to any SMS.
-                        {!newCustomer.phone && " (Phone number required to enable)"}
+                        Required for SMS delivery. Customer can opt out anytime
+                        by replying STOP to any SMS.
+                        {!newCustomer.phone &&
+                          " (Phone number required to enable)"}
                       </p>
                     </div>
                   </div>
@@ -1417,7 +1571,10 @@ const CustomerManagementPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone <span className="text-sm text-gray-500">(for SMS reviews)</span>
+                    Phone{" "}
+                    <span className="text-sm text-gray-500">
+                      (for SMS reviews)
+                    </span>
                   </label>
                   <input
                     type="tel"
@@ -1487,11 +1644,14 @@ const CustomerManagementPage = () => {
                     />
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Customer consents to receive SMS messages for review requests
+                        Customer consents to receive SMS messages for review
+                        requests
                       </label>
                       <p className="text-xs text-gray-500 mt-1">
-                        Required for SMS delivery. Customer can opt out anytime by replying STOP to any SMS.
-                        {!editCustomer.phone && " (Phone number required to enable)"}
+                        Required for SMS delivery. Customer can opt out anytime
+                        by replying STOP to any SMS.
+                        {!editCustomer.phone &&
+                          " (Phone number required to enable)"}
                       </p>
                     </div>
                   </div>
@@ -1643,7 +1803,11 @@ const CustomerManagementPage = () => {
                   SMS Consent Status
                 </label>
                 <div className="mt-1">
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getSmsConsentStatus(showCustomerDetails).color}`}>
+                  <span
+                    className={`px-3 py-1 text-sm font-medium rounded-full ${
+                      getSmsConsentStatus(showCustomerDetails).color
+                    }`}
+                  >
                     {getSmsConsentStatus(showCustomerDetails).label}
                   </span>
                 </div>
@@ -1730,6 +1894,38 @@ const CustomerManagementPage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Customer Timeline Modal */}
+      {showTimeline && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Automation Timeline - {showTimeline.name}
+              </h2>
+              <button
+                onClick={() => setShowTimeline(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <CustomerTimelineCard customer={showTimeline} userToken={token} />
           </div>
         </div>
       )}
