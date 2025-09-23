@@ -3,7 +3,7 @@ import axios from "axios";
 import { useToast } from "../../context/ToastContext";
 import { buildUrl } from "../../config/api";
 
-const WorkflowCard = ({ workflow, onWorkflowUpdate, userToken }) => {
+const WorkflowCard = ({ workflow, onWorkflowUpdate, onSaveAsTemplate, userToken }) => {
   const [isToggling, setIsToggling] = useState(false);
   const { showToast } = useToast();
 
@@ -162,13 +162,23 @@ const WorkflowCard = ({ workflow, onWorkflowUpdate, userToken }) => {
 
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
         <button
-          onClick={() => {}}
+          onClick={() => {
+            /* TODO: Open edit modal */
+          }}
           className="text-blue-300 hover:text-white text-sm font-medium transition-colors"
         >
           Edit Settings
         </button>
         <button
-          onClick={() => {}}
+          onClick={() => onSaveAsTemplate?.(workflow)}
+          className="text-green-300 hover:text-white text-sm font-medium transition-colors"
+        >
+          Save as Template
+        </button>
+        <button
+          onClick={() => {
+            /* TODO: View execution history */
+          }}
           className="text-blue-300 hover:text-white text-sm font-medium transition-colors"
         >
           View History

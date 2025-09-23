@@ -1,7 +1,7 @@
 import React from 'react';
 import WorkflowCard from './WorkflowCard';
 
-const WorkflowGrid = ({ workflows, onWorkflowUpdate, userToken }) => {
+const WorkflowGrid = ({ workflows, onWorkflowUpdate, onSaveAsTemplate, userToken }) => {
   if (!workflows || workflows.length === 0) {
     return (
       <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-12">
@@ -28,6 +28,7 @@ const WorkflowGrid = ({ workflows, onWorkflowUpdate, userToken }) => {
           key={workflow.id}
           workflow={workflow}
           onWorkflowUpdate={onWorkflowUpdate}
+          onSaveAsTemplate={onSaveAsTemplate}
           userToken={userToken}
         />
       ))}
