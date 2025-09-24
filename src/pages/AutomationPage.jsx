@@ -10,6 +10,7 @@ import axios from "axios";
 import TemplateLibrary from "../components/automation/TemplateLibrary";
 import WorkflowTemplateManager from "../components/automation/WorkflowTemplateManager";
 import QuickStartWizard from "../components/automation/QuickStartWizard";
+import JourneyBuilder from "../components/automation/JourneyBuilder";
 
 const AutomationPage = () => {
   const { token } = useContext(AuthContext);
@@ -27,6 +28,9 @@ const AutomationPage = () => {
   const [selectedWorkflowForTemplate, setSelectedWorkflowForTemplate] =
     useState(null);
   const [showQuickStart, setShowQuickStart] = useState(false);
+
+  const [showJourneyBuilder, setShowJourneyBuilder] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   useEffect(() => {
     fetchAutomationData();
@@ -81,14 +85,18 @@ const AutomationPage = () => {
   };
 
   const handleTemplateSelect = (template) => {
-    // Navigate to journey builder with template
-    console.log("Selected template:", template);
-    // TODO: Implement navigation to journey builder with template data
+    setSelectedTemplate(template);
+    setShowJourneyBuilder(true);
   };
 
   const handleSaveAsTemplate = (workflow) => {
     setSelectedWorkflowForTemplate(workflow);
     setShowSaveTemplate(true);
+  };
+
+  const handleCreateWorkflow = () => {
+    setSelectedTemplate(null);
+    setShowJourneyBuilder(true);
   };
 
   if (loading) {
@@ -156,7 +164,10 @@ const AutomationPage = () => {
                   {workflows.filter((w) => w.isActive).length} of{" "}
                   {workflows.length} active
                 </span>
-                <button className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold px-4 py-2 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-105">
+                <button
+                  onClick={handleCreateWorkflow}
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold px-4 py-2 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                >
                   + Create Workflow
                 </button>
               </div>
@@ -166,6 +177,7 @@ const AutomationPage = () => {
               workflows={workflows}
               onWorkflowUpdate={fetchAutomationData}
               onSaveAsTemplate={handleSaveAsTemplate}
+              onCreateWorkflow={handleCreateWorkflow}
               userToken={token}
             />
           </div>
@@ -215,6 +227,31 @@ const AutomationPage = () => {
         }}
         userToken={token}
       />
+
+      {/* Journey Builder Modal */}
+      {showJourneyBuilder && (
+        <div className="fixed inset-0 z-50 bg-gray-900">
+          <JourneyBuilder
+            workflow={
+              selectedTemplate
+                ? {
+                    name: selectedTemplate.name,
+                    description: selectedTemplate.description,
+                    nodes: selectedTemplate.nodes,
+                    connections: selectedTemplate.connections,
+                  }
+                : null
+            }
+            userToken={token}
+            onSave={(workflowData) => {
+              console.log("Workflow saved:", workflowData);
+              setShowJourneyBuilder(false);
+              fetchAutomationData();
+            }}
+            onCancel={() => setShowJourneyBuilder(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
