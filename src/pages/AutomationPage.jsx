@@ -7,6 +7,10 @@ import CustomerJourneyOverview from "../components/automation/CustomerJourneyOve
 import WorkflowGrid from "../components/automation/WorkflowGrid";
 import ExecutionsFeed from "../components/automation/ExecutionsFeed";
 import axios from "axios";
+import TemplateLibrary from "../components/automation/TemplateLibrary";
+import WorkflowTemplateManager from "../components/automation/WorkflowTemplateManager";
+import QuickStartWizard from "../components/automation/QuickStartWizard";
+import JourneyBuilder from "../components/automation/JourneyBuilder";
 
 const AutomationPage = () => {
   const { token } = useContext(AuthContext);
@@ -19,10 +23,25 @@ const AutomationPage = () => {
     avgResponseTime: "0 hours",
   });
   const [workflows, setWorkflows] = useState([]);
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [selectedWorkflowForTemplate, setSelectedWorkflowForTemplate] =
+    useState(null);
+  const [showQuickStart, setShowQuickStart] = useState(false);
+
+  const [showJourneyBuilder, setShowJourneyBuilder] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   useEffect(() => {
     fetchAutomationData();
   }, []);
+
+  // Check if user has no workflows and show quick start
+  useEffect(() => {
+    if (!loading && workflows.length === 0) {
+      setShowQuickStart(true);
+    }
+  }, [loading, workflows.length]);
 
   const fetchAutomationData = async () => {
     try {
@@ -65,6 +84,21 @@ const AutomationPage = () => {
     showToast("Manual request feature coming soon!", "info");
   };
 
+  const handleTemplateSelect = (template) => {
+    setSelectedTemplate(template);
+    setShowJourneyBuilder(true);
+  };
+
+  const handleSaveAsTemplate = (workflow) => {
+    setSelectedWorkflowForTemplate(workflow);
+    setShowSaveTemplate(true);
+  };
+
+  const handleCreateWorkflow = () => {
+    setSelectedTemplate(null);
+    setShowJourneyBuilder(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-4 md:p-6">
@@ -92,6 +126,12 @@ const AutomationPage = () => {
               </p>
             </div>
             <div className="flex space-x-3">
+              <button
+                onClick={() => setShowTemplateLibrary(true)}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+              >
+                Browse Templates
+              </button>
               <button
                 onClick={handleSendManualRequest}
                 className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
@@ -124,7 +164,10 @@ const AutomationPage = () => {
                   {workflows.filter((w) => w.isActive).length} of{" "}
                   {workflows.length} active
                 </span>
-                <button className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold px-4 py-2 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-105">
+                <button
+                  onClick={handleCreateWorkflow}
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold px-4 py-2 rounded-xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                >
                   + Create Workflow
                 </button>
               </div>
@@ -133,6 +176,8 @@ const AutomationPage = () => {
             <WorkflowGrid
               workflows={workflows}
               onWorkflowUpdate={fetchAutomationData}
+              onSaveAsTemplate={handleSaveAsTemplate}
+              onCreateWorkflow={handleCreateWorkflow}
               userToken={token}
             />
           </div>
@@ -151,6 +196,62 @@ const AutomationPage = () => {
           </div>
         </div>
       </div>
+      {/* Template Library Modal */}
+      <TemplateLibrary
+        isOpen={showTemplateLibrary}
+        onClose={() => setShowTemplateLibrary(false)}
+        onSelectTemplate={handleTemplateSelect}
+        userToken={token}
+      />
+
+      {/* Save as Template Modal */}
+      <WorkflowTemplateManager
+        workflow={selectedWorkflowForTemplate}
+        isOpen={showSaveTemplate}
+        onClose={() => setShowSaveTemplate(false)}
+        onSaveAsTemplate={(templateData) => {
+          console.log("Template saved:", templateData);
+          fetchAutomationData(); // Refresh data
+        }}
+        userToken={token}
+      />
+
+      {/* Quick Start Wizard */}
+      <QuickStartWizard
+        isOpen={showQuickStart}
+        onClose={() => setShowQuickStart(false)}
+        onComplete={(template) => {
+          console.log("Quick start completed with template:", template);
+          setShowQuickStart(false);
+          handleTemplateSelect(template);
+        }}
+        userToken={token}
+      />
+
+      {/* Journey Builder Modal */}
+      {showJourneyBuilder && (
+        <div className="fixed inset-0 z-50 bg-gray-900">
+          <JourneyBuilder
+            workflow={
+              selectedTemplate
+                ? {
+                    name: selectedTemplate.name,
+                    description: selectedTemplate.description,
+                    nodes: selectedTemplate.nodes,
+                    connections: selectedTemplate.connections,
+                  }
+                : null
+            }
+            userToken={token}
+            onSave={(workflowData) => {
+              console.log("Workflow saved:", workflowData);
+              setShowJourneyBuilder(false);
+              fetchAutomationData();
+            }}
+            onCancel={() => setShowJourneyBuilder(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
