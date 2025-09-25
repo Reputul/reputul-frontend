@@ -5,7 +5,6 @@ import WorkflowNode from './WorkflowNode';
 import NodePalette from './NodePalette';
 import JourneyCanvas from './JourneyCanvas';
 import NodePropertiesPanel from './NodePropertiesPanel';
-import WorkflowMinimap from './WorkflowMinimap';
 import axios from 'axios';
 
 const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
@@ -21,7 +20,6 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [connectionMode, setConnectionMode] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
-  const [showMinimap, setShowMinimap] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
   const { showToast } = useToast();
@@ -448,12 +446,6 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
             </div>
 
             {/* View Controls */}
-            <button
-              onClick={() => setShowMinimap(!showMinimap)}
-              className={`px-3 py-1 rounded text-sm ${showMinimap ? 'bg-blue-100 text-blue-700' : 'text-gray-600'}`}
-            >
-              Minimap
-            </button>
 
             <button
               onClick={() => setIsPreviewMode(!isPreviewMode)}
@@ -549,18 +541,6 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
             onAddNode={handleAddNode}
             onConnectionModeChange={setConnectionMode}
           />
-
-          {/* Minimap */}
-          {showMinimap && (
-            <div className="absolute bottom-4 right-4">
-              <WorkflowMinimap
-                nodes={nodes}
-                connections={connections}
-                selectedNode={selectedNode}
-                onNodeClick={setSelectedNode}
-              />
-            </div>
-          )}
         </div>
 
         {/* Enhanced Properties Panel */}
