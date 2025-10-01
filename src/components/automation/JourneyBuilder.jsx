@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { API_ENDPOINTS, buildUrl } from '../config/api';
+import { buildUrl } from '../../config/api';
 import { useToast } from '../../context/ToastContext';
 import WorkflowNode from './WorkflowNode';
 import NodePalette from './NodePalette';

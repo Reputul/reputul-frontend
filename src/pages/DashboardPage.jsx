@@ -93,8 +93,10 @@ const DashboardPage = () => {
 
   const fetchBusinesses = useCallback(async () => {
     console.log("🔄 fetchBusinesses called");
+    console.log("Token exists?", !!token); // ADD THIS
+    console.log("Token value:", token?.substring(0, 20) + "...");
     try {
-      const res = await axios.get(buildUrl(API_ENDPOINTS.BUSINESS.DASHBOARD), {
+      const res = await axios.get(buildUrl(API_ENDPOINTS.DASHBOARD.LIST), {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("🔥 Raw API response:", res.data);
@@ -141,6 +143,9 @@ const DashboardPage = () => {
       setReviewsMap(reviewsData);
     } catch (err) {
       console.error("Error fetching businesses:", err);
+      console.error("Status:", err.response?.status);
+      console.error("Data:", err.response?.data);
+      console.error("URL:", buildUrl(API_ENDPOINTS.DASHBOARD.LIST));
       alert("Failed to load businesses");
     } finally {
       setLoading(false);
