@@ -197,7 +197,7 @@ const CampaignSequenceBuilder = ({ sequence, onClose, onSave }) => {
 
       if (sequence) {
         await axios.put(
-          buildUrl(`/api/campaigns/sequences/${sequence.id}`),
+          buildUrl(`/api/v1/campaigns/sequences/${sequence.id}`),
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -205,7 +205,7 @@ const CampaignSequenceBuilder = ({ sequence, onClose, onSave }) => {
         );
         showToast("Campaign sequence updated successfully", "success");
       } else {
-        await axios.post(buildUrl("/api/campaigns/sequences"), payload, {
+        await axios.post(buildUrl("/api/v1/campaigns/sequences"), payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         showToast("Campaign sequence created successfully", "success");

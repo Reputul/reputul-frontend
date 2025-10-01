@@ -80,7 +80,7 @@ const TriggerWorkflowModal = ({
       };
 
       const response = await axios.post(
-        buildUrl('/api/automation/triggers/manual-bulk'),
+        buildUrl('/api/v1/automation/triggers/manual-bulk'),
         triggerData,
         { headers: { Authorization: `Bearer ${userToken}` } }
       );

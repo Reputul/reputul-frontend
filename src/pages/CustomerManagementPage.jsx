@@ -72,16 +72,16 @@ const CustomerManagementPage = () => {
     try {
       const [businessRes, customerRes, templateRes, workflowRes] =
         await Promise.all([
-          axios.get(buildUrl("/api/dashboard"), {
+          axios.get(buildUrl("/api/v1/dashboard"), {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(buildUrl("/api/customers"), {
+          axios.get(buildUrl("/api/v1/customers"), {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(buildUrl("/api/email-templates"), {
+          axios.get(buildUrl("/api/v1/email-templates"), {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(buildUrl("/api/automation/workflows"), {
+          axios.get(buildUrl("/api/v1/automation/workflows"), {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -112,7 +112,7 @@ const CustomerManagementPage = () => {
 
       try {
         const response = await axios.post(
-          buildUrl("/api/review-requests/validate-phone"),
+          buildUrl("/api/v1/review-requests/validate-phone"),
           { phone },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -150,7 +150,7 @@ const CustomerManagementPage = () => {
         tags: newCustomer.tags.length > 0 ? newCustomer.tags : ["NEW_CUSTOMER"],
       };
 
-      await axios.post(buildUrl("/api/customers"), customerData, {
+      await axios.post(buildUrl("/api/v1/customers"), customerData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -195,7 +195,7 @@ const CustomerManagementPage = () => {
       };
 
       await axios.put(
-        buildUrl(`/api/customers/${editCustomer.id}`),
+        buildUrl(`/api/v1/customers/${editCustomer.id}`),
         customerData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -220,7 +220,7 @@ const CustomerManagementPage = () => {
       }
 
       try {
-        await axios.delete(buildUrl(`/api/customers/${customerId}`), {
+        await axios.delete(buildUrl(`/api/v1/customers/${customerId}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
         alert("Customer deleted successfully!");
@@ -275,7 +275,7 @@ const CustomerManagementPage = () => {
         }
 
         const response = await axios.post(
-          buildUrl("/api/review-requests"),
+          buildUrl("/api/v1/review-requests"),
           requestData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -343,7 +343,7 @@ const CustomerManagementPage = () => {
           smsOptOut: false, // Clear opt-out when opting in
         };
 
-        await axios.put(buildUrl(`/api/customers/${customer.id}`), updateData, {
+        await axios.put(buildUrl(`/api/v1/ scustomers/${customer.id}`), updateData, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

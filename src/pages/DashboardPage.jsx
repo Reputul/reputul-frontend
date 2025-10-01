@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { buildUrl, API_ENDPOINTS } from "../config/api";
 import WilsonRating from "../components/WilsonRating";
 import ReputationBreakdown from "../components/ReputationBreakdown";
+import BusinessLogoUpload from "../components/business/BusinessLogoUpload";
 
 const DashboardPage = () => {
   const { token } = useAuth();
@@ -149,7 +150,7 @@ const DashboardPage = () => {
   // Fetch contacts count for dashboard metrics
   const fetchContactsCount = useCallback(async () => {
     try {
-      const response = await axios.get("/api/contacts", {
+      const response = await axios.get("/api/v1/contacts", {
         headers: { Authorization: `Bearer ${token}` },
         params: { page: 0, size: 1 }, // Just get count, not data
       });
@@ -169,7 +170,7 @@ const DashboardPage = () => {
         businesses.map(async (business) => {
           try {
             const response = await axios.get(
-              buildUrl(`/api/reputation/business/${business.id}/breakdown`),
+              buildUrl(`/api/v1/reputation/business/${business.id}/breakdown`),
               { headers: { Authorization: `Bearer ${token}` } }
             );
             breakdowns[business.id] = response.data;
@@ -194,7 +195,7 @@ const DashboardPage = () => {
 
       try {
         const response = await axios.get(
-          buildUrl(`/api/reputation/business/${businessId}/detailed`),
+          buildUrl(`/api/v1/reputation/business/${businessId}/detailed`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setReputationBreakdownData(response.data);
@@ -380,7 +381,7 @@ const DashboardPage = () => {
       try {
         // Use the new direct endpoint that matches frontend data
         await axios.post(
-          buildUrl("/api/review-requests/send-direct"), // ← New endpoint
+          buildUrl("/api/v1/review-requests/send-direct"), // ← New endpoint
           requestReviewsData, // ← This data structure matches what backend expects
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -425,7 +426,7 @@ const DashboardPage = () => {
     async (businessId) => {
       try {
         await axios.post(
-          buildUrl(`/api/reputation/business/${businessId}/recalculate`),
+          buildUrl(`/api/v1/reputation/business/${businessId}/recalculate`),
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -733,7 +734,17 @@ const DashboardPage = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <div className="relative p-6">
           <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
+            <div className="flex-1 flex items-start gap-4">
+              {/* Show logo if exists */}
+              {business.logoUrl && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={business.logoUrl}
+                    alt={`${business.name} logo`}
+                    className="w-16 h-16 object-contain rounded-lg border border-gray-200 bg-white p-2"
+                  />
+                </div>
+              )}
               <div className="flex items-center space-x-3 mb-2">
                 <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
                   {business.name}
@@ -1776,6 +1787,23 @@ const DashboardPage = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
               </div>
+
+              {/* NEW: Logo Upload Section */}
+              {(editingBusiness || newBusiness.id) && (
+                <div className="mb-6">
+                  <BusinessLogoUpload
+                    business={
+                      editingBusiness
+                        ? businesses.find((b) => b.id === editingBusiness)
+                        : newBusiness
+                    }
+                    onLogoUpdated={(updatedBusiness) => {
+                      // Refresh the business list
+                      fetchBusinesses();
+                    }}
+                  />
+                </div>
+              )}
               <div className="flex space-x-3 mt-6">
                 <button
                   type="submit"
@@ -1799,12 +1827,12 @@ const DashboardPage = () => {
       {/* Enhanced Edit Business Modal */}
       {editingBusiness && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-md w-full p-8 shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
               Edit Business
             </h3>
             <form onSubmit={handleUpdateBusiness}>
-              <div className="space-y-4">
+              <div className="space-y-4 mb-6">
                 <input
                   type="text"
                   name="name"
@@ -1848,7 +1876,16 @@ const DashboardPage = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                 />
               </div>
-              <div className="flex space-x-3 mt-6">
+
+              {/* Logo Upload Section */}
+              <div className="mb-6">
+                <BusinessLogoUpload
+                  business={businesses.find((b) => b.id === editingBusiness)}
+                  onLogoUpdated={() => fetchBusinesses()}
+                />
+              </div>
+
+              <div className="flex space-x-3">
                 <button
                   type="submit"
                   className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"

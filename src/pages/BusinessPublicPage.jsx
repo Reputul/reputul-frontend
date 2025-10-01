@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { API_ENDPOINTS, buildUrl } from "../config/api";
 
 const BusinessPublicPage = () => {
   const { id } = useParams();
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
   const [business, setBusiness] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,9 +18,9 @@ const BusinessPublicPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const bizRes = await axios.get(`${API_BASE}/api/businesses/${id}`);
+        const bizRes = await axios.get(buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(id)));
         const reviewRes = await axios.get(
-          `${API_BASE}/api/reviews/business/${id}`
+          buildUrl(API_ENDPOINTS.PUBLIC_REVIEWS.BY_BUSINESS(id))
         );
         setBusiness(bizRes.data);
         setReviews(reviewRes.data);
@@ -51,7 +51,7 @@ const BusinessPublicPage = () => {
         return;
       }
 
-      await axios.post(`${API_BASE}/api/public/reviews/${id}`, {
+      await axios.post(buildUrl(API_ENDPOINTS.PUBLIC_REVIEWS.SUBMIT(id)), {
         rating: parseInt(newReview.rating, 10),
         comment: newReview.comment.trim(),
       });
@@ -63,9 +63,9 @@ const BusinessPublicPage = () => {
 
       // Refresh reviews and business data
       const reviewRes = await axios.get(
-        `${API_BASE}/api/reviews/business/${id}`
+        buildUrl(API_ENDPOINTS.PUBLIC_REVIEWS.BY_BUSINESS(id))
       );
-      const bizRes = await axios.get(`${API_BASE}/api/businesses/${id}`);
+      const bizRes = await axios.get(buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(id)));
       setReviews(reviewRes.data);
       setBusiness(bizRes.data);
     } catch (err) {

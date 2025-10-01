@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 
 const ReviewPlatformSetupPage = () => {
   const [businesses, setBusinesses] = useState([]);
@@ -25,8 +26,6 @@ const ReviewPlatformSetupPage = () => {
     facebookReviewUrl: '',
     yelpReviewUrl: ''
   });
-
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
   useEffect(() => {
     fetchBusinesses();
@@ -59,7 +58,7 @@ const ReviewPlatformSetupPage = () => {
   const fetchBusinesses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE}/api/dashboard`, {
+      const response = await axios.get(buildUrl(API_ENDPOINTS.DASHBOARD.LIST), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBusinesses(response.data);
@@ -77,10 +76,10 @@ const ReviewPlatformSetupPage = () => {
   const fetchPlatformData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE}/api/businesses/${selectedBusiness}/review-platforms`, {
+      const response = await axios.get(buildUrl(`/api/v1/businesses/${selectedBusiness}/review-platforms`), {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setPlatformData({
         googlePlaceId: response.data.googlePlaceId || '',
         facebookPageUrl: response.data.facebookPageUrl || '',
@@ -105,10 +104,10 @@ const ReviewPlatformSetupPage = () => {
     setValidating(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE}/api/businesses/${selectedBusiness}/review-platforms/validate`, platformData, {
+      const response = await axios.post(buildUrl(`/api/v1/businesses/${selectedBusiness}/review-platforms/validate`), platformData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setValidation(response.data);
     } catch (err) {
       setError('Failed to validate platform URLs');
@@ -133,12 +132,12 @@ const ReviewPlatformSetupPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.put(
-        `${API_BASE}/api/businesses/${selectedBusiness}/review-platforms`, 
-        platformData, 
+        buildUrl(`/api/v1/businesses/${selectedBusiness}/review-platforms`),
+        platformData,
         {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }

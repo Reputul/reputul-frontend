@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { buildUrl } from '../../config/api';
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 import { useToast } from '../../context/ToastContext';
 import WorkflowNode from './WorkflowNode';
 import NodePalette from './NodePalette';
@@ -287,7 +287,7 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
       };
 
       await axios.put(
-        buildUrl(`/api/automation/workflows/${workflow.id}/draft`),
+        buildUrl(`/api/v1/automation/workflows/${workflow.id}/draft`),
         workflowData,
         { headers: { Authorization: `Bearer ${userToken}` } }
       );
@@ -317,8 +317,8 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
       };
 
       const endpoint = workflow?.id 
-        ? `/api/automation/workflows/${workflow.id}`
-        : '/api/automation/workflows';
+        ? `/api/v1/automation/workflows/${workflow.id}`
+        : '/api/v1/automation/workflows';
       
       const method = workflow?.id ? 'put' : 'post';
       
@@ -346,7 +346,7 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
 
     try {
       const response = await axios.post(
-        buildUrl('/api/automation/workflows/test'),
+        buildUrl('/api/v1/automation/workflows/test'),
         { nodes, connections },
         { headers: { Authorization: `Bearer ${userToken}` } }
       );

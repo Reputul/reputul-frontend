@@ -1,7 +1,6 @@
 // src/services/feedbackGateService.js
 import axios from 'axios';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 
 /**
  * Service for handling feedback gate operations
@@ -16,7 +15,7 @@ class FeedbackGateService {
    */
   async getCustomerGateInfo(customerId) {
     try {
-      const response = await axios.get(`${API_BASE}/api/customers/${customerId}/gate-info`);
+      const response = await axios.get(buildUrl(`/api/v1/customers/${customerId}/gate-info`));
       return {
         success: true,
         data: response.data,
@@ -41,7 +40,7 @@ class FeedbackGateService {
    */
   async submitRating(customerId, ratingData) {
     try {
-      const response = await axios.post(`${API_BASE}/api/customers/${customerId}/rate`, {
+      const response = await axios.post(buildUrl(`/api/v1/customers/${customerId}/rate`), {
         rating: ratingData.rating,
         source: ratingData.source || 'feedback_gate',
         timestamp: new Date().toISOString(),
@@ -68,7 +67,7 @@ class FeedbackGateService {
    */
   async checkGateStatus(customerId) {
     try {
-      const response = await axios.get(`${API_BASE}/api/customers/${customerId}/gate-status`);
+      const response = await axios.get(buildUrl(`/api/v1/customers/${customerId}/gate-status`));
       return {
         success: true,
         data: response.data,
@@ -232,7 +231,7 @@ class FeedbackGateService {
         }
       });
       
-      const response = await axios.get(`${API_BASE}/api/feedback-gate/analytics?${params}`);
+      const response = await axios.get(buildUrl(`/api/v1/feedback-gate/analytics?${params}`));
       return {
         success: true,
         data: response.data,

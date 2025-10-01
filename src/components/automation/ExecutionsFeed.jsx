@@ -29,7 +29,7 @@ const ExecutionsFeed = ({ userToken, refreshTrigger }) => {
       if (showLoading) setLoading(true);
 
       const response = await axios.get(
-        buildUrl("/api/automation/monitoring/executions?hoursBack=24&limit=20"),
+        buildUrl("/api/v1/automation/monitoring/executions?hoursBack=24&limit=20"),
         { headers: { Authorization: `Bearer ${userToken}` } }
       );
 
