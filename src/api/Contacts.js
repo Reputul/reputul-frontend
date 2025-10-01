@@ -33,28 +33,28 @@ export const contactsApi = {
     if (params.size !== undefined) queryParams.append('size', params.size);
     if (params.sort) queryParams.append('sort', params.sort);
     
-    const url = buildUrl('/api/contacts') + (queryParams.toString() ? `?${queryParams}` : '');
+    const url = buildUrl('/api/v1/contacts') + (queryParams.toString() ? `?${queryParams}` : '');
     return api.get(url);
   },
 
   // Get single contact
   getContact: (id) => {
-    return api.get(buildUrl(`/api/contacts/${id}`));
+    return api.get(buildUrl(`/api/v1/contacts/${id}`));
   },
 
   // Create new contact  
   createContact: (contactData) => {
-    return api.post(buildUrl('/api/contacts'), contactData);
+    return api.post(buildUrl('/api/v1/contacts'), contactData);
   },
 
   // Update existing contact
   updateContact: (id, contactData) => {
-    return api.put(buildUrl(`/api/contacts/${id}`), contactData);
+    return api.put(buildUrl(`/api/v1/contacts/${id}`), contactData);
   },
 
   // Delete contact
   deleteContact: (id) => {
-    return api.delete(buildUrl(`/api/contacts/${id}`));
+    return api.delete(buildUrl(`/api/v1/contacts/${id}`));
   },
 
   // CSV Import - Prepare step (matches backend /api/contacts/bulk/import/prepare)
@@ -62,21 +62,21 @@ export const contactsApi = {
     const formData = new FormData();
     formData.append('file', file);
     
-    return api.post(buildUrl('/api/contacts/bulk/import/prepare'), formData, {
+    return api.post(buildUrl('/api/v1/contacts/bulk/import/prepare'), formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
   },
 
-  // CSV Import - Commit step (matches backend /api/contacts/bulk/import/commit)
+  // CSV Import - Commit step (matches backend /api/v1/contacts/bulk/import/commit)
   commitCsvImport: (commitData) => {
-    return api.post(buildUrl('/api/contacts/bulk/import/commit'), commitData);
+    return api.post(buildUrl('/api/v1/contacts/bulk/import/commit'), commitData);
   },
 
   // Export contacts to CSV
   exportContacts: (tag = null) => {
-    const url = buildUrl('/api/contacts/export.csv') + (tag ? `?tag=${encodeURIComponent(tag)}` : '');
+    const url = buildUrl('/api/v1/contacts/export.csv') + (tag ? `?tag=${encodeURIComponent(tag)}` : '');
     return api.get(url, {
       responseType: 'blob', // Important for file download
     });
@@ -84,7 +84,7 @@ export const contactsApi = {
 
   // Get contact statistics
   getContactStats: () => {
-    return api.get(buildUrl('/api/contacts/stats'));
+    return api.get(buildUrl('/api/v1/contacts/stats'));
   },
 };
 

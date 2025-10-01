@@ -15,7 +15,7 @@ const QuickActionButtons = ({ customer, userToken, onActionComplete }) => {
 
       switch (action) {
         case 'send_review_request':
-          endpoint = '/api/automation/triggers/review-request';
+          endpoint = '/api/v1/automation/triggers/review-request';
           payload = { 
             customerId: customer.id,
             deliveryMethod: customer.phone && customer.smsOptIn ? 'SMS' : 'EMAIL',
@@ -26,7 +26,7 @@ const QuickActionButtons = ({ customer, userToken, onActionComplete }) => {
           break;
 
         case 'skip_automation':
-          endpoint = '/api/automation/customers/skip';
+          endpoint = '/api/v1/automation/customers/skip';
           payload = { 
             customerId: customer.id,
             reason: 'Manual skip from customer management',
@@ -36,7 +36,7 @@ const QuickActionButtons = ({ customer, userToken, onActionComplete }) => {
           break;
 
         case 'mark_service_complete':
-          endpoint = '/api/automation/triggers/service-complete';
+          endpoint = '/api/v1/automation/triggers/service-complete';
           payload = { 
             customerId: customer.id,
             reason: 'Manual service completion from customer management',
@@ -46,7 +46,7 @@ const QuickActionButtons = ({ customer, userToken, onActionComplete }) => {
           break;
 
         case 'reset_automation':
-          endpoint = '/api/automation/customers/reset';
+          endpoint = '/api/v1/automation/customers/reset';
           payload = { 
             customerId: customer.id,
             reason: 'Manual reset from customer management',

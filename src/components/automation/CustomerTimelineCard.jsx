@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { buildUrl } from '../../config/api';
+import { buildUrl, API_ENDPOINTS } from '../../config/api';
 import { useToast } from '../../context/ToastContext';
 
 const CustomerTimelineCard = ({ customer, userToken }) => {
@@ -19,7 +19,7 @@ const CustomerTimelineCard = ({ customer, userToken }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        buildUrl(`/api/automation/customers/${customer.id}/timeline`),
+        buildUrl(API_ENDPOINTS.AUTOMATION.CUSTOMER_TIMELINE.replace('{customerId}', customer.id)),
         { headers: { Authorization: `Bearer ${userToken}` } }
       );
       setTimeline(response.data.events || []);

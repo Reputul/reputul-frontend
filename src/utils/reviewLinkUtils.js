@@ -314,7 +314,7 @@ export const trackLinkClick = async (linkType, customerId, metadata = {}) => {
     };
 
     // Send to analytics endpoint
-    await fetch('/api/analytics/link-click', {
+    await fetch('/api/v1/analytics/link-click', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

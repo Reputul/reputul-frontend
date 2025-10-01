@@ -82,7 +82,7 @@ src/
 - JWT token stored in localStorage
 - AuthContext provides: `{ token, user, loading, login(), register(), logout(), updateUser(), isAuthenticated() }`
 - PrivateRoute component protects authenticated routes
-- Token validated on app startup via `/api/users/profile` endpoint
+- Token validated on app startup via `/api/v1/users/profile` endpoint
 
 #### State Management
 - React Context for global state (Auth, Toast)

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 
 const ReviewPage = () => {
   const { businessId } = useParams();
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
   const [business, setBusiness] = useState(null);
   const [form, setForm] = useState({ rating: '', comment: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -13,7 +13,7 @@ const ReviewPage = () => {
   useEffect(() => {
     const fetchBusiness = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/api/businesses/${businessId}`);
+        const res = await axios.get(buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(businessId)));
         setBusiness(res.data);
       } catch (err) {
         console.error('Error fetching business:', err);
@@ -32,7 +32,7 @@ const ReviewPage = () => {
     e.preventDefault();
     setError('');
     try {
-      await axios.post(`${API_BASE}/api/public/reviews/${businessId}`, form);
+      await axios.post(buildUrl(API_ENDPOINTS.PUBLIC_REVIEWS.SUBMIT(businessId)), form);
       setSubmitted(true);
     } catch (err) {
       console.error('Error submitting review:', err);

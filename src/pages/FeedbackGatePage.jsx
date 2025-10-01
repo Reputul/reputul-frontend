@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { buildUrl } from '../config/api';
 
 const FeedbackGatePage = () => {
   const { customerId } = useParams();
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
   
   const [customer, setCustomer] = useState(null);
   const [business, setBusiness] = useState(null);
@@ -18,7 +18,7 @@ const FeedbackGatePage = () => {
   useEffect(() => {
     const fetchCustomerGateInfo = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/api/customers/${customerId}/gate-info`);
+        const response = await axios.get(buildUrl(`/api/v1/customers/${customerId}/gate-info`));
         setCustomer(response.data.customer);
         setBusiness(response.data.business);
       } catch (err) {
@@ -41,7 +41,7 @@ const FeedbackGatePage = () => {
     setError("");
 
     try {
-      const response = await axios.post(`${API_BASE}/api/customers/${customerId}/rate`, {
+      const response = await axios.post(buildUrl(`/api/v1/customers/${customerId}/rate`), {
         rating: selectedRating,
         source: "feedback_gate"
       });

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import { buildUrl } from "../config/api";
+import { buildUrl, API_ENDPOINTS } from "../config/api";
 import CampaignSequenceBuilder from "../components/campaign/CampaignSequenceBuilder";
 import CampaignExecutionModal from "../components/campaign/CampaignExecutionModal";
 import CampaignAnalyticsModal from "../components/campaign/CampaignAnalyticsModal";
@@ -31,13 +31,13 @@ const CampaignManagementPage = () => {
     try {
       setLoading(true);
       const [sequencesRes, executionsRes, customersRes] = await Promise.all([
-        axios.get(buildUrl("/api/campaigns/sequences"), {
+        axios.get(buildUrl(API_ENDPOINTS.CAMPAIGNS.SEQUENCES), {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(buildUrl("/api/campaigns/executions"), {
+        axios.get(buildUrl(API_ENDPOINTS.CAMPAIGNS.EXECUTIONS), {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(buildUrl("/api/customers"), {
+        axios.get(buildUrl(API_ENDPOINTS.CUSTOMERS), {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -75,7 +75,7 @@ const CampaignManagementPage = () => {
     }
 
     try {
-      await axios.delete(buildUrl(`/api/campaigns/sequences/${sequenceId}`), {
+      await axios.delete(buildUrl(`/api/v1/campaigns/sequences/${sequenceId}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
       showToast("Campaign sequence deleted successfully", "success");
@@ -90,7 +90,7 @@ const CampaignManagementPage = () => {
   const handleToggleSequenceStatus = async (sequenceId, isActive) => {
     try {
       await axios.put(
-        buildUrl(`/api/campaigns/sequences/${sequenceId}/status`),
+        buildUrl(`/api/v1/campaigns/sequences/${sequenceId}/status`),
         { isActive },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -111,7 +111,7 @@ const CampaignManagementPage = () => {
   const handleSetAsDefault = async (sequenceId) => {
     try {
       await axios.put(
-        buildUrl(`/api/campaigns/sequences/${sequenceId}/set-default`),
+        buildUrl(`/api/v1/campaigns/sequences/${sequenceId}/set-default`),
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -134,7 +134,7 @@ const CampaignManagementPage = () => {
   const handleStartCampaign = async (customerId, sequenceId = null) => {
     try {
       await axios.post(
-        buildUrl("/api/campaigns/executions"),
+        buildUrl("/api/v1/campaigns/executions"),
         {
           reviewRequestId: null, // Will need to create review request first
           sequenceId: sequenceId,
@@ -162,7 +162,7 @@ const CampaignManagementPage = () => {
   const handleStopExecution = async (executionId) => {
     try {
       await axios.post(
-        buildUrl(`/api/campaigns/executions/${executionId}/stop`),
+        buildUrl(`/api/v1/campaigns/executions/${executionId}/stop`),
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -185,7 +185,7 @@ const CampaignManagementPage = () => {
     try {
       // Create review requests with campaigns for selected customers
       await axios.post(
-        buildUrl("/api/review-requests/bulk-campaigns"),
+        buildUrl("/api/v1/review-requests/bulk-campaigns"),
         {
           customerIds: selectedCustomers.map((c) => c.id),
           sequenceId: null, // Use default sequence

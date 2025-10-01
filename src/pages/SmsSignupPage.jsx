@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { CheckCircle, Phone, Shield, MessageSquare } from "lucide-react";
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 
 const SmsSignupPage = () => {
   const { businessId } = useParams();
@@ -16,8 +17,6 @@ const SmsSignupPage = () => {
     agreedToSms: false,
     referralSource: searchParams.get("ref") || "",
   });
-
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -40,7 +39,7 @@ const SmsSignupPage = () => {
 
   const fetchBusinessInfo = async () => {
     try {
-      const response = await fetch(`/api/public/sms/business/${businessId}`);
+      const response = await fetch(buildUrl(`/api/v1/public/sms/business/${businessId}`));
       if (response.ok) {
         const data = await response.json();
         setBusiness(data);
@@ -62,7 +61,7 @@ const SmsSignupPage = () => {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE}/api/sms-signup`, {
+      const response = await fetch(buildUrl('/api/v1/sms-signup'), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

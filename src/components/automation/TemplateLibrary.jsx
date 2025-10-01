@@ -21,10 +21,10 @@ const TemplateLibrary = ({ isOpen, onClose, onSelectTemplate, userToken }) => {
     try {
       setLoading(true);
       const [systemTemplatesRes, userTemplatesRes] = await Promise.all([
-        axios.get(buildUrl('/api/automation/templates'), {
+        axios.get(buildUrl('/api/v1/automation/templates'), {
           headers: { Authorization: `Bearer ${userToken}` }
         }),
-        axios.get(buildUrl('/api/automation/templates/user'), {
+        axios.get(buildUrl('/api/v1/automation/templates/user'), {
           headers: { Authorization: `Bearer ${userToken}` }
         })
       ]);

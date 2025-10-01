@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { buildUrl } from '../../config/api';
+import { buildUrl, API_ENDPOINTS } from '../../config/api';
 import { useToast } from '../../context/ToastContext';
 
 const CustomerAutomationStatus = ({ customer, userToken, onStatusUpdate }) => {
@@ -19,7 +19,7 @@ const CustomerAutomationStatus = ({ customer, userToken, onStatusUpdate }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        buildUrl(`/api/automation/customers/${customer.id}/status`),
+        buildUrl(`/api/v1/automation/customers/${customer.id}/status`),
         { headers: { Authorization: `Bearer ${userToken}` } }
       );
       setAutomationData(response.data);
@@ -42,15 +42,15 @@ const CustomerAutomationStatus = ({ customer, userToken, onStatusUpdate }) => {
 
       switch (action) {
         case 'send_now':
-          endpoint = '/api/automation/triggers/manual';
+          endpoint = '/api/v1/automation/triggers/manual';
           if (workflowId) payload.workflowId = workflowId;
           break;
         case 'skip_automation':
-          endpoint = '/api/automation/customers/skip';
+          endpoint = '/api/v1/automation/customers/skip';
           payload.reason = 'Manual skip from customer management';
           break;
         case 'mark_complete':
-          endpoint = '/api/automation/triggers/service-complete';
+          endpoint = '/api/v1/automation/triggers/service-complete';
           break;
         default:
           throw new Error(`Unknown action: ${action}`);

@@ -55,7 +55,7 @@ const WorkflowTemplateManager = ({
         }
       };
 
-      await axios.post(buildUrl('/api/automation/templates'), templateData, {
+      await axios.post(buildUrl('/api/v1/automation/templates'), templateData, {
         headers: { Authorization: `Bearer ${userToken}` }
       });
 

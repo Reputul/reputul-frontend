@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { buildUrl } from '../config/api';
+import { buildUrl, API_ENDPOINTS } from '../config/api';
 
 /**
  * Billing API service for handling Stripe integration
@@ -38,7 +38,7 @@ export class BillingApi {
    */
   async createCheckoutSession(plan, promoCode = null) {
     try {
-      const response = await this.api.post(buildUrl('/api/billing/checkout-session'), {
+      const response = await this.api.post(buildUrl('/api/v1/billing/checkout-session'), {
         plan: plan.toUpperCase(),
         promoCode: promoCode ? promoCode.trim() : null
       });
@@ -58,7 +58,7 @@ export class BillingApi {
    */
   async createBillingPortalSession() {
     try {
-      const response = await this.api.post(buildUrl('/api/billing/portal-session'));
+      const response = await this.api.post(buildUrl('/api/v1/billing/portal-session'));
       return response.data.url;
     } catch (error) {
       if (error.response?.data?.error) {
@@ -74,7 +74,7 @@ export class BillingApi {
    */
   async getSubscriptionInfo() {
     try {
-      const response = await this.api.get(buildUrl('/api/billing/subscription'));
+      const response = await this.api.get(buildUrl(API_ENDPOINTS.BILLING.SUBSCRIPTION));
       return response.data;
     } catch (error) {
       if (error.response?.data?.error) {
@@ -91,7 +91,7 @@ export class BillingApi {
    */
   async getBusinessBillingStatus(businessId) {
     try {
-      const response = await this.api.get(buildUrl(`/api/billing/business/${businessId}/status`));
+      const response = await this.api.get(buildUrl(`/api/v1/billing/business/${businessId}/status`));
       return response.data;
     } catch (error) {
       if (error.response?.data?.error) {
@@ -109,7 +109,7 @@ export class BillingApi {
    */
   async checkEntitlement(businessId, action) {
     try {
-      const response = await this.api.post(buildUrl('/api/billing/check-entitlement'), {
+      const response = await this.api.post(buildUrl('/api/v1/billing/check-entitlement'), {
         businessId,
         action: action.toUpperCase()
       });
@@ -128,7 +128,7 @@ export class BillingApi {
    */
   async getPlans() {
     try {
-      const response = await this.api.get(buildUrl('/api/billing/plans'));
+      const response = await this.api.get(buildUrl('/api/v1/billing/plans'));
       return response.data;
     } catch (error) {
       if (error.response?.data?.error) {

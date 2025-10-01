@@ -1,16 +1,15 @@
 // src/api/waitlistService.js
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 
 export const waitlistService = {
   /**
    * Add email to waitlist
-   * @param {string} email 
+   * @param {string} email
    * @returns {Promise<{success: boolean, message: string, duplicate?: boolean, waitlistCount?: number}>}
    */
   async addToWaitlist(email) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/waitlist`, {
+      const response = await fetch(buildUrl(API_ENDPOINTS.WAITLIST.ADD), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,7 +58,7 @@ export const waitlistService = {
    */
   async getWaitlistCount() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/waitlist/count`);
+      const response = await fetch(buildUrl(API_ENDPOINTS.WAITLIST.COUNT));
       
       if (response.ok) {
         const data = await response.json();

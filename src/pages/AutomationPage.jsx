@@ -49,7 +49,7 @@ const AutomationPage = () => {
 
       // Fetch workflows
       const workflowsResponse = await axios.get(
-        buildUrl("/api/automation/workflows"),
+        buildUrl("/api/v1/automation/workflows"),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -58,7 +58,7 @@ const AutomationPage = () => {
 
       // Fetch execution metrics
       const metricsResponse = await axios.get(
-        buildUrl("/api/automation/monitoring/metrics?hoursBack=168"),
+        buildUrl("/api/v1/automation/monitoring/metrics?hoursBack=168"),
         {
           headers: { Authorization: `Bearer ${token}` },
         }

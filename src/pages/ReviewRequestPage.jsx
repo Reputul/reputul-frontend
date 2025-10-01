@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 
 const ReviewRequestsPage = () => {
   const navigate = useNavigate();
@@ -18,8 +19,6 @@ const ReviewRequestsPage = () => {
   const [success, setSuccess] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
 
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
-
   useEffect(() => {
     fetchCustomers();
     fetchTemplates();
@@ -30,7 +29,7 @@ const ReviewRequestsPage = () => {
   const fetchCustomers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE}/api/customers`, {
+      const response = await axios.get(buildUrl(API_ENDPOINTS.CUSTOMERS.LIST), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCustomers(response.data);
@@ -43,7 +42,7 @@ const ReviewRequestsPage = () => {
   const fetchTemplates = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE}/api/email-templates`, {
+      const response = await axios.get(buildUrl(API_ENDPOINTS.EMAIL_TEMPLATES.LIST), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTemplates(response.data);
@@ -56,7 +55,7 @@ const ReviewRequestsPage = () => {
   const fetchReviewRequests = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE}/api/review-requests`, {
+      const response = await axios.get(buildUrl(API_ENDPOINTS.REVIEW_REQUESTS.SEND), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReviewRequests(response.data);
@@ -68,7 +67,7 @@ const ReviewRequestsPage = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE}/api/review-requests/stats`, {
+      const response = await axios.get(buildUrl(API_ENDPOINTS.REVIEW_REQUESTS.STATS), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(response.data);
@@ -80,13 +79,13 @@ const ReviewRequestsPage = () => {
   const handleSendReviewRequest = async (customerId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE}/api/review-requests`, {
+      const response = await axios.post(buildUrl(API_ENDPOINTS.REVIEW_REQUESTS.SEND), {
         customerId,
         deliveryMethod // NEW: Include delivery method
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       console.log('Review request sent:', response.data);
       return response.data;
     } catch (err) {

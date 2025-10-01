@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { renderTrustedHtml } from "../utils/sanitizer";
+import { API_ENDPOINTS, buildUrl } from '../config/api';
 
 // Email preview styles
 const emailPreviewStyles = `
@@ -64,8 +65,6 @@ const emailPreviewStyles = `
 `;
 
 const EmailTemplatesPage = () => {
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
-  const API_BASE_URL = `${API_BASE}/api/email-templates`;
   const [templates, setTemplates] = useState([]);
   const [templateTypes, setTemplateTypes] = useState([]);
   const [templateStats, setTemplateStats] = useState({});
@@ -127,7 +126,7 @@ const EmailTemplatesPage = () => {
       setLoading(true);
       console.log("📋 Fetching all templates...");
 
-      const response = await fetch(API_BASE_URL, {
+      const response = await fetch(buildUrl(API_ENDPOINTS.EMAIL_TEMPLATES.LIST), {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -153,7 +152,7 @@ const EmailTemplatesPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${API_BASE}/api/email-templates/types`,
+        buildUrl('/api/v1/email-templates/types'),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -178,7 +177,7 @@ const EmailTemplatesPage = () => {
   const fetchTemplateStats = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_BASE}/api/review-requests/stats`, {
+      const response = await axios.get(buildUrl(API_ENDPOINTS.REVIEW_REQUESTS.STATS), {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTemplateStats(response.data);
@@ -229,7 +228,7 @@ const EmailTemplatesPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${API_BASE}/api/email-templates`, formData, {
+      await axios.post(buildUrl(API_ENDPOINTS.EMAIL_TEMPLATES.LIST), formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -255,7 +254,7 @@ const EmailTemplatesPage = () => {
 
       // First, fetch the current template to ensure we have all required fields
       const currentTemplateResponse = await fetch(
-        `${API_BASE_URL}/${templateId}`,
+        buildUrl(API_ENDPOINTS.EMAIL_TEMPLATES.BY_ID(templateId)),
         {
           method: "GET",
           headers: getAuthHeaders(),
@@ -305,7 +304,7 @@ const EmailTemplatesPage = () => {
       console.log("📤 Sending update data:", updateData);
 
       // Send the update request
-      const updateResponse = await fetch(`${API_BASE_URL}/${templateId}`, {
+      const updateResponse = await fetch(buildUrl(API_ENDPOINTS.EMAIL_TEMPLATES.BY_ID(templateId)), {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify(updateData),
@@ -383,7 +382,7 @@ const EmailTemplatesPage = () => {
       setError("");
       setSuccess("");
 
-      const response = await fetch(`${API_BASE_URL}/${templateId}`, {
+      const response = await fetch(buildUrl(API_ENDPOINTS.EMAIL_TEMPLATES.BY_ID(templateId)), {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -412,7 +411,7 @@ const EmailTemplatesPage = () => {
       
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${API_BASE}/api/email-templates/${template.id}/preview`,
+        buildUrl(API_ENDPOINTS.EMAIL_TEMPLATES.PREVIEW(template.id)),
         previewData,
         {
           headers: { Authorization: `Bearer ${token}` },

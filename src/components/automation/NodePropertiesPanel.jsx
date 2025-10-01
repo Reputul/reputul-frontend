@@ -35,10 +35,10 @@ const NodePropertiesPanel = ({
     try {
       setLoading(true);
       const [emailRes, smsRes] = await Promise.all([
-        axios.get(buildUrl("/api/email-templates"), {
+        axios.get(buildUrl("/api/v1/email-templates"), {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(buildUrl("/api/sms-templates"), {
+        axios.get(buildUrl("/api/v1/sms-templates"), {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);

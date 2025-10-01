@@ -33,13 +33,13 @@ const CampaignAnalyticsModal = ({ sequences, onClose }) => {
 
       let response;
       if (selectedSequence === "all") {
-        response = await axios.get(buildUrl("/api/campaigns/analytics"), {
+        response = await axios.get(buildUrl("/api/v1/campaigns/analytics"), {
           params,
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
         response = await axios.get(
-          buildUrl(`/api/campaigns/sequences/${selectedSequence}/performance`),
+          buildUrl(`/api/v1/campaigns/sequences/${selectedSequence}/performance`),
           {
             params,
             headers: { Authorization: `Bearer ${token}` },

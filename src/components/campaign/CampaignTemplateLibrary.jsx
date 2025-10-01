@@ -215,7 +215,7 @@ const CampaignTemplateLibrary = ({
     setLoading(true);
     try {
       // Try to fetch from API, fall back to built-in templates
-      const response = await axios.get(buildUrl("/api/campaigns/templates"), {
+      const response = await axios.get(buildUrl("/api/v1/campaigns/templates"), {
         headers: { Authorization: `Bearer ${token}` },
       });
 

@@ -1,78 +1,220 @@
-// src/config/api.js - Updated with billing endpoints and dashboard metrics
-// Centralized API configuration
+// src/config/api.js - Complete API configuration
+// Centralized API configuration for all backend endpoints
 const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE ||
   (typeof window !== 'undefined' && window.location.hostname === 'localhost'
     ? 'http://localhost:8080'
     : 'https://api.reputul.com'),
   ENDPOINTS: {
-    // Auth endpoints
+    // ==========================================
+    // AUTH ENDPOINTS (unversioned)
+    // ==========================================
     AUTH: {
       LOGIN: '/api/auth/login',
-      REGISTER: '/api/auth/register'
+      REGISTER: '/api/auth/register',
+      FORGOT_PASSWORD: '/api/auth/forgot-password',
+      RESET_PASSWORD: '/api/auth/reset-password',
+      REFRESH: '/api/auth/refresh'
     },
     
-    // User endpoints
+    // ==========================================
+    // HEALTH & STATUS (unversioned)
+    // ==========================================
+    HEALTH: {
+      CHECK: '/api/health'
+    },
+    
+    // ==========================================
+    // USER ENDPOINTS
+    // ==========================================
     USERS: {
-      PROFILE: '/api/users/profile'
+      PROFILE: '/api/v1/users/profile',
+      DASHBOARD: '/api/v1/users/dashboard'
     },
     
-    // Business endpoints
+    // ==========================================
+    // BUSINESS ENDPOINTS
+    // ==========================================
     BUSINESS: {
-      DASHBOARD: '/api/dashboard',
-      DASHBOARD_METRICS: '/api/dashboard/metrics', // NEW: Dashboard metrics endpoint
-      LIST: '/api/businesses',
-      BY_ID: (id) => `/api/businesses/${id}`,
-      REVIEW_SUMMARY: (id) => `/api/businesses/${id}/review-summary`
+      LIST: '/api/v1/businesses',
+      BY_ID: (id) => `/api/v1/businesses/${id}`,
+      REVIEW_SUMMARY: (id) => `/api/v1/businesses/${id}/review-summary`,
+      UPLOAD_LOGO: (id) => `/api/v1/businesses/${id}/logo`,
+      DELETE_LOGO: (id) => `/api/v1/businesses/${id}/logo`
     },
     
-    // Review endpoints
+    // ==========================================
+    // DASHBOARD ENDPOINTS
+    // ==========================================
+    DASHBOARD: {
+      LIST: '/api/v1/dashboard',
+      METRICS: '/api/v1/dashboard/metrics'
+    },
+    
+    // ==========================================
+    // REVIEW ENDPOINTS
+    // ==========================================
     REVIEWS: {
-      BY_BUSINESS: (id) => `/api/reviews/business/${id}`,
-      REQUEST: '/api/review-requests',
-      MANUAL: (id) => `/api/reviews/manual/${id}`
+      BY_BUSINESS: (id) => `/api/v1/reviews/business/${id}`,
+      CREATE: (businessId) => `/api/v1/reviews/${businessId}`,
+      MANUAL: (businessId) => `/api/v1/reviews/manual/${businessId}`,
+      BY_ID: (id) => `/api/v1/reviews/${id}`
     },
     
-    // Customer endpoints
+    // ==========================================
+    // PUBLIC REVIEW ENDPOINTS (no auth)
+    // ==========================================
+    PUBLIC_REVIEWS: {
+      BY_BUSINESS: (businessId) => `/api/v1/public/reviews/business/${businessId}`,
+      SUBMIT: (businessId) => `/api/v1/public/reviews/${businessId}`
+    },
+    
+    // ==========================================
+    // REVIEW REQUEST ENDPOINTS
+    // ==========================================
+    REVIEW_REQUESTS: {
+      SEND: '/api/v1/review-requests',
+      SEND_DIRECT: '/api/v1/review-requests/send-direct',
+      SEND_BATCH: '/api/v1/review-requests/send-batch',
+      STATS: '/api/v1/review-requests/stats',
+      VALIDATE_PHONE: '/api/v1/review-requests/validate-phone',
+      BY_ID: (id) => `/api/v1/review-requests/${id}`
+    },
+    
+    // ==========================================
+    // CUSTOMER ENDPOINTS
+    // ==========================================
     CUSTOMERS: {
-      LIST: '/api/customers',
-      BY_ID: (id) => `/api/customers/${id}`,
-      FEEDBACK_INFO: (id) => `/api/customers/${id}/feedback-info`
+      LIST: '/api/v1/customers',
+      BY_ID: (id) => `/api/v1/customers/${id}`,
+      BY_BUSINESS: (businessId) => `/api/v1/customers/business/${businessId}`,
+      FEEDBACK_INFO: (id) => `/api/v1/customers/${id}/feedback-info`,
+      STATS: '/api/v1/customers/stats',
+      TEST: '/api/v1/customers/test'
     },
     
-    // Email template endpoints
-    EMAIL_TEMPLATES: {
-      LIST: '/api/email-templates',
-      BY_ID: (id) => `/api/email-templates/${id}`,
-      TYPES: '/api/email-templates/types',
-      PREVIEW: (id) => `/api/email-templates/${id}/preview`
-    },
-    
-    // Waitlist endpoints
-    WAITLIST: {
-      ADD: '/api/waitlist/add',
-      COUNT: '/api/waitlist/count'
-    },
-
-    // Billing endpoints (matching BillingController exactly)
-    BILLING: {
-      CHECKOUT_SESSION: '/api/billing/checkout-session',
-      PORTAL_SESSION: '/api/billing/portal-session',
-      SUBSCRIPTION: '/api/billing/subscription',
-      PLANS: '/api/billing/plans',
-      CHECK_ENTITLEMENT: '/api/billing/check-entitlement',
-      BUSINESS_STATUS: (businessId) => `/api/billing/business/${businessId}/status`,
-      WEBHOOK: '/api/billing/webhook'
-    },
-
-    // Contacts endpoints
+    // ==========================================
+    // CONTACTS (CRM) ENDPOINTS
+    // ==========================================
     CONTACTS: {
-      LIST: '/api/contacts',
-      BY_ID: (id) => `/api/contacts/${id}`,
-      STATS: '/api/contacts/stats',
-      EXPORT_CSV: '/api/contacts/export.csv',
-      BULK_IMPORT_PREPARE: '/api/contacts/bulk/import/prepare',
-      BULK_IMPORT_COMMIT: '/api/contacts/bulk/import/commit'
+      LIST: '/api/v1/contacts',
+      BY_ID: (id) => `/api/v1/contacts/${id}`,
+      STATS: '/api/v1/contacts/stats',
+      EXPORT_CSV: '/api/v1/contacts/export.csv',
+      BULK_IMPORT_PREPARE: '/api/v1/contacts/bulk/import/prepare',
+      BULK_IMPORT_COMMIT: '/api/v1/contacts/bulk/import/commit'
+    },
+    
+    // ==========================================
+    // EMAIL TEMPLATE ENDPOINTS
+    // ==========================================
+    EMAIL_TEMPLATES: {
+      LIST: '/api/v1/email-templates',
+      BY_ID: (id) => `/api/v1/email-templates/${id}`,
+      BY_TYPE: (type) => `/api/v1/email-templates/type/${type}`,
+      DEFAULT: (type) => `/api/v1/email-templates/default/${type}`,
+      PREVIEW: (id) => `/api/v1/email-templates/${id}/preview`
+    },
+    
+    // ==========================================
+    // REPUTATION ENDPOINTS
+    // ==========================================
+    REPUTATION: {
+      BY_BUSINESS: (businessId) => `/api/v1/reputation/business/${businessId}`,
+      BREAKDOWN: (businessId) => `/api/v1/reputation/business/${businessId}/breakdown`,
+      DETAILED: (businessId) => `/api/v1/reputation/business/${businessId}/detailed`,
+      RECALCULATE: (businessId) => `/api/v1/reputation/business/${businessId}/recalculate`,
+      BATCH_RECALCULATE: '/api/v1/reputation/batch/recalculate'
+    },
+    
+    // ==========================================
+    // BILLING ENDPOINTS
+    // ==========================================
+    BILLING: {
+      CHECKOUT_SESSION: '/api/v1/billing/checkout-session',
+      PORTAL_SESSION: '/api/v1/billing/portal-session',
+      SUBSCRIPTION: '/api/v1/billing/subscription',
+      PLANS: '/api/v1/billing/plans',
+      CHECK_ENTITLEMENT: '/api/v1/billing/check-entitlement',
+      BUSINESS_STATUS: (businessId) => `/api/v1/billing/business/${businessId}/status`,
+      WEBHOOK: '/api/v1/billing/webhook'
+    },
+    
+    // ==========================================
+    // CAMPAIGN ENDPOINTS
+    // ==========================================
+    CAMPAIGNS: {
+      // Sequences
+      SEQUENCES: '/api/v1/campaigns/sequences',
+      SEQUENCE_BY_ID: (id) => `/api/v1/campaigns/sequences/${id}`,
+      UPDATE_SEQUENCE: (id) => `/api/v1/campaigns/sequences/${id}`,
+      DELETE_SEQUENCE: (id) => `/api/v1/campaigns/sequences/${id}`,
+      ACTIVATE_SEQUENCE: (id) => `/api/v1/campaigns/sequences/${id}/activate`,
+      DEACTIVATE_SEQUENCE: (id) => `/api/v1/campaigns/sequences/${id}/deactivate`,
+      
+      // Executions
+      EXECUTIONS: '/api/v1/campaigns/executions',
+      EXECUTION_BY_ID: (id) => `/api/v1/campaigns/executions/${id}`,
+      STOP_EXECUTION: (id) => `/api/v1/campaigns/executions/${id}/stop`,
+      
+      // Analytics
+      ANALYTICS: (sequenceId) => `/api/v1/campaigns/sequences/${sequenceId}/analytics`
+    },
+    
+    // ==========================================
+    // AUTOMATION ENDPOINTS
+    // ==========================================
+    AUTOMATION: {
+      // Workflows
+      WORKFLOWS: '/api/v1/automation/workflows',
+      WORKFLOW_BY_ID: (id) => `/api/v1/automation/workflows/${id}`,
+      FROM_TEMPLATE: '/api/v1/automation/workflows/from-template',
+      UPDATE_WORKFLOW: (id) => `/api/v1/automation/workflows/${id}`,
+      DELETE_WORKFLOW: (id) => `/api/v1/automation/workflows/${id}`,
+      TOGGLE_WORKFLOW: (id) => `/api/v1/automation/workflows/${id}/toggle`,
+      
+      // Templates
+      TEMPLATES: '/api/v1/automation/templates',
+      TEMPLATE_BY_ID: (id) => `/api/v1/automation/templates/${id}`,
+      
+      // Executions
+      EXECUTIONS: '/api/v1/automation/executions',
+      EXECUTION_BY_ID: (id) => `/api/v1/automation/executions/${id}`,
+      RETRY_EXECUTION: (id) => `/api/v1/automation/executions/${id}/retry`,
+      
+      // Customer timeline
+      CUSTOMER_TIMELINE: (customerId) => `/api/v1/automation/customers/${customerId}/timeline`,
+      
+      // Triggers
+      TRIGGER_MANUAL: '/api/v1/automation/trigger/manual'
+    },
+    
+    // ==========================================
+    // WAITLIST ENDPOINTS
+    // ==========================================
+    WAITLIST: {
+      ADD: '/api/v1/waitlist/add',
+      COUNT: '/api/v1/waitlist/count'
+    },
+    
+    // ==========================================
+    // WEBHOOK ENDPOINTS (typically not called from frontend)
+    // ==========================================
+    WEBHOOKS: {
+      EMAIL: {
+        SENDGRID: '/api/v1/webhooks/email/sendgrid'
+      },
+      SMS: {
+        STATUS: '/api/v1/webhooks/sms/status',
+        DELIVERY: '/api/v1/webhooks/sms/delivery'
+      }
+    },
+    
+    // ==========================================
+    // FILE SERVING ENDPOINTS
+    // ==========================================
+    FILES: {
+      SERVE_LOGO: (filename) => `/api/v1/files/logos/${filename}`
     }
   }
 };
