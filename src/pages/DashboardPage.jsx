@@ -56,7 +56,6 @@ const DashboardPage = () => {
   const [selectedBusinessForReputation, setSelectedBusinessForReputation] =
     useState(null);
   const [reputationBreakdownData, setReputationBreakdownData] = useState(null);
-  
 
   // Fetch dashboard metrics
   const fetchMetrics = useCallback(async () => {
@@ -1308,7 +1307,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-primary-50">
+    <div className="bg-gradient-to-br from-gray-50 to-primary-50">
       {/* Enhanced Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

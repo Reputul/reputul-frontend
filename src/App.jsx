@@ -9,6 +9,7 @@ import {
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import Navbar from "./components/Navbar";
+import DashboardLayout from "./components/DashboardLayout"; // NEW
 import Toast from "./components/Toast";
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -22,6 +23,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivateRoute from "./components/PrivateRoute";
 import BusinessPublicPage from "./pages/BusinessPublicPage";
 import EmailTemplatesPage from "./pages/EmailTemplatesPage";
+import CampaignManagementPage from "./pages/CampaignManagementPage"; // NEW
 import {
   NotFoundPage,
   ServerErrorPage,
@@ -42,71 +44,62 @@ import TwilioProofPage from "./pages/TwilioProofPage";
 import AutomationPage from "./pages/AutomationPage";
 
 function App() {
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
-  const [maintenanceChecked, setMaintenanceChecked] = useState(false);
-
-  // Check maintenance status on app load
   useEffect(() => {
-    const checkMaintenanceStatus = async () => {
-      try {
-        // You can implement a real API call here to check maintenance status
-        // For now, this is a placeholder that checks localStorage or env variable
-        const maintenanceStatus =
-          import.meta.env.VITE_MAINTENANCE_MODE === "true" ||
-          localStorage.getItem("maintenanceMode") === "true";
+    document.body.style.overflow = '';
+  }, []);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
+  
 
-        setIsMaintenanceMode(maintenanceStatus);
-      } catch (error) {
-        // Silently handle maintenance check errors in production
-        // If we can't check status, assume app is available
-        setIsMaintenanceMode(false);
-      } finally {
-        setMaintenanceChecked(true);
-      }
+  // Check for maintenance mode on app load
+  useEffect(() => {
+    const checkMaintenanceMode = () => {
+      const envMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
+      const localMaintenanceMode = localStorage.getItem("maintenanceMode") === "true";
+      setIsMaintenanceMode(envMaintenanceMode || localMaintenanceMode);
+      setIsCheckingMaintenance(false);
     };
 
-    checkMaintenanceStatus();
+    checkMaintenanceMode();
   }, []);
 
-  // Determine whether to show the Navbar (hide on auth pages AND customer-facing pages)
-  const hideNavbarOnRoutes = [
-    "/",
+  // Don't show navbar for certain routes
+  const noNavbarRoutes = [
     "/login",
     "/register",
     "/forgot-password",
     "/reset-password",
+    "/dashboard",
+    "/customers",
+    "/contacts",
+    "/email-templates",
+    "/review-requests",
+    "/review-platform-setup",
+    "/profile",
+    "/automation",
+    "/campaigns",
+    "/account/billing",
   ];
 
-  // Also hide navbar on customer-facing feedback pages
-  const currentPath = window.location.pathname;
-  const isCustomerFeedbackRoute =
-    currentPath.startsWith("/feedback/") ||
-    currentPath.startsWith("/feedback-gate/");
+  const shouldShowNavbar = !noNavbarRoutes.some((route) =>
+    window.location.pathname.startsWith(route)
+  );
 
-  const shouldShowNavbar =
-    !hideNavbarOnRoutes.includes(currentPath) && !isCustomerFeedbackRoute;
-
-  // Show loading while checking maintenance status
-  if (!maintenanceChecked) {
+  if (isCheckingMaintenance) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <div className="relative mb-8">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-200"></div>
-              <div className="animate-spin rounded-full h-20 w-20 border-4 border-transparent border-t-primary-500 border-r-primary-400 absolute top-0"></div>
-            </div>
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-200"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-transparent border-t-primary-500 border-r-primary-400 absolute top-0"></div>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Loading Reputul
-          </h2>
+          <h2 className="text-2xl font-bold text-white mb-2">Loading Reputul</h2>
           <p className="text-blue-200">Please wait...</p>
         </div>
       </div>
     );
   }
 
-  // Show maintenance page if in maintenance mode
   if (isMaintenanceMode) {
     return <MaintenancePage />;
   }
@@ -120,62 +113,21 @@ function App() {
               {shouldShowNavbar && <Navbar />}
               <Toast />
               <Routes>
-                {/* Redirect root path to dashboard if authenticated, else login */}
-                <Route path="/" element={<LandingPage />} />
-
                 {/* Public routes */}
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                <Route
-                  path="/forgot-password"
-                  element={<ForgotPasswordPage />}
-                />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/business/:id" element={<BusinessPublicPage />} />
                 <Route path="/sms-signup" element={<SmsSignupPage />} />
-                <Route
-                  path="/sms-signup/:businessId"
-                  element={<SmsSignupPage />}
-                />
+                <Route path="/sms-signup/:businessId" element={<SmsSignupPage />} />
                 <Route path="/twilio-proof" element={<TwilioProofPage />} />
-
-                {/* NEW: Billing routes */}
                 <Route path="/pricing" element={<PricingPage />} />
-                <Route
-                  path="/checkout/success"
-                  element={<CheckoutPages.Success />}
-                />
-                <Route
-                  path="/checkout/error"
-                  element={<CheckoutPages.Error />}
-                />
-
-                {/* NEW: Protected billing routes */}
-                <Route
-                  path="/account/billing"
-                  element={
-                    <PrivateRoute>
-                      <AccountBillingPage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/account"
-                  element={<Navigate to="/account/billing" replace />}
-                />
-
-                {/* Feedback Gate Route - Google Compliant Rating Interface */}
-                <Route
-                  path="/feedback-gate/:customerId"
-                  element={<FeedbackGatePage />}
-                />
-
-                {/* Private Feedback Route - Now works with feedback gate flow */}
-                <Route
-                  path="/feedback/:customerId"
-                  element={<CustomerFeedbackPage />}
-                />
-
+                <Route path="/checkout/success" element={<CheckoutPages.Success />} />
+                <Route path="/checkout/error" element={<CheckoutPages.Error />} />
+                <Route path="/feedback-gate/:customerId" element={<FeedbackGatePage />} />
+                <Route path="/feedback/:customerId" element={<CustomerFeedbackPage />} />
                 <Route path="/opt-in-policy" element={<OptInPolicy />} />
 
                 {/* Error routes */}
@@ -183,12 +135,14 @@ function App() {
                 <Route path="/server-error" element={<ServerErrorPage />} />
                 <Route path="/maintenance" element={<MaintenancePage />} />
 
-                {/* Protected routes */}
+                {/* Protected routes WITH SIDEBAR LAYOUT */}
                 <Route
                   path="/dashboard"
                   element={
                     <PrivateRoute>
-                      <DashboardPage />
+                      <DashboardLayout>
+                        <DashboardPage />
+                      </DashboardLayout>
                     </PrivateRoute>
                   }
                 />
@@ -196,7 +150,9 @@ function App() {
                   path="/customers"
                   element={
                     <PrivateRoute>
-                      <CustomerManagementPage />
+                      <DashboardLayout>
+                        <CustomerManagementPage />
+                      </DashboardLayout>
                     </PrivateRoute>
                   }
                 />
@@ -204,7 +160,9 @@ function App() {
                   path="/contacts"
                   element={
                     <PrivateRoute>
-                      <ContactsPage />
+                      <DashboardLayout>
+                        <ContactsPage />
+                      </DashboardLayout>
                     </PrivateRoute>
                   }
                 />
@@ -212,7 +170,9 @@ function App() {
                   path="/email-templates"
                   element={
                     <PrivateRoute>
-                      <EmailTemplatesPage />
+                      <DashboardLayout>
+                        <EmailTemplatesPage />
+                      </DashboardLayout>
                     </PrivateRoute>
                   }
                 />
@@ -220,15 +180,9 @@ function App() {
                   path="/review-requests"
                   element={
                     <PrivateRoute>
-                      <ReviewRequestPage />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <PrivateRoute>
-                      <ProfilePage />
+                      <DashboardLayout>
+                        <ReviewRequestPage />
+                      </DashboardLayout>
                     </PrivateRoute>
                   }
                 />
@@ -236,7 +190,9 @@ function App() {
                   path="/review-platform-setup"
                   element={
                     <PrivateRoute>
-                      <ReviewPlatformSetupPage />
+                      <DashboardLayout>
+                        <ReviewPlatformSetupPage />
+                      </DashboardLayout>
                     </PrivateRoute>
                   }
                 />
@@ -244,12 +200,45 @@ function App() {
                   path="/automation"
                   element={
                     <PrivateRoute>
-                      <AutomationPage />
+                      <DashboardLayout>
+                        <AutomationPage />
+                      </DashboardLayout>
                     </PrivateRoute>
                   }
                 />
+                <Route
+                  path="/campaigns"
+                  element={
+                    <PrivateRoute>
+                      <DashboardLayout>
+                        <CampaignManagementPage />
+                      </DashboardLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <PrivateRoute>
+                      <DashboardLayout>
+                        <ProfilePage />
+                      </DashboardLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/account/billing"
+                  element={
+                    <PrivateRoute>
+                      <DashboardLayout>
+                        <AccountBillingPage />
+                      </DashboardLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route path="/account" element={<Navigate to="/account/billing" replace />} />
 
-                {/* 404 - Keep this LAST to catch all unmatched routes */}
+                {/* 404 - Keep this LAST */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </div>
