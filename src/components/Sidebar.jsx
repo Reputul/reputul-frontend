@@ -156,9 +156,11 @@ const Sidebar = () => {
       <div className="p-4 border-b border-slate-800 flex items-center justify-between">
         {!isCollapsed && (
           <Link to="/dashboard" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">R</span>
-            </div>
+            <img
+              src="/logo192.png"
+              alt="Reputul Logo"
+              className="w-8 h-8 object-contain"
+            />
             <span className="font-bold text-xl">Reputul</span>
           </Link>
         )}
