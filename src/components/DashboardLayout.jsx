@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 const DashboardLayout = ({ children }) => {
   return (
     <div className="flex h-screen bg-slate-50">
-      <div className="flex-shrink-0 z-40 w-64">
+      <div className="flex-shrink-0 z-40">  {/* ← Removed w-64 */}
         <Sidebar />
       </div>
       

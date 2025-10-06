@@ -32,6 +32,9 @@ const DashboardPage = () => {
   const [setupBannerDismissed, setSetupBannerDismissed] = useState(false);
   const [contactsCount, setContactsCount] = useState(0);
 
+  // Mobile menu state
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
   // Metrics state
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -68,13 +71,13 @@ const DashboardPage = () => {
   // Wilson Score state
   const [wilsonBreakdowns, setWilsonBreakdowns] = useState({});
   const [showReputationModal, setShowReputationModal] = useState(false);
-  const [selectedBusinessForReputation, setSelectedBusinessForReputation] = useState(null);
+  const [selectedBusinessForReputation, setSelectedBusinessForReputation] =
+    useState(null);
   const [reputationBreakdownData, setReputationBreakdownData] = useState(null);
 
-  // Fetch functions
+  // Fetch functions (keep all existing fetch functions - no changes needed)
   const fetchMetrics = useCallback(async () => {
     if (!token) return;
-
     setMetricsLoading(true);
     try {
       const response = await axios.get(
@@ -102,7 +105,6 @@ const DashboardPage = () => {
 
   const fetchBusinesses = useCallback(async () => {
     if (!token) return;
-
     try {
       const res = await axios.get(buildUrl(API_ENDPOINTS.DASHBOARD.LIST), {
         headers: { Authorization: `Bearer ${token}` },
@@ -119,7 +121,10 @@ const DashboardPage = () => {
             );
             summaries[biz.id] = summaryRes.data;
           } catch (err) {
-            console.error(`Error fetching summary for business ${biz.id}:`, err);
+            console.error(
+              `Error fetching summary for business ${biz.id}:`,
+              err
+            );
           }
         })
       );
@@ -135,7 +140,10 @@ const DashboardPage = () => {
             );
             reviewsData[biz.id] = reviewRes.data;
           } catch (err) {
-            console.error(`Error fetching reviews for business ${biz.id}:`, err);
+            console.error(
+              `Error fetching reviews for business ${biz.id}:`,
+              err
+            );
           }
         })
       );
@@ -150,7 +158,6 @@ const DashboardPage = () => {
 
   const fetchContactsCount = useCallback(async () => {
     if (!token) return;
-
     try {
       const response = await axios.get("/api/v1/contacts", {
         headers: { Authorization: `Bearer ${token}` },
@@ -164,7 +171,6 @@ const DashboardPage = () => {
 
   const fetchWilsonBreakdowns = useCallback(async () => {
     if (!token) return;
-
     try {
       const breakdowns = {};
       await Promise.all(
@@ -176,7 +182,10 @@ const DashboardPage = () => {
             );
             breakdowns[business.id] = response.data;
           } catch (err) {
-            console.error(`Error fetching Wilson breakdown for business ${business.id}:`, err);
+            console.error(
+              `Error fetching Wilson breakdown for business ${business.id}:`,
+              err
+            );
           }
         })
       );
@@ -189,7 +198,6 @@ const DashboardPage = () => {
   const fetchReputationBreakdown = useCallback(
     async (businessId) => {
       if (!token) return;
-
       try {
         const response = await axios.get(
           buildUrl(`/api/v1/reputation/business/${businessId}/detailed`),
@@ -197,7 +205,10 @@ const DashboardPage = () => {
         );
         setReputationBreakdownData(response.data);
       } catch (err) {
-        console.error(`Error fetching detailed reputation for business ${businessId}:`, err);
+        console.error(
+          `Error fetching detailed reputation for business ${businessId}:`,
+          err
+        );
         setReputationBreakdownData({
           reputulRating: 0.0,
           compositeScore: 0,
@@ -213,13 +224,16 @@ const DashboardPage = () => {
     [token]
   );
 
-  // Event handlers
+  // Event handlers (keep all existing handlers)
   const handleBusinessChange = useCallback((e) => {
     setNewBusiness((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }, []);
 
   const handleEditBusinessChange = useCallback((e) => {
-    setEditBusinessData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setEditBusinessData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   }, []);
 
   const handleCreateBusiness = useCallback(
@@ -314,7 +328,10 @@ const DashboardPage = () => {
   );
 
   const handleRequestReviewsChange = useCallback((e) => {
-    setRequestReviewsData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setRequestReviewsData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   }, []);
 
   const handleShowReputationBreakdown = useCallback(
@@ -348,7 +365,8 @@ const DashboardPage = () => {
 
   const handleDeleteBusiness = useCallback(
     async (businessId) => {
-      if (!window.confirm("Are you sure you want to delete this business?")) return;
+      if (!window.confirm("Are you sure you want to delete this business?"))
+        return;
       try {
         await axios.delete(buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(businessId)), {
           headers: { Authorization: `Bearer ${token}` },
@@ -382,7 +400,7 @@ const DashboardPage = () => {
     alert("Public link copied to clipboard!");
   }, []);
 
-  // Effects
+  // Effects (keep all existing useEffects)
   useEffect(() => {
     fetchBusinesses();
     fetchContactsCount();
@@ -448,12 +466,17 @@ const DashboardPage = () => {
   };
 
   const staticMetrics = {
-    totalReviews: businesses.reduce((sum, biz) => sum + (biz.reviewCount || 0), 0),
+    totalReviews: businesses.reduce(
+      (sum, biz) => sum + (biz.reviewCount || 0),
+      0
+    ),
     averageRating:
       businesses.length > 0
         ? (
-            businesses.reduce((sum, biz) => sum + (biz.reputationScore || 0), 0) /
-            businesses.length
+            businesses.reduce(
+              (sum, biz) => sum + (biz.reputationScore || 0),
+              0
+            ) / businesses.length
           ).toFixed(1)
         : "0.0",
     responseTime: 18,
@@ -478,202 +501,382 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-primary-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-                Reputul Dashboard
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-primary-50">
+      {/* Mobile Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent truncate">
+                Reputul
               </h1>
-              <p className="text-gray-600 mt-1">
-                Manage your business reputation with confidence
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5 hidden sm:block">
+                Manage your business reputation
               </p>
             </div>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+              className="lg:hidden p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+
+            {/* Desktop add business button */}
             <button
               onClick={() => setShowAddBusiness(true)}
-              className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95 group"
+              className="hidden sm:flex items-center space-x-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-lg lg:rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95"
             >
-              <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <svg
+                className="w-4 h-4 lg:w-5 lg:h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
-              <span className="font-semibold">Add Business</span>
+              <span className="text-sm lg:text-base font-semibold hidden sm:inline">
+                Add Business
+              </span>
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <PeriodSelector metricsPeriod={metricsPeriod} setMetricsPeriod={setMetricsPeriod} />
-
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-12 gap-6 mb-8">
-          <div className="col-span-12 md:col-span-6 lg:col-span-3">
-            <MetricCard
-              icon={
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+      {/* Mobile Sidebar Overlay */}
+      {showMobileSidebar && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setShowMobileSidebar(false)}
+        >
+          <div
+            className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-2xl overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+              <h2 className="text-lg font-bold text-gray-900">Menu</h2>
+              <button
+                onClick={() => setShowMobileSidebar(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
-              }
-              title="Requests Sent"
-              value={metrics?.sent || 0}
-              subtitle={`Last ${metricsPeriod} days`}
-              color="primary"
-              loading={metricsLoading}
-            />
-          </div>
-
-          <div className="col-span-12 md:col-span-6 lg:col-span-3">
-            <MetricCard
-              icon={
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
-              title="Completed"
-              value={metrics?.completed || 0}
-              subtitle="Reviews submitted"
-              trend={getCompletionRateTrend()}
-              color="green"
-              loading={metricsLoading}
-            />
-          </div>
-
-          <div className="col-span-12 md:col-span-6 lg:col-span-3">
-            <MetricCard
-              icon={
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              }
-              title="Avg Rating"
-              value={metrics?.averageRatingInPeriod?.toFixed(1) || staticMetrics.averageRating}
-              subtitle={`Last ${metricsPeriod} days`}
-              color="yellow"
-              loading={metricsLoading}
-            />
-          </div>
-
-          <div className="col-span-12 md:col-span-6 lg:col-span-3">
-            <MetricCard
-              icon={
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              }
-              title="Total Contacts"
-              value={staticMetrics.totalContacts}
-              subtitle="In your database"
-              color="purple"
-              loading={false}
-            />
+              </button>
+            </div>
+            <div className="p-4 space-y-6">
+              <QuickActions
+                setShowAddBusiness={(val) => {
+                  setShowAddBusiness(val);
+                  setShowMobileSidebar(false);
+                }}
+                setShowRequestReviews={(val) => {
+                  setShowRequestReviews(val);
+                  setShowMobileSidebar(false);
+                }}
+                setShowAnalytics={(val) => {
+                  setShowAnalytics(val);
+                  setShowMobileSidebar(false);
+                }}
+              />
+              <RecentActivity businesses={businesses} reviewsMap={reviewsMap} />
+              <ProTip />
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Time Series Chart */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="mb-4 sm:mb-6">
+          <PeriodSelector
+            metricsPeriod={metricsPeriod}
+            setMetricsPeriod={setMetricsPeriod}
+          />
+        </div>
+
+        {/* Metrics Cards - 2 columns on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+          <MetricCard
+            icon={
+              <svg
+                className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                />
+              </svg>
+            }
+            title="Requests Sent"
+            value={metrics?.sent || 0}
+            subtitle={`Last ${metricsPeriod}d`}
+            color="primary"
+            loading={metricsLoading}
+          />
+
+          <MetricCard
+            icon={
+              <svg
+                className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            }
+            title="Completed"
+            value={metrics?.completed || 0}
+            subtitle="Reviews"
+            trend={getCompletionRateTrend()}
+            color="green"
+            loading={metricsLoading}
+          />
+
+          <MetricCard
+            icon={
+              <svg
+                className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            }
+            title="Avg Rating"
+            value={
+              metrics?.averageRatingInPeriod?.toFixed(1) ||
+              staticMetrics.averageRating
+            }
+            subtitle={`${metricsPeriod}d`}
+            color="yellow"
+            loading={metricsLoading}
+          />
+
+          <MetricCard
+            icon={
+              <svg
+                className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            }
+            title="Contacts"
+            value={staticMetrics.totalContacts}
+            subtitle="Total"
+            color="purple"
+            loading={false}
+          />
+        </div>
+
+        {/* Time Series Chart - Hide on small mobile, show on tablet+ */}
         {metrics?.byDay && metrics.byDay.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Over Time</h3>
-            <div className="h-64 flex items-end space-x-2">
+          <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 sm:mb-8">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+              Activity Over Time
+            </h3>
+            <div className="h-48 sm:h-64 flex items-end space-x-1 sm:space-x-2 overflow-x-auto">
               {metrics.byDay.map((day) => {
-                const maxValue = Math.max(...metrics.byDay.map((d) => Math.max(d.requestsSent, d.reviewsReceived)));
-                const requestHeight = maxValue > 0 ? (day.requestsSent / maxValue) * 200 : 0;
-                const reviewHeight = maxValue > 0 ? (day.reviewsReceived / maxValue) * 200 : 0;
+                const maxValue = Math.max(
+                  ...metrics.byDay.map((d) =>
+                    Math.max(d.requestsSent, d.reviewsReceived)
+                  )
+                );
+                const requestHeight =
+                  maxValue > 0 ? (day.requestsSent / maxValue) * 150 : 0;
+                const reviewHeight =
+                  maxValue > 0 ? (day.reviewsReceived / maxValue) * 150 : 0;
 
                 return (
-                  <div key={day.date} className="flex-1 flex flex-col items-center">
+                  <div
+                    key={day.date}
+                    className="flex-1 flex flex-col items-center min-w-[20px]"
+                  >
                     <div className="relative w-full max-w-16 mb-2">
-                      <div className="bg-blue-500 rounded-t mx-1" style={{ height: `${requestHeight}px` }} title={`${day.requestsSent} requests sent`} />
-                      <div className="bg-green-500 rounded-t mx-1" style={{ height: `${reviewHeight}px` }} title={`${day.reviewsReceived} reviews received`} />
+                      <div
+                        className="bg-blue-500 rounded-t mx-0.5 sm:mx-1"
+                        style={{ height: `${requestHeight}px` }}
+                        title={`${day.requestsSent} requests`}
+                      />
+                      <div
+                        className="bg-green-500 rounded-t mx-0.5 sm:mx-1"
+                        style={{ height: `${reviewHeight}px` }}
+                        title={`${day.reviewsReceived} reviews`}
+                      />
                     </div>
-                    <div className="text-xs text-gray-500 transform -rotate-45 origin-center">
-                      {new Date(day.date).getMonth() + 1}/{new Date(day.date).getDate()}
+                    <div className="text-[10px] sm:text-xs text-gray-500 transform -rotate-45 origin-center whitespace-nowrap">
+                      {new Date(day.date).getMonth() + 1}/
+                      {new Date(day.date).getDate()}
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="flex justify-center space-x-6 mt-4">
+            <div className="flex justify-center space-x-4 sm:space-x-6 mt-4">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                <span className="text-sm text-gray-600">Requests Sent</span>
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded"></div>
+                <span className="text-xs sm:text-sm text-gray-600">
+                  Requests
+                </span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                <span className="text-sm text-gray-600">Reviews Received</span>
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded"></div>
+                <span className="text-xs sm:text-sm text-gray-600">
+                  Reviews
+                </span>
               </div>
             </div>
           </div>
         )}
 
         {/* Platform Setup Banner */}
-        {!setupBannerDismissed && businesses.some((b) => !b.reviewPlatformsConfigured) && (
-          <div className="bg-white/90 backdrop-blur-xl border border-yellow-200 rounded-2xl p-6 mb-6 shadow-xl">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center">
-                <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full mr-4 shadow-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Complete Your Setup</h3>
-                  <p className="text-gray-700 mb-3">
-                    {businesses.filter((b) => !b.reviewPlatformsConfigured).length === 1
-                      ? "1 business needs"
-                      : `${businesses.filter((b) => !b.reviewPlatformsConfigured).length} businesses need`}{" "}
-                    platform configuration. Set up Google/Facebook review URLs to maximize your reputation impact.
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => navigate("/review-platform-setup")}
-                      className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        {!setupBannerDismissed &&
+          businesses.some((b) => !b.reviewPlatformsConfigured) && (
+            <div className="bg-white/90 backdrop-blur-xl border border-yellow-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1">
+                  <div className="p-2 sm:p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full shadow-lg flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      Configure Review Platforms
-                    </button>
-                    <button
-                      onClick={handleRemindLater}
-                      className="text-gray-600 hover:text-gray-800 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
-                    >
-                      Remind me in 24 hours
-                    </button>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                      Complete Your Setup
+                    </h3>
+                    <p className="text-sm sm:text-base text-gray-700 mb-3">
+                      {businesses.filter((b) => !b.reviewPlatformsConfigured)
+                        .length === 1
+                        ? "1 business needs"
+                        : `${
+                            businesses.filter(
+                              (b) => !b.reviewPlatformsConfigured
+                            ).length
+                          } businesses need`}{" "}
+                      platform configuration.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                      <button
+                        onClick={() => navigate("/review-platform-setup")}
+                        className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base"
+                      >
+                        Configure Now
+                      </button>
+                      <button
+                        onClick={handleRemindLater}
+                        className="text-gray-600 hover:text-gray-800 px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                      >
+                        Remind in 24h
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <button onClick={handleDismissBanner} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200" title="Dismiss permanently">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Your Businesses</h2>
-                <p className="text-gray-600">Manage and monitor your business reputation</p>
-              </div>
-              <div className="flex space-x-3">
                 <button
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  onClick={handleDismissBanner}
+                  className="self-start sm:self-auto text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
+          {/* Main Content - Full width until xl, then 2 columns */}
+          <div className="col-span-1 xl:col-span-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                  Your Businesses
+                </h2>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Manage your reputation
+                </p>
+              </div>
+              <div className="flex space-x-2 sm:space-x-3 w-full sm:w-auto">
+                <button
+                  className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     selectedFilter === "all"
                       ? "bg-primary-500 text-white shadow-lg"
-                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300 hover:border-primary-300"
+                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300"
                   }`}
                   onClick={() => setSelectedFilter("all")}
                 >
                   All
                 </button>
                 <button
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     selectedFilter === "top-rated"
                       ? "bg-primary-500 text-white shadow-lg"
-                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300 hover:border-primary-300"
+                      : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-300"
                   }`}
                   onClick={() => setSelectedFilter("top-rated")}
                 >
@@ -683,30 +886,45 @@ const DashboardPage = () => {
             </div>
 
             {businesses.length === 0 ? (
-              <div className="bg-gradient-to-br from-primary-50 to-purple-50 rounded-2xl border-2 border-dashed border-primary-200 p-12 text-center">
-                <div className="relative mx-auto w-32 h-32 mb-6">
+              <div className="bg-gradient-to-br from-primary-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-dashed border-primary-200 p-8 sm:p-12 text-center">
+                <div className="relative mx-auto w-24 h-24 sm:w-32 sm:h-32 mb-4 sm:mb-6">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
                   <div className="relative bg-gradient-to-r from-primary-500 to-purple-600 rounded-full w-full h-full flex items-center justify-center shadow-xl">
-                    <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    <svg
+                      className="w-12 h-12 sm:w-16 sm:h-16 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Ready to boost your reputation?</h3>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
-                  Add your first business and start collecting 5-star reviews that drive more customers to your door.
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+                  Ready to boost your reputation?
+                </h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-md mx-auto leading-relaxed px-4">
+                  Add your first business and start collecting 5-star reviews
                 </p>
                 <button
                   onClick={() => setShowAddBusiness(true)}
-                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-primary-500/25 transform hover:-translate-y-1 transition-all duration-300 active:scale-95"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-bold text-base sm:text-lg shadow-2xl hover:shadow-primary-500/25 transform hover:-translate-y-1 transition-all duration-300 active:scale-95"
                 >
                   Add Your First Business
                 </button>
               </div>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid gap-4 sm:gap-6">
                 {businesses
-                  .filter((business) => selectedFilter === "all" || business.badge === "Top Rated")
+                  .filter(
+                    (business) =>
+                      selectedFilter === "all" || business.badge === "Top Rated"
+                  )
                   .map((business) => (
                     <BusinessCard
                       key={business.id}
@@ -718,7 +936,9 @@ const DashboardPage = () => {
                       handleEditBusiness={handleEditBusiness}
                       copyPublicLink={copyPublicLink}
                       handleDeleteBusiness={handleDeleteBusiness}
-                      handleShowReputationBreakdown={handleShowReputationBreakdown}
+                      handleShowReputationBreakdown={
+                        handleShowReputationBreakdown
+                      }
                       fetchBusinesses={fetchBusinesses}
                       fetchMetrics={fetchMetrics}
                     />
@@ -727,20 +947,42 @@ const DashboardPage = () => {
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <QuickActions
-              setShowAddBusiness={setShowAddBusiness}
-              setShowRequestReviews={setShowRequestReviews}
-              setShowAnalytics={setShowAnalytics}
-            />
-            <RecentActivity businesses={businesses} reviewsMap={reviewsMap} />
-            <ProTip />
+          {/* Desktop Sidebar - Only visible on xl screens */}
+          <div className="hidden xl:block col-span-1">
+            <div className="space-y-6 sticky top-24">
+              <QuickActions
+                setShowAddBusiness={setShowAddBusiness}
+                setShowRequestReviews={setShowRequestReviews}
+                setShowAnalytics={setShowAnalytics}
+              />
+              <RecentActivity businesses={businesses} reviewsMap={reviewsMap} />
+              <ProTip />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Mobile FAB (Floating Action Button) for Add Business */}
+      <button
+        onClick={() => setShowAddBusiness(true)}
+        className="sm:hidden fixed bottom-6 right-6 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white p-4 rounded-full shadow-2xl hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-200 z-30"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+          />
+        </svg>
+      </button>
+
+      {/* All Modals */}
       <AddBusinessModal
         showAddBusiness={showAddBusiness}
         setShowAddBusiness={setShowAddBusiness}
