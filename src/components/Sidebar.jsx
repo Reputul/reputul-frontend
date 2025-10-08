@@ -107,8 +107,8 @@ const Sidebar = () => {
       title: "Settings",
       items: [
         {
-          name: "Review Platforms",
-          path: "/review-platform-setup",
+          name: "Review Platforms", // Single unified entry
+          path: "/review-platforms",
           icon: (
             <path
               strokeLinecap="round"

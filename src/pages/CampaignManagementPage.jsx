@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { toast } from 'sonner';
 import { buildUrl, API_ENDPOINTS } from "../config/api";
 import CampaignSequenceBuilder from "../components/campaign/CampaignSequenceBuilder";
 import CampaignExecutionModal from "../components/campaign/CampaignExecutionModal";
@@ -11,7 +11,6 @@ import CampaignPreviewModal from "../components/campaign/CampaignPreviewModal";
 
 const CampaignManagementPage = () => {
   const { token } = useAuth();
-  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [sequences, setSequences] = useState([]);
   const [executions, setExecutions] = useState([]);
@@ -47,11 +46,11 @@ const CampaignManagementPage = () => {
       setCustomers(customersRes.data);
     } catch (error) {
       console.error("Error fetching campaign data:", error);
-      showToast("Failed to load campaign data", "error");
+      toast.error("Failed to load campaign data");
     } finally {
       setLoading(false);
     }
-  }, [token, showToast]);
+  }, [token]);
 
   useEffect(() => {
     fetchData();
@@ -78,11 +77,11 @@ const CampaignManagementPage = () => {
       await axios.delete(buildUrl(`/api/v1/campaigns/sequences/${sequenceId}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
-      showToast("Campaign sequence deleted successfully", "success");
+      toast.success("Campaign sequence deleted successfully");
       fetchData();
     } catch (error) {
       console.error("Error deleting sequence:", error);
-      showToast("Failed to delete campaign sequence", "error");
+      toast.error("Failed to delete campaign sequence");
     }
   };
 
@@ -96,14 +95,13 @@ const CampaignManagementPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      showToast(
-        `Campaign ${isActive ? "activated" : "deactivated"} successfully`,
-        "success"
+      toast.success(
+        `Campaign ${isActive ? "activated" : "deactivated"} successfully`
       );
       fetchData();
     } catch (error) {
       console.error("Error toggling sequence status:", error);
-      showToast("Failed to update campaign status", "error");
+      toast.error("Failed to update campaign status");
     }
   };
 
@@ -117,15 +115,15 @@ const CampaignManagementPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      showToast("Default campaign updated successfully", "success");
+      toast.success("Default campaign updated successfully");
       fetchData();
     } catch (error) {
       console.error("Error setting default sequence:", error);
-      showToast("Failed to set default campaign", "error");
+      toast.error("Failed to set default campaign");
     }
   };
 
-  // NEW: Preview a sequence
+  // Preview a sequence
   const handlePreviewSequence = (sequence) => {
     setPreviewSequence(sequence);
     setShowPreviewModal(true);
@@ -143,19 +141,19 @@ const CampaignManagementPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      showToast("Campaign started successfully", "success");
+      toast.success("Campaign started successfully");
       fetchData();
     } catch (error) {
       console.error("Error starting campaign:", error);
-      showToast("Failed to start campaign", "error");
+      toast.error("Failed to start campaign");
     }
   };
 
-  // NEW: Start campaign from a sequence
+  // Start campaign from a sequence
   const handleStartCampaignForSequence = (sequence) => {
     // This would open a modal to select customers or start immediately
     // For now, just show a success message
-    showToast(`Ready to start campaign: ${sequence.name}`, "info");
+    toast.info(`Ready to start campaign: ${sequence.name}`);
     // You can implement customer selection logic here
   };
 
@@ -168,17 +166,17 @@ const CampaignManagementPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      showToast("Campaign stopped successfully", "success");
+      toast.success("Campaign stopped successfully");
       fetchData();
     } catch (error) {
       console.error("Error stopping campaign:", error);
-      showToast("Failed to stop campaign", "error");
+      toast.error("Failed to stop campaign");
     }
   };
 
   const handleBulkStartCampaigns = async () => {
     if (selectedCustomers.length === 0) {
-      showToast("Please select customers first", "warning");
+      toast.warning("Please select customers first");
       return;
     }
 
@@ -195,16 +193,13 @@ const CampaignManagementPage = () => {
         }
       );
 
-      showToast(
-        `Started campaigns for ${selectedCustomers.length} customers`,
-        "success"
-      );
+      toast.success(`Started campaigns for ${selectedCustomers.length} customers`);
       setSelectedCustomers([]);
       setShowBulkActions(false);
       fetchData();
     } catch (error) {
       console.error("Error starting bulk campaigns:", error);
-      showToast("Failed to start bulk campaigns", "error");
+      toast.error("Failed to start bulk campaigns");
     }
   };
 

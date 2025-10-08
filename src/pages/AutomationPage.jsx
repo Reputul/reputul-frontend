@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { toast } from 'sonner';
 import { buildUrl } from "../config/api";
 import AutomationMetricsCards from "../components/automation/AutomationMetricsCards";
 import CustomerJourneyOverview from "../components/automation/CustomerJourneyOverview";
@@ -14,7 +14,6 @@ import JourneyBuilder from "../components/automation/JourneyBuilder";
 
 const AutomationPage = () => {
   const { token } = useContext(AuthContext);
-  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
     requestsSent: 0,
@@ -74,14 +73,14 @@ const AutomationPage = () => {
       });
     } catch (error) {
       console.error("Error fetching automation data:", error);
-      showToast("Failed to load automation data", "error");
+      toast.error("Failed to load automation data");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSendManualRequest = () => {
-    showToast("Manual request feature coming soon!", "info");
+    toast.info("Manual request feature coming soon!");
   };
 
   const handleTemplateSelect = (template) => {

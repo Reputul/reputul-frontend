@@ -125,6 +125,17 @@ const DashboardPage = () => {
               `Error fetching summary for business ${biz.id}:`,
               err
             );
+            if (err.response?.status === 403) {
+              console.warn(
+                `⚠️ Access denied for business ${biz.id} - tenant mismatch`
+              );
+              summaries[biz.id] = {
+                averageRating: 0,
+                totalReviews: 0,
+                latestReviewComment: "Access denied",
+                badge: "Unknown",
+              };
+            }
           }
         })
       );
@@ -144,6 +155,12 @@ const DashboardPage = () => {
               `Error fetching reviews for business ${biz.id}:`,
               err
             );
+            if (err.response?.status === 403) {
+              console.warn(
+                `⚠️ Access denied for business ${biz.id} reviews - tenant mismatch`
+              );
+              reviewsData[biz.id] = [];
+            }
           }
         })
       );
@@ -398,6 +415,11 @@ const DashboardPage = () => {
     const link = `${window.location.origin}/business/${businessId}`;
     navigator.clipboard.writeText(link);
     alert("Public link copied to clipboard!");
+  }, []);
+
+  useEffect(() => {
+    console.log("🔍 Current user token:", token);
+    console.log("🔍 Decoded token:", JSON.parse(atob(token.split(".")[1])));
   }, []);
 
   // Effects (keep all existing useEffects)
