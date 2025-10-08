@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -8,10 +7,9 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { ToastProvider } from "./context/ToastContext";
+import { Toaster } from 'sonner';
 import Navbar from "./components/Navbar";
 import DashboardLayout from "./components/DashboardLayout";
-import Toast from "./components/Toast";
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import CustomerManagementPage from "./pages/CustomerManagementPage";
@@ -33,7 +31,7 @@ import {
 } from "./pages/ErrorPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ReviewRequestPage from "./pages/ReviewRequestPage";
-import ReviewPlatformSetupPage from "./pages/ReviewPlatformSetupPage";
+import ReviewPlatformsPage from "./pages/ReviewPlatformsPage";
 import CustomerFeedbackPage from "./pages/CustomerFeedbackPage";
 import FeedbackGatePage from "./pages/FeedbackGatePage";
 import OptInPolicy from "./pages/OptInPolicy";
@@ -43,6 +41,7 @@ import CheckoutPages from "./pages/CheckoutPages";
 import SmsSignupPage from "./pages/SmsSignupPage";
 import TwilioProofPage from "./pages/TwilioProofPage";
 import AutomationPage from "./pages/AutomationPage";
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -73,7 +72,13 @@ function AppContent() {
   return (
     <div className="App">
       {shouldShowNavbar && <Navbar />}
-      <Toast />
+      <Toaster 
+        position="top-right"
+        expand={true}
+        richColors
+        closeButton
+        duration={4000}
+      />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
@@ -88,8 +93,15 @@ function AppContent() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/checkout/success" element={<CheckoutPages.Success />} />
         <Route path="/checkout/error" element={<CheckoutPages.Error />} />
-        <Route path="/feedback-gate/:customerId" element={<FeedbackGatePage />} />
-        <Route path="/feedback/:customerId" element={<CustomerFeedbackPage />} />
+        <Route path="/oauth/callback/google" element={<OAuthCallbackPage />} />
+        <Route
+          path="/feedback-gate/:customerId"
+          element={<FeedbackGatePage />}
+        />
+        <Route
+          path="/feedback/:customerId"
+          element={<CustomerFeedbackPage />}
+        />
         <Route path="/opt-in-policy" element={<OptInPolicy />} />
 
         {/* Error routes */}
@@ -149,11 +161,11 @@ function AppContent() {
           }
         />
         <Route
-          path="/review-platform-setup"
+          path="/review-platforms"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <ReviewPlatformSetupPage />
+                <ReviewPlatformsPage />
               </DashboardLayout>
             </PrivateRoute>
           }
@@ -198,7 +210,10 @@ function AppContent() {
             </PrivateRoute>
           }
         />
-        <Route path="/account" element={<Navigate to="/account/billing" replace />} />
+        <Route
+          path="/account"
+          element={<Navigate to="/account/billing" replace />}
+        />
 
         {/* 404 - Keep this LAST */}
         <Route path="*" element={<NotFoundPage />} />
@@ -218,8 +233,10 @@ function App() {
   // Check for maintenance mode on app load
   useEffect(() => {
     const checkMaintenanceMode = () => {
-      const envMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
-      const localMaintenanceMode = localStorage.getItem("maintenanceMode") === "true";
+      const envMaintenanceMode =
+        import.meta.env.VITE_MAINTENANCE_MODE === "true";
+      const localMaintenanceMode =
+        localStorage.getItem("maintenanceMode") === "true";
       setIsMaintenanceMode(envMaintenanceMode || localMaintenanceMode);
       setIsCheckingMaintenance(false);
     };
@@ -235,7 +252,9 @@ function App() {
             <div className="animate-spin rounded-full h-20 w-20 border-4 border-primary-200"></div>
             <div className="animate-spin rounded-full h-20 w-20 border-4 border-transparent border-t-primary-500 border-r-primary-400 absolute top-0"></div>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Loading Reputul</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Loading Reputul
+          </h2>
           <p className="text-blue-200">Please wait...</p>
         </div>
       </div>
@@ -249,11 +268,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <ToastProvider>
-          <ErrorBoundary>
-            <AppContent />
-          </ErrorBoundary>
-        </ToastProvider>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
       </AuthProvider>
     </Router>
   );
