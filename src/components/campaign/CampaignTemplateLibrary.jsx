@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
 import { buildUrl } from "../../config/api";
 import ModalPortal from "../common/ModalPortal";
 
@@ -22,7 +21,6 @@ const CampaignTemplateLibrary = ({
   selectedIndustry = null,
 }) => {
   const { token } = useAuth();
-  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);

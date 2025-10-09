@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useToast } from "../../context/ToastContext";
+import { toast } from 'sonner';
 import { buildUrl } from "../../config/api";
 
 const WorkflowCard = ({ workflow, onWorkflowUpdate, onSaveAsTemplate, userToken }) => {
   const [isToggling, setIsToggling] = useState(false);
-  const { showToast } = useToast();
 
   const handleToggleStatus = async () => {
     if (isToggling) return;
@@ -25,11 +24,11 @@ const WorkflowCard = ({ workflow, onWorkflowUpdate, onSaveAsTemplate, userToken 
         { headers: { Authorization: `Bearer ${userToken}` } }
       );
 
-      showToast(`Workflow ${action}d successfully`, "success");
+      toast.success(`Workflow ${action}d successfully`);
       onWorkflowUpdate();
     } catch (error) {
       console.error(`Error ${action}ing workflow:`, error);
-      showToast(`Failed to ${action} workflow`, "error");
+      toast.error(`Failed to ${action} workflow`);
     } finally {
       setIsToggling(false);
     }

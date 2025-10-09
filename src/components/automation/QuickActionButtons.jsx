@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { buildUrl } from '../../config/api';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 
 const QuickActionButtons = ({ customer, userToken, onActionComplete }) => {
   const [loading, setLoading] = useState({});
-  const { showToast } = useToast();
 
   const handleQuickAction = async (action, additionalData = {}) => {
     setLoading(prev => ({ ...prev, [action]: true }));
@@ -63,13 +62,13 @@ const QuickActionButtons = ({ customer, userToken, onActionComplete }) => {
         headers: { Authorization: `Bearer ${userToken}` }
       });
 
-      showToast(successMessage, 'success');
+      toast.success(successMessage);
       onActionComplete?.(customer.id, action);
       
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
       const errorMessage = error.response?.data?.message || `Failed to ${action.replace('_', ' ')}`;
-      showToast(errorMessage, 'error');
+      toast.error(errorMessage);
     } finally {
       setLoading(prev => ({ ...prev, [action]: false }));
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { buildUrl } from '../../config/api';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 
 const TemplateLibrary = ({ isOpen, onClose, onSelectTemplate, userToken }) => {
   const [templates, setTemplates] = useState([]);
@@ -9,7 +9,6 @@ const TemplateLibrary = ({ isOpen, onClose, onSelectTemplate, userToken }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -33,7 +32,7 @@ const TemplateLibrary = ({ isOpen, onClose, onSelectTemplate, userToken }) => {
       setCustomTemplates(userTemplatesRes.data);
     } catch (error) {
       console.error('Error fetching templates:', error);
-      showToast('Failed to load templates', 'error');
+      toast.error('Failed to load templates');
     } finally {
       setLoading(false);
     }

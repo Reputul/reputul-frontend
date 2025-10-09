@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { buildUrl, API_ENDPOINTS } from '../../config/api';
-import { useToast } from '../../context/ToastContext';
 
 const CustomerTimelineCard = ({ customer, userToken }) => {
   const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
-  const { showToast } = useToast();
 
   useEffect(() => {
     if (customer?.id && userToken) {

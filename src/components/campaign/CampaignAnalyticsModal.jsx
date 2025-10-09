@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
+import { toast } from 'sonner';
 import { buildUrl } from "../../config/api";
 import ModalPortal from "../common/ModalPortal";
 
@@ -9,7 +9,6 @@ const CampaignAnalyticsModal = ({ sequences, onClose }) => {
   console.log("=== CampaignAnalyticsModal RENDERING ===");
   console.log("Sequences prop:", sequences);
   const { token } = useAuth();
-  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
   const [dateRange, setDateRange] = useState("30");
@@ -50,7 +49,7 @@ const CampaignAnalyticsModal = ({ sequences, onClose }) => {
       setAnalytics(response.data);
     } catch (error) {
       console.error("Error fetching analytics:", error);
-      showToast("Failed to load analytics data", "error");
+      toast.error("Failed to load analytics data");
       // Set dummy data for testing
       setAnalytics({
         totalExecutions: 45,

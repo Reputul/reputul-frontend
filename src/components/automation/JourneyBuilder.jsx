@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { buildUrl } from '../../config/api';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 import WorkflowNode from './WorkflowNode';
 import NodePalette from './NodePalette';
 import JourneyCanvas from './JourneyCanvas';
@@ -21,8 +21,6 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
   const [connectionMode, setConnectionMode] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const { showToast } = useToast();
   const canvasRef = useRef(null);
   const autoSaveTimer = useRef(null);
 
@@ -170,7 +168,7 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
 
   const handleNodeDelete = useCallback((nodeId) => {
     if (nodeId.startsWith('trigger-')) {
-      showToast('Cannot delete the trigger node', 'error');
+      toast.error('Cannot delete the trigger node');
       return;
     }
 
@@ -184,12 +182,12 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
     setSelectedNode(null);
     setHasUnsavedChanges(true);
     saveToHistory(newNodes, newConnections);
-  }, [nodes, connections, selectedNode, showToast, saveToHistory]);
+  }, [nodes, connections, selectedNode, saveToHistory]);
 
   const handleBulkDelete = useCallback(() => {
     const triggerNodes = selectedNodes.filter(id => id.startsWith('trigger-'));
     if (triggerNodes.length > 0) {
-      showToast('Cannot delete trigger nodes', 'error');
+      toast.error('Cannot delete trigger nodes');
       return;
     }
 
@@ -203,7 +201,7 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
     setSelectedNodes([]);
     setHasUnsavedChanges(true);
     saveToHistory(newNodes, newConnections);
-  }, [nodes, connections, selectedNodes, showToast, saveToHistory]);
+  }, [nodes, connections, selectedNodes, saveToHistory]);
 
   const handleConnect = useCallback((sourceId, targetId) => {
     // Prevent self-connection and duplicates
@@ -302,7 +300,7 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
 
   const handleSave = async () => {
     if (!validateWorkflow()) {
-      showToast('Please fix validation errors before saving', 'error');
+      toast.error('Please fix validation errors before saving');
       return;
     }
 
@@ -326,13 +324,13 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
         headers: { Authorization: `Bearer ${userToken}` }
       });
 
-      showToast('Workflow saved successfully', 'success');
+      toast.success('Workflow saved successfully');
       setHasUnsavedChanges(false);
       onSave?.(workflowData);
       
     } catch (error) {
       console.error('Error saving workflow:', error);
-      showToast('Failed to save workflow', 'error');
+      toast.error('Failed to save workflow');
     } finally {
       setSaving(false);
     }
@@ -340,7 +338,7 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
 
   const handleTestWorkflow = async () => {
     if (!validateWorkflow()) {
-      showToast('Fix validation errors before testing', 'error');
+      toast.error('Fix validation errors before testing');
       return;
     }
 
@@ -351,9 +349,9 @@ const JourneyBuilder = ({ workflow, userToken, onSave, onCancel }) => {
         { headers: { Authorization: `Bearer ${userToken}` } }
       );
 
-      showToast('Test execution started - check executions feed', 'success');
+      toast.success('Test execution started - check executions feed');
     } catch (error) {
-      showToast('Failed to start test', 'error');
+      toast.error('Failed to start test');
     }
   };
 

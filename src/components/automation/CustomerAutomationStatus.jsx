@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { buildUrl, API_ENDPOINTS } from '../../config/api';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 
 const CustomerAutomationStatus = ({ customer, userToken, onStatusUpdate }) => {
   const [automationData, setAutomationData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const { showToast } = useToast();
 
   useEffect(() => {
     if (customer?.id && userToken) {
@@ -60,7 +59,7 @@ const CustomerAutomationStatus = ({ customer, userToken, onStatusUpdate }) => {
         headers: { Authorization: `Bearer ${userToken}` }
       });
 
-      showToast(`Action completed successfully`, 'success');
+      toast.success(`Action completed successfully`);
       
       // Refresh automation status
       await fetchAutomationStatus();
@@ -71,7 +70,7 @@ const CustomerAutomationStatus = ({ customer, userToken, onStatusUpdate }) => {
       }
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
-      showToast(`Failed to ${action.replace('_', ' ')}`, 'error');
+      toast.error(`Failed to ${action.replace('_', ' ')}`);
     } finally {
       setActionLoading(false);
     }

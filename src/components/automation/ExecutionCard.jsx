@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useToast } from "../../context/ToastContext";
+import { toast } from 'sonner';
 import { buildUrl } from "../../config/api";
 
 const ExecutionCard = ({ execution, userToken }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const { showToast } = useToast();
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -48,10 +47,10 @@ const ExecutionCard = ({ execution, userToken }) => {
         {},
         { headers: { Authorization: `Bearer ${userToken}` } }
       );
-      showToast("Execution retry initiated", "success");
+      toast.success("Execution retry initiated");
     } catch (error) {
       console.error("Error retrying execution:", error);
-      showToast("Failed to retry execution", "error");
+      toast.error("Failed to retry execution");
     } finally {
       setRetrying(false);
     }

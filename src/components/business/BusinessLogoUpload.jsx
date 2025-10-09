@@ -1,12 +1,11 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 import { buildUrl } from '../../config/api';
 
 const BusinessLogoUpload = ({ business, onLogoUpdated }) => {
   const { token } = useAuth();
-  const { showToast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(business?.logoUrl || null);
   const fileInputRef = useRef(null);
@@ -18,13 +17,13 @@ const BusinessLogoUpload = ({ business, onLogoUpdated }) => {
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/svg+xml', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      showToast('Please select a valid image file (JPG, PNG, SVG, or WebP)', 'error');
+      toast.error('Please select a valid image file (JPG, PNG, SVG, or WebP)');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showToast('File size must be less than 5MB', 'error');
+      toast.error('File size must be less than 5MB');
       return;
     }
 
@@ -41,7 +40,7 @@ const BusinessLogoUpload = ({ business, onLogoUpdated }) => {
 
   const uploadLogo = async (file) => {
     if (!business?.id) {
-      showToast('Please save the business first before uploading a logo', 'warning');
+      toast.warning('Please save the business first before uploading a logo');
       return;
     }
 
@@ -62,14 +61,14 @@ const BusinessLogoUpload = ({ business, onLogoUpdated }) => {
       );
 
       setPreview(response.data.logoUrl);
-      showToast('Logo uploaded successfully!', 'success');
+      toast.success('Logo uploaded successfully!');
       
       if (onLogoUpdated) {
         onLogoUpdated(response.data);
       }
     } catch (error) {
       console.error('Error uploading logo:', error);
-      showToast(error.response?.data?.error || 'Failed to upload logo', 'error');
+      toast.error(error.response?.data?.error || 'Failed to upload logo');
       setPreview(business?.logoUrl || null);
     } finally {
       setUploading(false);
@@ -89,14 +88,14 @@ const BusinessLogoUpload = ({ business, onLogoUpdated }) => {
       });
 
       setPreview(null);
-      showToast('Logo deleted successfully', 'success');
+      toast.success('Logo deleted successfully');
       
       if (onLogoUpdated) {
         onLogoUpdated({ ...business, logoUrl: null, logoFilename: null });
       }
     } catch (error) {
       console.error('Error deleting logo:', error);
-      showToast('Failed to delete logo', 'error');
+      toast.error('Failed to delete logo');
     }
   };
 

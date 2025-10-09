@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
+import { toast } from 'sonner';
 import { buildUrl } from "../../config/api";
 import CampaignStepEditor from "./CampaignStepEditor";
 import CampaignTemplateLibrary from "./CampaignTemplateLibrary";
@@ -9,7 +9,6 @@ import ModalPortal from "../common/ModalPortal";
 
 const CampaignSequenceBuilder = ({ sequence, onClose, onSave }) => {
   const { token } = useAuth();
-  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -91,7 +90,7 @@ const CampaignSequenceBuilder = ({ sequence, onClose, onSave }) => {
 
   const removeStep = (stepIndex) => {
     if (formData.steps.length <= 1) {
-      showToast("Campaign must have at least one step", "warning");
+      toast.warning("Campaign must have at least one step");
       return;
     }
 
@@ -156,17 +155,17 @@ const CampaignSequenceBuilder = ({ sequence, onClose, onSave }) => {
     }));
     setShowTemplateLibrary(false);
     setActiveStepIndex(0);
-    showToast("Template loaded successfully", "success");
+    toast.success("Template loaded successfully");
   };
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      showToast("Please enter a campaign name", "warning");
+      toast.warning("Please enter a campaign name");
       return;
     }
 
     if (formData.steps.length === 0) {
-      showToast("Please add at least one step", "warning");
+      toast.warning("Please add at least one step");
       return;
     }
 
@@ -174,13 +173,12 @@ const CampaignSequenceBuilder = ({ sequence, onClose, onSave }) => {
     for (let i = 0; i < formData.steps.length; i++) {
       const step = formData.steps[i];
       if (!step.bodyTemplate.trim()) {
-        showToast(`Step ${i + 1} requires a message template`, "warning");
+        toast.warning(`Step ${i + 1} requires a message template`);
         return;
       }
       if (step.messageType.includes("EMAIL") && !step.subjectTemplate.trim()) {
-        showToast(
-          `Step ${i + 1} requires a subject for email messages`,
-          "warning"
+        toast.warning(
+          `Step ${i + 1} requires a subject for email messages`
         );
         return;
       }
@@ -203,20 +201,19 @@ const CampaignSequenceBuilder = ({ sequence, onClose, onSave }) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        showToast("Campaign sequence updated successfully", "success");
+        toast.success("Campaign sequence updated successfully");
       } else {
         await axios.post(buildUrl("/api/v1/campaigns/sequences"), payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        showToast("Campaign sequence created successfully", "success");
+        toast.success("Campaign sequence created successfully");
       }
 
       onSave();
     } catch (error) {
       console.error("Error saving sequence:", error);
-      showToast(
-        error.response?.data?.message || "Failed to save campaign sequence",
-        "error"
+      toast.error(
+        error.response?.data?.message || "Failed to save campaign sequence"
       );
     } finally {
       setLoading(false);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { buildUrl } from '../../config/api';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 
 const WorkflowTemplateManager = ({ 
   workflow, 
@@ -15,7 +15,6 @@ const WorkflowTemplateManager = ({
   const [templateCategory, setTemplateCategory] = useState('custom');
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { showToast } = useToast();
 
   const categories = [
     { id: 'custom', label: 'Custom' },
@@ -30,12 +29,12 @@ const WorkflowTemplateManager = ({
 
   const handleSave = async () => {
     if (!templateName.trim()) {
-      showToast('Please enter a template name', 'error');
+      toast.error('Please enter a template name');
       return;
     }
 
     if (!templateDescription.trim()) {
-      showToast('Please enter a template description', 'error');
+      toast.error('Please enter a template description');
       return;
     }
 
@@ -59,7 +58,7 @@ const WorkflowTemplateManager = ({
         headers: { Authorization: `Bearer ${userToken}` }
       });
 
-      showToast('Template saved successfully', 'success');
+      toast.success('Template saved successfully');
       onSaveAsTemplate?.(templateData);
       onClose();
       
@@ -71,7 +70,7 @@ const WorkflowTemplateManager = ({
       
     } catch (error) {
       console.error('Error saving template:', error);
-      showToast('Failed to save template', 'error');
+      toast.error('Failed to save template');
     } finally {
       setSaving(false);
     }
