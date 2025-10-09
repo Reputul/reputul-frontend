@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { buildUrl } from '../../config/api';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 
 const TriggerWorkflowModal = ({ 
   isOpen, 
@@ -17,7 +17,6 @@ const TriggerWorkflowModal = ({
   const [customDelay, setCustomDelay] = useState(0);
   const [delayUnit, setDelayUnit] = useState('hours');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -34,17 +33,17 @@ const TriggerWorkflowModal = ({
     e.preventDefault();
     
     if (!selectedWorkflow) {
-      showToast('Please select a workflow', 'error');
+      toast.error('Please select a workflow');
       return;
     }
 
     if (!triggerReason.trim()) {
-      showToast('Please provide a reason for manual triggering', 'error');
+      toast.error('Please provide a reason for manual triggering');
       return;
     }
 
     if (selectedCustomers.length === 0) {
-      showToast('No customers selected', 'error');
+      toast.error('No customers selected');
       return;
     }
 
@@ -55,9 +54,8 @@ const TriggerWorkflowModal = ({
       );
       
       if (invalidSmsCustomers.length > 0) {
-        showToast(
-          `${invalidSmsCustomers.length} customers are not eligible for SMS delivery. Please check SMS consent.`,
-          'error'
+        toast.error(
+          `${invalidSmsCustomers.length} customers are not eligible for SMS delivery. Please check SMS consent.`
         );
         return;
       }
@@ -88,16 +86,14 @@ const TriggerWorkflowModal = ({
       const { successful, failed } = response.data;
       
       if (successful > 0) {
-        showToast(
-          `Successfully triggered automation for ${successful} customer${successful > 1 ? 's' : ''}`,
-          'success'
+        toast.success(
+          `Successfully triggered automation for ${successful} customer${successful > 1 ? 's' : ''}`
         );
       }
       
       if (failed > 0) {
-        showToast(
-          `Failed to trigger automation for ${failed} customer${failed > 1 ? 's' : ''}`,
-          'warning'
+        toast.warning(
+          `Failed to trigger automation for ${failed} customer${failed > 1 ? 's' : ''}`
         );
       }
 
@@ -106,7 +102,7 @@ const TriggerWorkflowModal = ({
       
     } catch (error) {
       console.error('Error triggering workflow:', error);
-      showToast('Failed to trigger automation workflow', 'error');
+      toast.error('Failed to trigger automation workflow');
     } finally {
       setIsSubmitting(false);
     }

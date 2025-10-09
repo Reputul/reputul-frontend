@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useToast } from "../../context/ToastContext";
+import { toast } from 'sonner';
 import { buildUrl } from "../../config/api";
 import ExecutionCard from "./ExecutionCard";
 
@@ -8,7 +8,6 @@ const ExecutionsFeed = ({ userToken, refreshTrigger }) => {
   const [executions, setExecutions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
-  const { showToast } = useToast();
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -38,7 +37,7 @@ const ExecutionsFeed = ({ userToken, refreshTrigger }) => {
     } catch (error) {
       console.error("Error fetching executions:", error);
       if (showLoading) {
-        showToast("Failed to load recent executions", "error");
+        toast.error("Failed to load recent executions");
       }
     } finally {
       if (showLoading) setLoading(false);

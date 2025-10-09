@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { toast } from 'sonner';
 import { buildUrl } from '../../config/api';
 import ModalPortal from '../common/ModalPortal'; 
 
@@ -11,7 +11,6 @@ const CampaignExecutionModal = ({ executions, onClose, onRefresh }) => {
   console.log('onClose prop:', typeof onClose);
   console.log('onRefresh prop:', typeof onRefresh);
   const { token } = useAuth();
-  const { showToast } = useToast();
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,11 +25,11 @@ const CampaignExecutionModal = ({ executions, onClose, onRefresh }) => {
       await axios.post(buildUrl(`/api/campaigns/executions/${executionId}/stop`), {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast('Campaign stopped successfully', 'success');
+      toast.success('Campaign stopped successfully');
       onRefresh();
     } catch (error) {
       console.error('Error stopping campaign:', error);
-      showToast('Failed to stop campaign', 'error');
+      toast.error('Failed to stop campaign');
     } finally {
       setLoading(false);
     }
@@ -50,11 +49,11 @@ const CampaignExecutionModal = ({ executions, onClose, onRefresh }) => {
       await axios.post(buildUrl(`/api/campaigns/executions/${executionId}/cancel`), {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      showToast('Campaign cancelled successfully', 'success');
+      toast.success('Campaign cancelled successfully');
       onRefresh();
     } catch (error) {
       console.error('Error cancelling campaign:', error);
-      showToast('Failed to cancel campaign', 'error');
+      toast.error('Failed to cancel campaign');
     } finally {
       setLoading(false);
     }
@@ -226,7 +225,7 @@ const CampaignExecutionModal = ({ executions, onClose, onRefresh }) => {
                         {(execution.status === 'COMPLETED' || execution.status === 'FAILED') && (
                           <button
                             onClick={() => {
-                              showToast('Execution details coming soon', 'info');
+                              toast.info('Execution details coming soon');
                             }}
                             className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-700"
                           >
