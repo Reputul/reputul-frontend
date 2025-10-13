@@ -94,6 +94,7 @@ function AppContent() {
         <Route path="/checkout/success" element={<CheckoutPages.Success />} />
         <Route path="/checkout/error" element={<CheckoutPages.Error />} />
         <Route path="/oauth/callback/google" element={<OAuthCallbackPage />} />
+        <Route path="/oauth/callback/facebook" element={<OAuthCallbackPage />} />
         <Route
           path="/feedback-gate/:customerId"
           element={<FeedbackGatePage />}
