@@ -42,13 +42,6 @@ const ReviewPlatformsPage = () => {
       color: "indigo",
       description: "Auto-sync reviews from Facebook",
     },
-    {
-      id: "YELP",
-      name: "Yelp",
-      icon: "⭐",
-      color: "red",
-      description: "Auto-sync reviews from Yelp",
-    },
   ];
 
   useEffect(() => {
@@ -461,30 +454,6 @@ const ReviewPlatformsPage = () => {
                       value={platformData.facebookPageUrl}
                       onChange={handleInputChange}
                       placeholder="https://www.facebook.com/yourbusinesspage"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* Yelp */}
-                  <div className="mb-8">
-                    <div className="flex items-center mb-3">
-                      <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                        <span className="text-red-600 font-bold">Y</span>
-                      </div>
-                      <h3 className="text-md font-semibold text-gray-900">
-                        Yelp
-                      </h3>
-                    </div>
-
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Yelp Business Page URL
-                    </label>
-                    <input
-                      type="url"
-                      name="yelpPageUrl"
-                      value={platformData.yelpPageUrl}
-                      onChange={handleInputChange}
-                      placeholder="https://www.yelp.com/biz/your-business-name"
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
