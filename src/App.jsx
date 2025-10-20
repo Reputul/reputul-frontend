@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { BusinessProvider } from "./context/BusinessContext"; // NEW: Import BusinessProvider
 import { Toaster } from 'sonner';
 import Navbar from "./components/Navbar";
 import DashboardLayout from "./components/DashboardLayout";
@@ -269,9 +270,12 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
+        {/* NEW: Wrap with BusinessProvider inside AuthProvider */}
+        <BusinessProvider>
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        </BusinessProvider>
       </AuthProvider>
     </Router>
   );
