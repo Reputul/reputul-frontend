@@ -19,9 +19,10 @@ const InsightsPage = () => {
 
   const [insightsData, setInsightsData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [period, setPeriod] = useState(30); // Default 30 days
 
-  // Fetch insights data
+  // Fetch insights data using the NEW SINGLE ENDPOINT
   const fetchInsightsData = useCallback(async () => {
     if (!token || !selectedBusiness) {
       setLoading(false);
@@ -30,158 +31,66 @@ const InsightsPage = () => {
 
     try {
       setLoading(true);
+      setError(null);
 
-      // Fetch multiple endpoints and combine data
-      const [reputationRes, reviewsRes, summaryRes] = await Promise.all([
-        axios.get(
-          buildUrl(`/api/v1/reputation/business/${selectedBusiness.id}/breakdown`),
-          { headers: { Authorization: `Bearer ${token}` } }
-        ),
-        axios.get(
-          buildUrl(`/api/v1/reviews/business/${selectedBusiness.id}`),
-          { headers: { Authorization: `Bearer ${token}` } }
-        ),
-        axios.get(
-          buildUrl(`/api/v1/businesses/${selectedBusiness.id}/review-summary`),
-          { headers: { Authorization: `Bearer ${token}` } }
-        ),
-      ]);
+      console.log(`Fetching insights for business ${selectedBusiness.id} with period ${period}d`);
 
-      const reviews = reviewsRes.data || [];
-      const reputation = reputationRes.data;
-      const summary = summaryRes.data;
+      // Use the NEW single insights endpoint
+      const response = await axios.get(
+        buildUrl(`/api/v1/insights/business/${selectedBusiness.id}?period=${period}d`),
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 30000
+        }
+      );
 
-      // Process data for insights
-      const processedData = processInsightsData(reviews, reputation, summary);
-      setInsightsData(processedData);
+      console.log("Insights API Response:", response.data);
+      setInsightsData(response.data);
 
     } catch (err) {
       console.error("Error fetching insights data:", err);
-      // Set empty data on error
+      
+      if (err.response?.status === 404) {
+        setError("Business not found or access denied");
+      } else if (err.response?.status === 401) {
+        setError("Authentication required");
+      } else if (err.response?.status === 500) {
+        setError("Server error - please check backend logs");
+      } else if (err.code === 'ECONNABORTED') {
+        setError("Request timeout - please try again");
+      } else {
+        setError(`Failed to load insights data: ${err.message}`);
+      }
+
+      // Set empty data structure on error for graceful degradation
       setInsightsData({
         overallRating: 0,
         totalReviews: 0,
         reviewDistribution: [],
         reputationMetrics: { score: 0, badge: 'Unranked', wilsonScore: 0 },
-        ratingGoals: [],
+        ratingGoals: [
+          { target: 4.8, reviewsNeeded: 0, progress: 0 },
+          { target: 4.9, reviewsNeeded: 0, progress: 0 },
+          { target: 5.0, reviewsNeeded: 0, progress: 0 }
+        ],
         platformPerformance: [],
-        sentiment: { positive: 0, negative: 0 },
+        sentiment: { 
+          positive: { count: 0, percentage: 0 }, 
+          negative: { count: 0, percentage: 0 } 
+        },
         timeSeries: [],
-        statistics: { averagePerMonth: 0, totalSinceJoining: 0, memberSince: null }
+        statistics: { 
+          averagePerMonth: 0, 
+          totalSinceJoining: 0, 
+          memberSince: null 
+        }
       });
     } finally {
       setLoading(false);
     }
   }, [token, selectedBusiness, period]);
 
-  // Process raw data into insights format
-  const processInsightsData = (reviews, reputation, summary) => {
-    // Calculate review distribution by platform
-    const distributionMap = {};
-    reviews.forEach(review => {
-      const source = review.source || 'DIRECT';
-      if (!distributionMap[source]) {
-        distributionMap[source] = { count: 0, totalRating: 0 };
-      }
-      distributionMap[source].count++;
-      distributionMap[source].totalRating += review.rating;
-    });
-
-    const reviewDistribution = Object.entries(distributionMap).map(([platform, data]) => ({
-      platform: platform.charAt(0) + platform.slice(1).toLowerCase(),
-      count: data.count,
-      avgRating: (data.totalRating / data.count).toFixed(1)
-    }));
-
-    // Calculate rating goals (how many 5-star reviews needed)
-    const currentSum = summary.averageRating * summary.totalReviews;
-    const calculateReviewsNeeded = (targetRating) => {
-      if (summary.averageRating >= targetRating) return 0;
-      return Math.ceil((targetRating * summary.totalReviews - currentSum) / (5 - targetRating));
-    };
-
-    const ratingGoals = [
-      { 
-        target: 4.8, 
-        reviewsNeeded: calculateReviewsNeeded(4.8),
-        progress: Math.min(100, (summary.averageRating / 4.8) * 100)
-      },
-      { 
-        target: 4.9, 
-        reviewsNeeded: calculateReviewsNeeded(4.9),
-        progress: Math.min(100, (summary.averageRating / 4.9) * 100)
-      },
-      { 
-        target: 5.0, 
-        reviewsNeeded: calculateReviewsNeeded(5.0),
-        progress: Math.min(100, (summary.averageRating / 5.0) * 100)
-      },
-    ];
-
-    // Platform performance
-    const platformPerformance = reviewDistribution.map(item => ({
-      name: item.platform,
-      rating: parseFloat(item.avgRating),
-      count: item.count,
-      color: getPlatformColor(item.platform)
-    }));
-
-    // Sentiment breakdown
-    const positiveReviews = reviews.filter(r => r.rating >= 4).length;
-    const negativeReviews = reviews.filter(r => r.rating <= 3).length;
-    const sentiment = {
-      positive: { count: positiveReviews, percentage: Math.round((positiveReviews / reviews.length) * 100) || 0 },
-      negative: { count: negativeReviews, percentage: Math.round((negativeReviews / reviews.length) * 100) || 0 }
-    };
-
-    // Time series data (group by month)
-    const timeSeriesMap = {};
-    reviews.forEach(review => {
-      const date = new Date(review.createdAt);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      if (!timeSeriesMap[monthKey]) {
-        timeSeriesMap[monthKey] = { count: 0, totalRating: 0 };
-      }
-      timeSeriesMap[monthKey].count++;
-      timeSeriesMap[monthKey].totalRating += review.rating;
-    });
-
-    const timeSeries = Object.entries(timeSeriesMap)
-      .map(([month, data]) => ({
-        date: month,
-        count: data.count,
-        avgRating: (data.totalRating / data.count).toFixed(1)
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(-12); // Last 12 months
-
-    // Statistics
-    const averagePerMonth = timeSeries.length > 0 
-      ? (reviews.length / timeSeries.length).toFixed(1)
-      : 0;
-
-    return {
-      overallRating: summary.averageRating || 0,
-      totalReviews: summary.totalReviews || 0,
-      reviewDistribution,
-      reputationMetrics: {
-        score: Math.round(reputation.reputulRating * 10) || 0,
-        badge: selectedBusiness.badge || 'Unranked',
-        wilsonScore: reputation.reputulRating || 0
-      },
-      ratingGoals,
-      platformPerformance,
-      sentiment,
-      timeSeries,
-      statistics: {
-        averagePerMonth: parseFloat(averagePerMonth),
-        totalSinceJoining: reviews.length,
-        memberSince: selectedBusiness.createdAt
-      }
-    };
-  };
-
-  // Get platform color
+  // Get platform color (keep this helper function for consistency)
   const getPlatformColor = (platform) => {
     const colors = {
       'Google': '#4285F4',
@@ -255,6 +164,43 @@ const InsightsPage = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading insights...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Error Loading Insights</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+                <div className="mt-4">
+                  <button
+                    onClick={fetchInsightsData}
+                    className="text-sm bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded transition-colors mr-2"
+                  >
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded transition-colors"
+                  >
+                    Back to Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -341,6 +287,20 @@ const InsightsPage = () => {
               totalSinceJoining={insightsData.statistics.totalSinceJoining}
               memberSince={insightsData.statistics.memberSince}
             />
+          </div>
+        )}
+
+        {/* Debug Information (only in development) */}
+        {process.env.NODE_ENV === 'development' && insightsData && (
+          <div className="mt-8 bg-gray-100 p-4 rounded-lg">
+            <details>
+              <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                Debug: Raw Insights Data
+              </summary>
+              <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto max-h-96">
+                {JSON.stringify(insightsData, null, 2)}
+              </pre>
+            </details>
           </div>
         )}
       </div>
