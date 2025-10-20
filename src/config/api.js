@@ -1,4 +1,3 @@
-// src/config/api.js
 const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE || 'http://localhost:8080',
   ENDPOINTS: {
@@ -75,6 +74,9 @@ const API_CONFIG = {
       DETAILED: (businessId) => `/api/v1/reputation/business/${businessId}/detailed`,
       RECALCULATE: (businessId) => `/api/v1/reputation/business/${businessId}/recalculate`,
       BATCH_RECALCULATE: '/api/v1/reputation/batch/recalculate'
+    },
+    INSIGHTS: {
+      BY_BUSINESS: (businessId, period = '30d') => `/api/v1/insights/business/${businessId}?period=${period}`
     },
     BILLING: {
       CHECKOUT_SESSION: '/api/v1/billing/checkout-session',
@@ -177,6 +179,16 @@ export const handleApiError = (error) => {
   if (error.response?.status === 429) return 'Too many requests. Please try again later.';
   if (error.response?.status >= 500) return 'Server error. Please try again later.';
   return error.message || 'An unexpected error occurred.';
+};
+
+/**
+ * Helper function to get insights endpoint with parameters
+ * @param {number} businessId - Business ID
+ * @param {string} period - Time period (e.g., '30d', '90d', '365d')
+ * @returns {string} Complete insights endpoint URL
+ */
+export const getInsightsUrl = (businessId, period = '30d') => {
+  return buildUrl(API_CONFIG.ENDPOINTS.INSIGHTS.BY_BUSINESS(businessId, period));
 };
 
 export const API_ENDPOINTS = API_CONFIG.ENDPOINTS;
