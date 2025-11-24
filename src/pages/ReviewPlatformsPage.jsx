@@ -2,18 +2,20 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from 'sonner'; 
 import { useAuth } from "../context/AuthContext";
+import { useBusiness } from "../context/BusinessContext"; // NEW: Add business context
+import { useNavigate } from "react-router-dom"; // NEW: Add navigation
 import { API_ENDPOINTS, buildUrl } from "../config/api";
 
 const ReviewPlatformsPage = () => {
   const [activeTab, setActiveTab] = useState("quick-setup");
-  const [businesses, setBusinesses] = useState([]);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed from businesses loading
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const successRef = useRef(null);
   const { token } = useAuth();
+  const { selectedBusiness, businesses, loading: businessesLoading } = useBusiness(); // NEW: Use business context
+  const navigate = useNavigate(); // NEW: Add navigation
 
   // Quick Setup state
   const [platformData, setPlatformData] = useState({
@@ -44,16 +46,21 @@ const ReviewPlatformsPage = () => {
     },
   ];
 
-  useEffect(() => {
-    fetchBusinesses();
-  }, []);
-
+  // NEW: Handle business context changes
   useEffect(() => {
     if (selectedBusiness) {
       fetchPlatformData();
       if (activeTab === "auto-sync") {
         fetchConnectedPlatforms();
       }
+    } else {
+      // Reset state when no business is selected
+      setPlatformData({
+        googlePlaceId: "",
+        facebookPageUrl: "",
+        yelpPageUrl: "",
+      });
+      setConnectedPlatforms([]);
     }
   }, [selectedBusiness, activeTab]);
 
@@ -69,23 +76,6 @@ const ReviewPlatformsPage = () => {
     }
   }, [success]);
 
-  const fetchBusinesses = async () => {
-    try {
-      const response = await axios.get(buildUrl(API_ENDPOINTS.DASHBOARD.LIST), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBusinesses(response.data);
-      if (response.data.length > 0) {
-        setSelectedBusiness(response.data[0]);
-      }
-    } catch (err) {
-      setError("Failed to fetch businesses");
-      console.error("Error fetching businesses:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchPlatformData = async () => {
     if (!selectedBusiness) return;
 
@@ -94,13 +84,14 @@ const ReviewPlatformsPage = () => {
         buildUrl(`/api/v1/businesses/${selectedBusiness.id}/review-platforms`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setPlatformData({
-        googlePlaceId: response.data.googlePlaceId || "",
-        facebookPageUrl: response.data.facebookPageUrl || "",
-        yelpPageUrl: response.data.yelpPageUrl || "",
+      setPlatformData(response.data || {
+        googlePlaceId: "",
+        facebookPageUrl: "",
+        yelpPageUrl: "",
       });
     } catch (err) {
       console.error("Error fetching platform data:", err);
+      // Don't show error for empty state - it's expected for new businesses
     }
   };
 
@@ -109,23 +100,27 @@ const ReviewPlatformsPage = () => {
 
     try {
       const response = await axios.get(
-        buildUrl(`/api/v1/platforms/business/${selectedBusiness.id}`),
+        buildUrl(`/api/v1/platforms/business/${selectedBusiness.id}/connected`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setConnectedPlatforms(response.data);
-    } catch (error) {
-      console.error("Error fetching connected platforms:", error);
+      setConnectedPlatforms(response.data || []);
+    } catch (err) {
+      console.error("Error fetching connected platforms:", err);
+      setConnectedPlatforms([]);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setPlatformData((prev) => ({ ...prev, [name]: value }));
+    setPlatformData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const savePlatforms = async () => {
     if (!selectedBusiness) {
-      setError("Please select a business first");
+      setError("No business selected");
       return;
     }
 
@@ -134,518 +129,475 @@ const ReviewPlatformsPage = () => {
     setSuccess("");
 
     try {
-      await axios.put(
+      await axios.post(
         buildUrl(`/api/v1/businesses/${selectedBusiness.id}/review-platforms`),
         platformData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess("✅ Review platforms updated successfully!");
-      toast.success("Review platforms updated successfully!"); 
-      fetchBusinesses();
+      setSuccess(
+        `✅ Platform configuration saved successfully for ${selectedBusiness.name}!`
+      );
+      setError("");
     } catch (err) {
-      console.error("Error saving platforms:", err);
-      const errorMsg = `Failed to save: ${err.response?.data?.message || err.message}`;
-      setError(errorMsg);
-      toast.error(errorMsg);
+      setError(
+        err.response?.data?.message ||
+          "Failed to save platform configuration. Please try again."
+      );
+      setSuccess("");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleConnectPlatform = async (platformType) => {
+  const connectPlatform = async (platformId) => {
     if (!selectedBusiness) {
-      toast.error("Please select a business first"); 
+      toast.error("No business selected");
       return;
     }
 
-    setSyncing(true);
     try {
-      console.log(
-        "Connecting platform:",
-        platformType,
-        "for business:",
-        selectedBusiness.id
-      );
-
-      const response = await axios.get(
-        buildUrl(
-          `/api/v1/platforms/connect/${platformType}?businessId=${selectedBusiness.id}`
-        ),
+      const response = await axios.post(
+        buildUrl("/api/v1/platforms/connect"),
+        {
+          platformType: platformId,
+          businessId: selectedBusiness.id,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log("Connect response:", response.data);
-
-      if (response.data.error) {
-        toast.error(response.data.error); 
-        return;
-      }
-
       if (response.data.authUrl) {
-        console.log("Redirecting to:", response.data.authUrl);
-        window.location.href = response.data.authUrl;
+        window.open(response.data.authUrl, "_blank", "width=600,height=700");
       }
-    } catch (error) {
-      console.error("Connect platform error:", error);
-      toast.error("Failed to connect platform"); 
-    } finally {
-      setSyncing(false);
+    } catch (err) {
+      console.error("Error connecting platform:", err);
+      toast.error("Failed to connect platform");
     }
   };
 
-  const handleSyncPlatform = async (credentialId, platformName) => {
-    setSyncingPlatforms(prev => ({ ...prev, [credentialId]: true }));
-    
-    // 🆕 Show loading toast with ID so we can update it
-    const toastId = toast.loading(`Syncing ${platformName}...`);
+  const triggerSync = async (credentialId, platformName) => {
+    if (!selectedBusiness) {
+      toast.error("No business selected");
+      return;
+    }
+
+    setSyncingPlatforms((prev) => ({ ...prev, [credentialId]: true }));
 
     try {
-      console.log('Starting sync for credential:', credentialId);
-
-      const response = await axios.post(
+      await axios.post(
         buildUrl(`/api/v1/platforms/${credentialId}/sync`),
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log('Sync response:', response.data);
-
-      if (response.data.success) {
-        const { reviewsFetched, newCount, updatedCount } = response.data;
-        const message = `Sync complete! ${reviewsFetched || 0} reviews fetched (${newCount || 0} new, ${updatedCount || 0} updated)`;
-
-        // 🆕 Update loading toast to success
-        toast.success(message, { id: toastId, duration: 5000 });
-
-        setTimeout(fetchConnectedPlatforms, 1000);
-      }
-    } catch (error) {
-      console.error("Sync error:", error);
-
-      const errorMsg =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        "Failed to sync reviews";
-
-      // 🆕 Update loading toast to error
-      toast.error(errorMsg, { id: toastId });
+      toast.success(`${platformName} sync completed successfully!`);
+      fetchConnectedPlatforms();
+    } catch (err) {
+      console.error("Error syncing platform:", err);
+      toast.error(`Failed to sync ${platformName}`);
     } finally {
-      setSyncingPlatforms(prev => ({ ...prev, [credentialId]: false }));
+      setSyncingPlatforms((prev) => ({ ...prev, [credentialId]: false }));
     }
   };
 
-  const handleDisconnect = async (credentialId) => {
-    if (!window.confirm("Are you sure you want to disconnect this platform?")) {
+  const disconnectPlatform = async (credentialId, platformName) => {
+    if (!selectedBusiness) {
+      toast.error("No business selected");
+      return;
+    }
+
+    if (!confirm(`Disconnect ${platformName}? This will stop automatic review syncing.`)) {
       return;
     }
 
     try {
-      await axios.delete(buildUrl(`/api/v1/platforms/${credentialId}`), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(
+        buildUrl(`/api/v1/platforms/${credentialId}`),
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      toast.success("Platform disconnected");
+      toast.success(`${platformName} disconnected successfully`);
       fetchConnectedPlatforms();
-    } catch (error) {
-      toast.error("Failed to disconnect"); 
+    } catch (err) {
+      console.error("Error disconnecting platform:", err);
+      toast.error(`Failed to disconnect ${platformName}`);
     }
   };
 
-  const isConnected = (platformId) => {
-    return connectedPlatforms.some(
-      (p) => p.platform === platformId && p.status === "ACTIVE"
-    );
-  };
-
-  const getConnectedPlatform = (platformId) => {
-    return connectedPlatforms.find((p) => p.platform === platformId);
-  };
-
-  if (loading) {
+  // NEW: No business selected state
+  if (businessesLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading businesses...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Review Platforms
-        </h1>
-        <p className="text-gray-600">
-          Configure review platforms and manage automated sync
-        </p>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div
-          ref={successRef}
-          tabIndex={-1}
-          className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          {success}
-        </div>
-      )}
-
-      {/* Business Selector */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Business
-        </label>
-        <select
-          value={selectedBusiness?.id || ""}
-          onChange={(e) => {
-            const business = businesses.find(
-              (b) => b.id === parseInt(e.target.value)
-            );
-            setSelectedBusiness(business);
-          }}
-          className="w-full md:w-96 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Choose a business</option>
-          {businesses.map((business) => (
-            <option key={business.id} value={business.id}>
-              {business.name} {business.reviewPlatformsConfigured && "✅"}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {selectedBusiness && (
-        <>
-          {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-sm border mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="flex gap-8 px-6">
-                <button
-                  onClick={() => setActiveTab("quick-setup")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "quick-setup"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    🔗 Review Request Links
-                  </span>
-                </button>
-                <button
-                  onClick={() => setActiveTab("auto-sync")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === "auto-sync"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    🔄 Automated Sync
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">
-                      Beta
-                    </span>
-                  </span>
-                </button>
-              </nav>
+  if (!selectedBusiness) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-content">
+              <svg className="w-8 h-8 text-blue-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
             </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Business</h3>
+            <p className="text-gray-600 mb-6">
+              Please select a business from the sidebar to configure review platforms.
+            </p>
+            {businesses.length === 0 ? (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all"
+              >
+                Create Your First Business
+              </button>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Use the business selector in the sidebar to choose which business to configure.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {/* Tab Content */}
-            <div className="p-6">
-              {/* QUICK SETUP TAB */}
-              {activeTab === "quick-setup" && (
-                <div>
-                  <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                      Manual Platform Setup
-                    </h2>
-                    <p className="text-gray-600">
-                      Enter your review platform URLs to include them in review
-                      request emails
-                    </p>
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-4xl mx-auto p-6">
+        {/* NEW: Business Context Header */}
+        <div className="mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">
+                  {selectedBusiness.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Review Platforms</h1>
+                <p className="text-gray-600">
+                  Configure review platforms for <span className="font-semibold">{selectedBusiness.name}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="border-b border-gray-200">
+            <nav className="flex">
+              <button
+                onClick={() => setActiveTab("quick-setup")}
+                className={`px-6 py-4 text-sm font-medium transition-colors ${
+                  activeTab === "quick-setup"
+                    ? "border-b-2 border-blue-500 text-blue-600 bg-blue-50"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Quick Setup
+              </button>
+              <button
+                onClick={() => setActiveTab("auto-sync")}
+                className={`px-6 py-4 text-sm font-medium transition-colors ${
+                  activeTab === "auto-sync"
+                    ? "border-b-2 border-blue-500 text-blue-600 bg-blue-50"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Auto Sync
+              </button>
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800">{error}</p>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {success && (
+              <div
+                ref={successRef}
+                className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg"
+                tabIndex={-1}
+              >
+                <p className="text-green-800">{success}</p>
+              </div>
+            )}
+
+            {/* QUICK SETUP TAB */}
+            {activeTab === "quick-setup" && (
+              <div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Quick Platform Setup
+                  </h3>
+                  <p className="text-gray-600">
+                    Add your platform URLs to enable review collection buttons in your email campaigns.
+                  </p>
+                </div>
+
+                {/* Google */}
+                <div className="mb-8">
+                  <div className="flex items-center mb-3">
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-red-600 font-bold">G</span>
+                    </div>
+                    <h3 className="text-md font-semibold text-gray-900">
+                      Google My Business
+                    </h3>
                   </div>
 
-                  {/* Google */}
-                  <div className="mb-8">
-                    <div className="flex items-center mb-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                        <span className="text-green-600 font-bold">G</span>
-                      </div>
-                      <h3 className="text-md font-semibold text-gray-900">
-                        Google Reviews
-                      </h3>
-                    </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Google Place ID (Optional but Recommended)
+                  </label>
+                  <input
+                    type="text"
+                    name="googlePlaceId"
+                    value={platformData.googlePlaceId}
+                    onChange={handleInputChange}
+                    placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
 
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Google Place ID (Optional - Recommended)
-                    </label>
-                    <input
-                      type="text"
-                      name="googlePlaceId"
-                      value={platformData.googlePlaceId}
-                      onChange={handleInputChange}
-                      placeholder="e.g., ChIJN1t_tDeuEmsRUsoyG83frY4"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-
-                    {!platformData.googlePlaceId && selectedBusiness && (
-                      <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-start">
+                  {/* Smart Fallback Notice */}
+                  <div className="mt-3">
+                    {!platformData.googlePlaceId && (
+                      <div className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex-shrink-0">
                           <svg
-                            className="w-5 h-5 text-green-600 mt-0.5 mr-2 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                            className="w-5 h-5 text-green-500 mt-0.5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
                           >
                             <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
                             />
                           </svg>
-                          <div>
-                            <h4 className="text-sm font-semibold text-green-800 mb-1">
-                              ✅ No Problem! Google Reviews Will Still Work
-                            </h4>
-                            <p className="text-sm text-green-700">
-                              Without a Place ID, we'll create a smart Google
-                              search using your business info.
-                            </p>
-                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-green-900 mb-1">
+                            Google Reviews Will Still Work
+                          </h4>
+                          <p className="text-sm text-green-700">
+                            Without a Place ID, we'll create a smart Google
+                            search using your business info.
+                          </p>
                         </div>
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* Facebook */}
-                  <div className="mb-8">
-                    <div className="flex items-center mb-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                        <span className="text-blue-600 font-bold">f</span>
-                      </div>
-                      <h3 className="text-md font-semibold text-gray-900">
-                        Facebook Page
-                      </h3>
+                {/* Facebook */}
+                <div className="mb-8">
+                  <div className="flex items-center mb-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-bold">f</span>
                     </div>
-
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Facebook Page URL
-                    </label>
-                    <input
-                      type="url"
-                      name="facebookPageUrl"
-                      value={platformData.facebookPageUrl}
-                      onChange={handleInputChange}
-                      placeholder="https://www.facebook.com/yourbusinesspage"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
+                    <h3 className="text-md font-semibold text-gray-900">
+                      Facebook Page
+                    </h3>
                   </div>
 
-                  {/* Save Button */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={savePlatforms}
-                      disabled={saving}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                    >
-                      {saving ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>💾 Save Configuration</>
-                      )}
-                    </button>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Facebook Page URL
+                  </label>
+                  <input
+                    type="url"
+                    name="facebookPageUrl"
+                    value={platformData.facebookPageUrl}
+                    onChange={handleInputChange}
+                    placeholder="https://www.facebook.com/yourbusinesspage"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
 
-                  {/* Info box */}
-                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="text-sm font-semibold text-blue-800 mb-2">
-                      💡 How It Works:
-                    </h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>
-                        • <strong>Google Reviews:</strong> Works with or without
-                        Place ID (smart fallback included)
-                      </li>
-                      <li>
-                        • <strong>Facebook Reviews:</strong> Enter your page URL
-                        to enable Facebook review buttons
-                      </li>
-                      <li>
-                        • <strong>Yelp Reviews:</strong> Optional - add if you
-                        have a Yelp business page
-                      </li>
-                    </ul>
+                {/* Save Button */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={savePlatforms}
+                    disabled={saving}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>💾 Save Configuration</>
+                    )}
+                  </button>
+                </div>
+
+                {/* Info box */}
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-2">
+                    💡 How It Works:
+                  </h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>
+                      • <strong>Google Reviews:</strong> Works with or without
+                      Place ID (smart fallback included)
+                    </li>
+                    <li>
+                      • <strong>Facebook Reviews:</strong> Enter your page URL
+                      to enable Facebook review buttons
+                    </li>
+                    <li>
+                      • <strong>Yelp Reviews:</strong> Optional - add if you
+                      have a Yelp business page
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* AUTO SYNC TAB */}
+            {activeTab === "auto-sync" && (
+              <div>
+                <div className="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-500 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🚧</span>
+                    <div>
+                      <h3 className="font-semibold text-yellow-900 mb-1">
+                        OAuth Integration In Development
+                      </h3>
+                      <p className="text-sm text-yellow-800">
+                        We're building automated review sync. Click "Connect"
+                        below to test the OAuth flow!
+                      </p>
+                    </div>
                   </div>
                 </div>
-              )}
 
-              {/* AUTO SYNC TAB */}
-              {activeTab === "auto-sync" && (
-                <div>
-                  <div className="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-500 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">🚧</span>
-                      <div>
-                        <h3 className="font-semibold text-yellow-900 mb-1">
-                          OAuth Integration In Development
-                        </h3>
-                        <p className="text-sm text-yellow-800">
-                          We're building automated review sync. Click "Connect"
-                          below to test the OAuth flow!
-                        </p>
-                      </div>
+                {/* Connected Platforms */}
+                {connectedPlatforms.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Connected Platforms for {selectedBusiness.name}
+                    </h3>
+                    <div className="space-y-4">
+                      {connectedPlatforms.map((platform) => (
+                        <div
+                          key={platform.id}
+                          className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                              <span className="text-green-600 font-bold">
+                                {platform.platform === "FACEBOOK" ? "📘" : "🔍"}
+                              </span>
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {platform.platform === "FACEBOOK"
+                                  ? "Facebook"
+                                  : "Google My Business"}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                Status: {platform.status} | Last sync:{" "}
+                                {platform.lastSyncAt
+                                  ? new Date(platform.lastSyncAt).toLocaleDateString()
+                                  : "Never"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() =>
+                                triggerSync(platform.id, platform.platform)
+                              }
+                              disabled={syncingPlatforms[platform.id]}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
+                            >
+                              {syncingPlatforms[platform.id] ? (
+                                <div className="flex items-center space-x-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  <span>Syncing...</span>
+                                </div>
+                              ) : (
+                                "Sync Now"
+                              )}
+                            </button>
+                            <button
+                              onClick={() =>
+                                disconnectPlatform(platform.id, platform.platform)
+                              }
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                )}
 
-                  {/* Platform Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Available Platforms */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Connect New Platforms
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
                     {SUPPORTED_PLATFORMS.map((platform) => {
-                      const connected = isConnected(platform.id);
-                      const connectedCred = getConnectedPlatform(platform.id);
-                      const isSyncing = syncingPlatforms[connectedCred?.id];
-
+                      const isConnected = connectedPlatforms.some(
+                        (cp) => cp.platform === platform.id
+                      );
                       return (
                         <div
                           key={platform.id}
-                          className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+                          className={`p-6 border rounded-lg transition-all ${
+                            isConnected
+                              ? "bg-gray-50 border-gray-200"
+                              : "bg-white border-gray-300 hover:border-blue-400 hover:shadow-md"
+                          }`}
                         >
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center">
-                              <span className="text-3xl mr-3">
-                                {platform.icon}
-                              </span>
-                              <div>
-                                <h3 className="font-semibold text-gray-900">
-                                  {platform.name}
-                                </h3>
-                                <p className="text-xs text-gray-500">
-                                  {platform.description}
-                                </p>
-                              </div>
-                            </div>
-                            {connected && (
-                              <span className="text-green-500 text-xl">✓</span>
-                            )}
+                          <div className="flex items-center space-x-3 mb-3">
+                            <span className="text-2xl">{platform.icon}</span>
+                            <h4 className="font-medium text-gray-900">
+                              {platform.name}
+                            </h4>
                           </div>
-
-                          {connected ? (
-                            <div className="space-y-3">
-                              <div className="text-xs text-gray-500">
-                                <p className="mb-1">
-                                  <span className="font-medium">Status: </span>
-                                  <span
-                                    className={`px-2 py-1 rounded ${
-                                      connectedCred.status === "ACTIVE"
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}
-                                  >
-                                    {connectedCred.status}
-                                  </span>
-                                </p>
-                                <p>
-                                  <span className="font-medium">
-                                    Last synced:{" "}
-                                  </span>
-                                  {connectedCred.lastSyncAt
-                                    ? new Date(
-                                        connectedCred.lastSyncAt
-                                      ).toLocaleString()
-                                    : "Never"}
-                                </p>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    handleSyncPlatform(connectedCred.id, platform.name)
-                                  }
-                                  disabled={isSyncing}
-                                  className={`flex-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
-                                    isSyncing
-                                      ? "bg-gray-400 cursor-not-allowed text-white"
-                                      : "bg-blue-500 text-white hover:bg-blue-600"
-                                  }`}
-                                >
-                                  {isSyncing ? (
-                                    <>
-                                      <svg
-                                        className="animate-spin h-4 w-4 text-white"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <circle
-                                          className="opacity-25"
-                                          cx="12"
-                                          cy="12"
-                                          r="10"
-                                          stroke="currentColor"
-                                          strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                          className="opacity-75"
-                                          fill="currentColor"
-                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                      </svg>
-                                      Syncing...
-                                    </>
-                                  ) : (
-                                    "Sync Now"
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDisconnect(connectedCred.id)
-                                  }
-                                  disabled={isSyncing}
-                                  className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  Disconnect
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleConnectPlatform(platform.id)}
-                              disabled={syncing}
-                              className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-                            >
-                              {syncing
-                                ? "Connecting..."
-                                : `Connect ${platform.name}`}
-                            </button>
-                          )}
+                          <p className="text-sm text-gray-600 mb-4">
+                            {platform.description}
+                          </p>
+                          <button
+                            onClick={() => connectPlatform(platform.id)}
+                            disabled={isConnected}
+                            className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              isConnected
+                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                : "bg-blue-600 text-white hover:bg-blue-700"
+                            }`}
+                          >
+                            {isConnected ? "Connected" : "Connect"}
+                          </button>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 };
