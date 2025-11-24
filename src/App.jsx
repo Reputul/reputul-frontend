@@ -33,6 +33,7 @@ import {
 import ErrorBoundary from "./components/ErrorBoundary";
 import ReviewRequestPage from "./pages/ReviewRequestPage";
 import ReviewPlatformsPage from "./pages/ReviewPlatformsPage";
+import ReviewManagementPage from "./pages/ReviewManagementPage";
 import CustomerFeedbackPage from "./pages/CustomerFeedbackPage";
 import FeedbackGatePage from "./pages/FeedbackGatePage";
 import OptInPolicy from "./pages/OptInPolicy";
@@ -187,6 +188,13 @@ function AppContent() {
             </PrivateRoute>
           }
         />
+        <Route path="/review-management" element={
+                <PrivateRoute>
+                  <DashboardLayout>
+                    <ReviewManagementPage />
+                  </DashboardLayout>
+                </PrivateRoute>
+              } />
         <Route
           path="/automation"
           element={
