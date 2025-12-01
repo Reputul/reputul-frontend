@@ -43,7 +43,9 @@ import SmsSignupPage from "./pages/SmsSignupPage";
 import TwilioProofPage from "./pages/TwilioProofPage";
 import AutomationPage from "./pages/AutomationPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
+import WidgetsPage from "./pages/WidgetsPage";
 import InsightsPage from "./pages/InsightsPage";
+
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -213,6 +215,16 @@ function AppContent() {
             <PrivateRoute>
               <DashboardLayout>
                 <ProfilePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/widgets"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <WidgetsPage />
               </DashboardLayout>
             </PrivateRoute>
           }
