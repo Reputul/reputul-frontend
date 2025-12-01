@@ -75,7 +75,9 @@ const DashboardPage = () => {
 
       // Fetch reputation data
       const reputationResponse = await axios.get(
-        buildUrl(`/api/v1/reputation/business/${selectedBusiness.id}/breakdown`),
+        buildUrl(
+          `/api/v1/reputation/business/${selectedBusiness.id}/breakdown`
+        ),
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -91,18 +93,20 @@ const DashboardPage = () => {
           totalReviews: summaryResponse.data.totalReviews || 0,
           newReviews: metricsResponse.data.totalReviewsInPeriod || 0,
           avgRating: summaryResponse.data.averageRating || 0,
-          engagementRate: metricsResponse.data.completed 
-            ? Math.round((metricsResponse.data.completed / metricsResponse.data.sent) * 100) 
+          engagementRate: metricsResponse.data.completed
+            ? Math.round(
+                (metricsResponse.data.completed / metricsResponse.data.sent) *
+                  100
+              )
             : 0,
         },
         reputation: {
           score: Math.round(reputationResponse.data.reputulRating * 10) || 0,
-          badge: selectedBusiness.badge || 'Unranked',
+          badge: selectedBusiness.badge || "Unranked",
           trend: 0, // TODO: Calculate trend from historical data
           totalReviews: summaryResponse.data.totalReviews || 0,
-        }
+        },
       });
-
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       // Set default values on error
@@ -115,10 +119,10 @@ const DashboardPage = () => {
         },
         reputation: {
           score: 0,
-          badge: 'Unranked',
+          badge: "Unranked",
           trend: 0,
           totalReviews: 0,
-        }
+        },
       });
     } finally {
       setLoading(false);
@@ -150,7 +154,9 @@ const DashboardPage = () => {
 
     try {
       const response = await axios.get(
-        buildUrl(`/api/v1/reputation/business/${selectedBusiness.id}/breakdown`),
+        buildUrl(
+          `/api/v1/reputation/business/${selectedBusiness.id}/breakdown`
+        ),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setReputationBreakdownData(response.data);
@@ -293,28 +299,52 @@ const DashboardPage = () => {
     [token, fetchReputationBreakdown, fetchDashboardData]
   );
 
-  // NEW: Empty state when no business selected
+  // Empty state when no business selected
   if (!selectedBusiness && businesses.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
+      <>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Welcome to Reputul!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Get started by adding your first business to begin managing
+              reviews and reputation.
+            </p>
+            <button
+              onClick={() => setShowAddBusiness(true)}
+              className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+            >
+              Add Your First Business
+            </button>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Reputul!</h2>
-          <p className="text-gray-600 mb-6">
-            Get started by adding your first business to begin managing reviews and reputation.
-          </p>
-          <button
-            onClick={() => setShowAddBusiness(true)}
-            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-          >
-            Add Your First Business
-          </button>
         </div>
-      </div>
+        <AddBusinessModal
+          showAddBusiness={showAddBusiness}
+          setShowAddBusiness={setShowAddBusiness}
+          newBusiness={newBusiness}
+          handleBusinessChange={handleBusinessChange}
+          handleCreateBusiness={handleCreateBusiness}
+          businesses={businesses}
+          fetchBusinesses={refreshBusinesses}
+        />
+      </>
     );
   }
 
@@ -337,21 +367,18 @@ const DashboardPage = () => {
         <BusinessHeader business={selectedBusiness} />
 
         {/* NEW: Key Metrics Grid */}
-        <KeyMetricsGrid 
-          metrics={dashboardData?.metrics} 
-          loading={loading} 
-        />
+        <KeyMetricsGrid metrics={dashboardData?.metrics} loading={loading} />
 
         {/* NEW: Reputation Score Card */}
-        <ReputationScoreCard 
-          reputation={dashboardData?.reputation} 
+        <ReputationScoreCard
+          reputation={dashboardData?.reputation}
           loading={loading}
           onViewBreakdown={handleShowReputationBreakdown}
         />
 
         {/* NEW: Latest Reviews List */}
-        <LatestReviewsList 
-          reviews={reviews} 
+        <LatestReviewsList
+          reviews={reviews}
           loading={reviewsLoading}
           businessId={selectedBusiness?.id}
         />
