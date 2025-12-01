@@ -7,7 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { Toaster } from 'sonner';
+import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import DashboardLayout from "./components/DashboardLayout";
 import LandingPage from "./pages/LandingPage";
@@ -41,7 +41,8 @@ import CheckoutPages from "./pages/CheckoutPages";
 import SmsSignupPage from "./pages/SmsSignupPage";
 import TwilioProofPage from "./pages/TwilioProofPage";
 import AutomationPage from "./pages/AutomationPage";
-import OAuthCallbackPage from './pages/OAuthCallbackPage';
+import OAuthCallbackPage from "./pages/OAuthCallbackPage";
+import WidgetsPage from "./pages/WidgetsPage";
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -72,7 +73,7 @@ function AppContent() {
   return (
     <div className="App">
       {shouldShowNavbar && <Navbar />}
-      <Toaster 
+      <Toaster
         position="top-right"
         expand={true}
         richColors
@@ -94,7 +95,10 @@ function AppContent() {
         <Route path="/checkout/success" element={<CheckoutPages.Success />} />
         <Route path="/checkout/error" element={<CheckoutPages.Error />} />
         <Route path="/oauth/callback/google" element={<OAuthCallbackPage />} />
-        <Route path="/oauth/callback/facebook" element={<OAuthCallbackPage />} />
+        <Route
+          path="/oauth/callback/facebook"
+          element={<OAuthCallbackPage />}
+        />
         <Route
           path="/feedback-gate/:customerId"
           element={<FeedbackGatePage />}
@@ -197,6 +201,16 @@ function AppContent() {
             <PrivateRoute>
               <DashboardLayout>
                 <ProfilePage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/widgets"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <WidgetsPage />
               </DashboardLayout>
             </PrivateRoute>
           }
