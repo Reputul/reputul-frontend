@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { BusinessProvider } from "./context/BusinessContext"; // NEW: Import BusinessProvider
 import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import DashboardLayout from "./components/DashboardLayout";
@@ -43,6 +44,8 @@ import TwilioProofPage from "./pages/TwilioProofPage";
 import AutomationPage from "./pages/AutomationPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import WidgetsPage from "./pages/WidgetsPage";
+import InsightsPage from "./pages/InsightsPage";
+
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -64,6 +67,7 @@ function AppContent() {
     "/automation",
     "/campaigns",
     "/account",
+    "/insights",
   ];
 
   const shouldShowNavbar = !noNavbarRoutes.some((route) =>
@@ -141,6 +145,16 @@ function AppContent() {
             <PrivateRoute>
               <DashboardLayout>
                 <ContactsPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/insights"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <InsightsPage />
               </DashboardLayout>
             </PrivateRoute>
           }
@@ -283,9 +297,12 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
+        {/* NEW: Wrap with BusinessProvider inside AuthProvider */}
+        <BusinessProvider>
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        </BusinessProvider>
       </AuthProvider>
     </Router>
   );
