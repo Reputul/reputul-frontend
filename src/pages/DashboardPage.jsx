@@ -1,26 +1,39 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { useBusiness } from "../context/BusinessContext"; // NEW: Import BusinessContext
-import { useNavigate } from "react-router-dom";
+import { useBusiness } from "../context/BusinessContext";
 import { buildUrl, API_ENDPOINTS } from "../config/api";
 
-// NEW: Import new dashboard components
+// Component imports
 import BusinessHeader from "../components/dashboard/BusinessHeader";
 import KeyMetricsGrid from "../components/dashboard/KeyMetricsGrid";
 import ReputationScoreCard from "../components/dashboard/ReputationScoreCard";
 import LatestReviewsList from "../components/dashboard/LatestReviewsList";
 
-// Keep existing modal imports
+// Modal imports
 import AddBusinessModal from "../components/dashboard/modals/AddBusinessModal";
 import EditBusinessModal from "../components/dashboard/modals/EditBusinessModal";
 import RequestReviewsModal from "../components/dashboard/modals/RequestReviewsModal";
 import ReputationModal from "../components/dashboard/modals/ReputationModal";
 
+// Helper function to get best available Google review URL
+const getBestGoogleReviewUrl = (business) => {
+  // Priority: direct review URL > short URL > search URL
+  if (business?.googleReviewUrl) {
+    return business.googleReviewUrl;
+  }
+  if (business?.googleReviewShortUrl) {
+    return business.googleReviewShortUrl;
+  }
+  if (business?.googleSearchUrl) {
+    return business.googleSearchUrl;
+  }
+  return null;
+};
+
 const DashboardPage = () => {
   const { token } = useAuth();
-  const { selectedBusiness, businesses, refreshBusinesses } = useBusiness(); // NEW: Use business context
-  const navigate = useNavigate();
+  const { selectedBusiness, businesses, refreshBusinesses } = useBusiness();
 
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState(null);
@@ -34,7 +47,7 @@ const DashboardPage = () => {
   const [showReputationModal, setShowReputationModal] = useState(false);
   const [reputationBreakdownData, setReputationBreakdownData] = useState(null);
 
-  // Business form state (for modals)
+  // Business form state (for add modal)
   const [newBusiness, setNewBusiness] = useState({
     name: "",
     industry: "",
@@ -42,6 +55,8 @@ const DashboardPage = () => {
     website: "",
     address: "",
   });
+
+  // Edit business state
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [editBusinessData, setEditBusinessData] = useState({
     name: "",
@@ -50,6 +65,8 @@ const DashboardPage = () => {
     website: "",
     address: "",
   });
+
+  // Request reviews state
   const [requestReviewsData, setRequestReviewsData] = useState({
     selectedBusiness: "",
     customerEmail: "",
@@ -57,7 +74,7 @@ const DashboardPage = () => {
     message: "",
   });
 
-  // NEW: Fetch dashboard data for selected business
+  // Fetch dashboard data for selected business
   const fetchDashboardData = useCallback(async () => {
     if (!token || !selectedBusiness) {
       setLoading(false);
@@ -75,9 +92,7 @@ const DashboardPage = () => {
 
       // Fetch reputation data
       const reputationResponse = await axios.get(
-        buildUrl(
-          `/api/v1/reputation/business/${selectedBusiness.id}/breakdown`
-        ),
+        buildUrl(`/api/v1/reputation/business/${selectedBusiness.id}/breakdown`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -88,20 +103,20 @@ const DashboardPage = () => {
       );
 
       // Combine data
+      // FIX: Check if sent > 0 to avoid division by zero
+      const sent = metricsResponse.data.sent || 0;
+      const completed = metricsResponse.data.completed || 0;
+      const engagementRate = sent > 0 ? Math.round((completed / sent) * 100) : 0;
+
       setDashboardData({
         metrics: {
           totalReviews: summaryResponse.data.totalReviews || 0,
           newReviews: metricsResponse.data.totalReviewsInPeriod || 0,
           avgRating: summaryResponse.data.averageRating || 0,
-          engagementRate: metricsResponse.data.completed
-            ? Math.round(
-                (metricsResponse.data.completed / metricsResponse.data.sent) *
-                  100
-              )
-            : 0,
+          engagementRate: engagementRate,
         },
         reputation: {
-          score: Math.round(reputationResponse.data.reputulRating * 10) || 0,
+          score: Math.round((reputationResponse.data.reputulRating || 0) * 10),
           badge: selectedBusiness.badge || "Unranked",
           trend: 0, // TODO: Calculate trend from historical data
           totalReviews: summaryResponse.data.totalReviews || 0,
@@ -129,7 +144,7 @@ const DashboardPage = () => {
     }
   }, [token, selectedBusiness]);
 
-  // NEW: Fetch reviews for selected business
+  // Fetch reviews for selected business
   const fetchReviews = useCallback(async () => {
     if (!token || !selectedBusiness) return;
 
@@ -148,15 +163,13 @@ const DashboardPage = () => {
     }
   }, [token, selectedBusiness]);
 
-  // NEW: Fetch reputation breakdown for modal
+  // Fetch reputation breakdown for modal
   const fetchReputationBreakdown = useCallback(async () => {
     if (!token || !selectedBusiness) return;
 
     try {
       const response = await axios.get(
-        buildUrl(
-          `/api/v1/reputation/business/${selectedBusiness.id}/breakdown`
-        ),
+        buildUrl(`/api/v1/reputation/business/${selectedBusiness.id}/breakdown`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setReputationBreakdownData(response.data);
@@ -173,7 +186,11 @@ const DashboardPage = () => {
     }
   }, [selectedBusiness, fetchDashboardData, fetchReviews]);
 
-  // Business CRUD handlers (keep existing logic)
+  // ============================================================
+  // Business CRUD handlers
+  // ============================================================
+
+  // Add business handlers
   const handleBusinessChange = useCallback((e) => {
     setNewBusiness((prev) => ({
       ...prev,
@@ -197,7 +214,7 @@ const DashboardPage = () => {
         });
         setShowAddBusiness(false);
         alert("Business created successfully!");
-        refreshBusinesses(); // Refresh business list
+        refreshBusinesses();
       } catch (err) {
         console.error("Error creating business:", err);
         alert("Failed to create business");
@@ -205,6 +222,18 @@ const DashboardPage = () => {
     },
     [newBusiness, token, refreshBusinesses]
   );
+
+  // Edit business handlers
+  const handleEditBusiness = useCallback((business) => {
+    setEditingBusiness(business.id);
+    setEditBusinessData({
+      name: business.name || "",
+      industry: business.industry || "",
+      phone: business.phone || "",
+      website: business.website || "",
+      address: business.address || "",
+    });
+  }, []);
 
   const handleEditBusinessChange = useCallback((e) => {
     setEditBusinessData((prev) => ({
@@ -232,13 +261,22 @@ const DashboardPage = () => {
         });
         alert("Business updated successfully!");
         refreshBusinesses();
+        fetchDashboardData();
       } catch (err) {
         console.error("Error updating business:", err);
         alert("Failed to update business");
       }
     },
-    [editingBusiness, editBusinessData, token, refreshBusinesses]
+    [editingBusiness, editBusinessData, token, refreshBusinesses, fetchDashboardData]
   );
+
+  // Request reviews handlers
+  const handleRequestReviewsChange = useCallback((e) => {
+    setRequestReviewsData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  }, []);
 
   const handleRequestReviews = useCallback(
     async (e) => {
@@ -258,7 +296,7 @@ const DashboardPage = () => {
         });
         setShowRequestReviews(false);
         alert("Review request sent successfully!");
-        fetchDashboardData(); // Refresh metrics
+        fetchDashboardData();
       } catch (err) {
         console.error("Error sending review request:", err);
         alert("Failed to send review request");
@@ -267,13 +305,7 @@ const DashboardPage = () => {
     [requestReviewsData, token, fetchDashboardData]
   );
 
-  const handleRequestReviewsChange = useCallback((e) => {
-    setRequestReviewsData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  }, []);
-
+  // Reputation handlers
   const handleShowReputationBreakdown = useCallback(() => {
     setShowReputationModal(true);
     fetchReputationBreakdown();
@@ -299,7 +331,9 @@ const DashboardPage = () => {
     [token, fetchReputationBreakdown, fetchDashboardData]
   );
 
-  // Empty state when no business selected
+  // ============================================================
+  // Render: Empty state when no businesses exist
+  // ============================================================
   if (!selectedBusiness && businesses.length === 0) {
     return (
       <>
@@ -335,6 +369,8 @@ const DashboardPage = () => {
             </button>
           </div>
         </div>
+
+        {/* FIX: Modal must be included here for empty state to work */}
         <AddBusinessModal
           showAddBusiness={showAddBusiness}
           setShowAddBusiness={setShowAddBusiness}
@@ -348,7 +384,9 @@ const DashboardPage = () => {
     );
   }
 
-  // NEW: Loading state when selecting business
+  // ============================================================
+  // Render: Loading state when business is being selected
+  // ============================================================
   if (!selectedBusiness && businesses.length > 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -360,23 +398,81 @@ const DashboardPage = () => {
     );
   }
 
+  // ============================================================
+  // Render: Main dashboard with selected business
+  // ============================================================
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* NEW: Business Header */}
-        <BusinessHeader business={selectedBusiness} />
+        {/* Business Header with Edit and Request Reviews actions */}
+        <BusinessHeader
+          business={selectedBusiness}
+          onEdit={() => handleEditBusiness(selectedBusiness)}
+          onRequestReviews={() => {
+            setRequestReviewsData((prev) => ({
+              ...prev,
+              selectedBusiness: selectedBusiness?.id?.toString() || "",
+            }));
+            setShowRequestReviews(true);
+          }}
+          onAddBusiness={() => setShowAddBusiness(true)}
+        />
 
-        {/* NEW: Key Metrics Grid */}
+        {/* Key Metrics Grid */}
         <KeyMetricsGrid metrics={dashboardData?.metrics} loading={loading} />
 
-        {/* NEW: Reputation Score Card */}
+        {/* Reputation Score Card */}
         <ReputationScoreCard
           reputation={dashboardData?.reputation}
           loading={loading}
           onViewBreakdown={handleShowReputationBreakdown}
         />
 
-        {/* NEW: Latest Reviews List */}
+        {/* NEW: Google Review URL Card */}
+        {selectedBusiness && getBestGoogleReviewUrl(selectedBusiness) && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Google Review Link
+                  </h3>
+                  {selectedBusiness.googlePlaceAutoDetected && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Auto-detected
+                    </span>
+                  )}
+                </div>
+                <a
+                  href={getBestGoogleReviewUrl(selectedBusiness)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                >
+                  {getBestGoogleReviewUrl(selectedBusiness)}
+                </a>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(getBestGoogleReviewUrl(selectedBusiness));
+                  alert('✅ Google review link copied to clipboard!');
+                }}
+                className="ml-4 flex-shrink-0 px-3 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1"
+                title="Copy review link"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Latest Reviews List */}
         <LatestReviewsList
           reviews={reviews}
           loading={reviewsLoading}
@@ -384,7 +480,11 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Keep all existing modals */}
+      {/* ============================================================ */}
+      {/* All Modals */}
+      {/* ============================================================ */}
+
+      {/* Add Business Modal */}
       <AddBusinessModal
         showAddBusiness={showAddBusiness}
         setShowAddBusiness={setShowAddBusiness}
@@ -395,6 +495,7 @@ const DashboardPage = () => {
         fetchBusinesses={refreshBusinesses}
       />
 
+      {/* Edit Business Modal */}
       <EditBusinessModal
         editingBusiness={editingBusiness}
         setEditingBusiness={setEditingBusiness}
@@ -405,6 +506,7 @@ const DashboardPage = () => {
         fetchBusinesses={refreshBusinesses}
       />
 
+      {/* Request Reviews Modal */}
       <RequestReviewsModal
         showRequestReviews={showRequestReviews}
         setShowRequestReviews={setShowRequestReviews}
@@ -414,11 +516,12 @@ const DashboardPage = () => {
         businesses={businesses}
       />
 
+      {/* Reputation Breakdown Modal */}
       <ReputationModal
         showReputationModal={showReputationModal}
         setShowReputationModal={setShowReputationModal}
         selectedBusinessForReputation={selectedBusiness}
-        setSelectedBusinessForReputation={() => {}} // Not needed anymore
+        setSelectedBusinessForReputation={() => {}}
         reputationBreakdownData={reputationBreakdownData}
         setReputationBreakdownData={setReputationBreakdownData}
         handleRecalculateReputation={handleRecalculateReputation}
