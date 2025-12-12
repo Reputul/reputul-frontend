@@ -18,6 +18,7 @@ const ReviewPlatformsPage = () => {
   // Quick Setup state
   const [platformData, setPlatformData] = useState({
     googlePlaceId: "",
+    googleReviewShortUrl: "", // NEW: g.page short URL support
     facebookPageUrl: "",
     yelpPageUrl: "",
   });
@@ -96,6 +97,7 @@ const ReviewPlatformsPage = () => {
       );
       setPlatformData({
         googlePlaceId: response.data.googlePlaceId || "",
+        googleReviewShortUrl: response.data.googleReviewShortUrl || "", // NEW
         facebookPageUrl: response.data.facebookPageUrl || "",
         yelpPageUrl: response.data.yelpPageUrl || "",
       });
@@ -392,8 +394,27 @@ const ReviewPlatformsPage = () => {
                       </h3>
                     </div>
 
+                    {/* Show auto-detection status if available */}
+                    {selectedBusiness?.googlePlaceAutoDetected && (
+                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center">
+                          <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div>
+                            <p className="text-sm font-semibold text-green-800">
+                              ✅ Google Place ID Auto-Detected
+                            </p>
+                            <p className="text-xs text-green-700 mt-1">
+                              We automatically found your business on Google: {selectedBusiness.googlePlaceName || selectedBusiness.name}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Google Place ID (Optional - Recommended)
+                      Google Place ID (Optional)
                     </label>
                     <input
                       type="text"
@@ -403,12 +424,33 @@ const ReviewPlatformsPage = () => {
                       placeholder="e.g., ChIJN1t_tDeuEmsRUsoyG83frY4"
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave blank to auto-detect from business name and address
+                    </p>
 
-                    {!platformData.googlePlaceId && selectedBusiness && (
-                      <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    {/* NEW: g.page Short URL field */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        OR paste your Google review link
+                      </label>
+                      <input
+                        type="text"
+                        name="googleReviewShortUrl"
+                        value={platformData.googleReviewShortUrl}
+                        onChange={handleInputChange}
+                        placeholder="https://g.page/r/CZfH8POGJQGsEAI/review"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Get this from your Google Business Profile dashboard
+                      </p>
+                    </div>
+
+                    {!platformData.googlePlaceId && !platformData.googleReviewShortUrl && selectedBusiness && (
+                      <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-start">
                           <svg
-                            className="w-5 h-5 text-green-600 mt-0.5 mr-2 flex-shrink-0"
+                            className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -417,16 +459,16 @@ const ReviewPlatformsPage = () => {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
                           <div>
-                            <h4 className="text-sm font-semibold text-green-800 mb-1">
-                              ✅ No Problem! Google Reviews Will Still Work
+                            <h4 className="text-sm font-semibold text-blue-800 mb-1">
+                              💡 Auto-Detection Active
                             </h4>
-                            <p className="text-sm text-green-700">
-                              Without a Place ID, we'll create a smart Google
-                              search using your business info.
+                            <p className="text-sm text-blue-700">
+                              We'll automatically find your Google Place ID when you save. A smart Google
+                              search link will be generated if we can't find your exact business.
                             </p>
                           </div>
                         </div>

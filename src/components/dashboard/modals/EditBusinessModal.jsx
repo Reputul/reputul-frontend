@@ -60,6 +60,59 @@ const EditBusinessModal = ({
               placeholder="Business Address"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
             />
+
+            {/* NEW: Google Places Info Display */}
+            {editBusinessData.googleReviewUrl && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Google Review Configuration
+                </h4>
+                
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Review URL:</span>
+                    <a 
+                      href={editBusinessData.googleReviewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-blue-600 hover:underline truncate mt-1"
+                    >
+                      {editBusinessData.googleReviewUrl}
+                    </a>
+                  </div>
+                  
+                  {editBusinessData.googlePlaceAutoDetected && (
+                    <div className="flex items-center text-green-700 pt-2">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>Auto-detected from Google Places</span>
+                    </div>
+                  )}
+                  
+                  {editBusinessData.googlePlaceName && (
+                    <div className="pt-2">
+                      <span className="font-medium text-gray-700">Google Name:</span>
+                      <span className="ml-2 text-gray-600">{editBusinessData.googlePlaceName}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => window.open('/review-platform-setup', '_blank')}
+                  className="mt-3 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  </svg>
+                  Configure review platforms
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="mb-6">
