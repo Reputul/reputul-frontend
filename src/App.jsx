@@ -23,7 +23,6 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivateRoute from "./components/PrivateRoute";
 import BusinessPublicPage from "./pages/BusinessPublicPage";
 import EmailTemplatesPage from "./pages/EmailTemplatesPage";
-import CampaignManagementPage from "./pages/CampaignManagementPage";
 import {
   NotFoundPage,
   ServerErrorPage,
@@ -41,11 +40,10 @@ import AccountBillingPage from "./pages/AccountBillingPage";
 import CheckoutPages from "./pages/CheckoutPages";
 import SmsSignupPage from "./pages/SmsSignupPage";
 import TwilioProofPage from "./pages/TwilioProofPage";
-import AutomationPage from "./pages/AutomationPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import WidgetsPage from "./pages/WidgetsPage";
 import InsightsPage from "./pages/InsightsPage";
-
+import CampaignsPage from "./pages/CampaignsPage";
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -64,7 +62,6 @@ function AppContent() {
     "/review-requests",
     "/review-platform-setup",
     "/profile",
-    "/automation",
     "/campaigns",
     "/account",
     "/insights",
@@ -190,21 +187,11 @@ function AppContent() {
           }
         />
         <Route
-          path="/automation"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <AutomationPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
           path="/campaigns"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <CampaignManagementPage />
+                <CampaignsPage /> {/* ← NEW PAGE */}
               </DashboardLayout>
             </PrivateRoute>
           }

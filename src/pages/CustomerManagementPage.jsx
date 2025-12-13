@@ -2,11 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import CustomerAutomationStatus from "../components/automation/CustomerAutomationStatus";
-import CustomerTimelineCard from "../components/automation/CustomerTimelineCard";
 import { buildUrl } from "../config/api";
-import TriggerWorkflowModal from "../components/automation/TriggerWorkflowModal";
-import QuickActionButtons from "../components/automation/QuickActionButtons";
 
 const CustomerManagementPage = () => {
   const { token } = useAuth();
@@ -24,11 +20,7 @@ const CustomerManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [sendingReview, setSendingReview] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [showTimeline, setShowTimeline] = useState(null);
   const [selectedCustomers, setSelectedCustomers] = useState([]);
-  const [showBulkActions, setShowBulkActions] = useState(false);
-  const [showTriggerModal, setShowTriggerModal] = useState(false);
-  const [workflows, setWorkflows] = useState([]);
 
   // SMS delivery state
   const [deliveryMethod, setDeliveryMethod] = useState("EMAIL");
@@ -69,27 +61,22 @@ const CustomerManagementPage = () => {
 
   // Fetch businesses, customers, and templates
   const fetchData = useCallback(async () => {
-    try {
-      const [businessRes, customerRes, templateRes, workflowRes] =
-        await Promise.all([
-          axios.get(buildUrl("/api/v1/dashboard"), {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(buildUrl("/api/v1/customers"), {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(buildUrl("/api/v1/email-templates"), {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(buildUrl("/api/v1/automation/workflows"), {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+  try {
+    const [businessRes, customerRes, templateRes] = await Promise.all([
+      axios.get(buildUrl("/api/v1/dashboard"), {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      axios.get(buildUrl("/api/v1/customers"), {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      axios.get(buildUrl("/api/v1/email-templates"), {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
 
-      setBusinesses(businessRes.data);
-      setCustomers(customerRes.data);
-      setTemplates(templateRes.data);
-      setWorkflows(workflowRes.data);
+    setBusinesses(businessRes.data);
+    setCustomers(customerRes.data);
+    setTemplates(templateRes.data);
     } catch (err) {
       console.error("Error fetching data:", err);
       alert("Failed to load data");
@@ -544,25 +531,6 @@ const CustomerManagementPage = () => {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setShowTimeline(customer)}
-              className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-              title="View automation timeline"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </button>
-            <button
               onClick={() => setShowCustomerDetails(customer)}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             >
@@ -648,15 +616,6 @@ const CustomerManagementPage = () => {
           </div>
         </div>
 
-        {/* Automation Status */}
-        <div className="mb-4">
-          <CustomerAutomationStatus
-            customer={customer}
-            userToken={token}
-            onStatusUpdate={fetchData}
-          />
-        </div>
-
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
           {customer.tags &&
@@ -670,15 +629,6 @@ const CustomerManagementPage = () => {
                 {tag.replace("_", " ").toLowerCase()}
               </span>
             ))}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-4">
-          <QuickActionButtons
-            customer={customer}
-            userToken={token}
-            onActionComplete={fetchData}
-          />
         </div>
 
         {/* Standard Actions */}
@@ -901,12 +851,7 @@ const CustomerManagementPage = () => {
                 </button>
               </div>
               <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => setShowTriggerModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Trigger Automation
-                </button>
+                
                 <button
                   onClick={() => {
                     const customerIds = selectedCustomers.map((c) => c.id);
@@ -1990,51 +1935,6 @@ const CustomerManagementPage = () => {
           </div>
         </div>
       )}
-      {/* Customer Timeline Modal */}
-      {showTimeline && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Automation Timeline - {showTimeline.name}
-              </h2>
-              <button
-                onClick={() => setShowTimeline(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <CustomerTimelineCard customer={showTimeline} userToken={token} />
-          </div>
-        </div>
-      )}
-      
-      {/* Trigger Workflow Modal */}
-      <TriggerWorkflowModal
-        isOpen={showTriggerModal}
-        onClose={() => setShowTriggerModal(false)}
-        selectedCustomers={selectedCustomers}
-        availableWorkflows={workflows}
-        userToken={token}
-        onSuccess={() => {
-          fetchData();
-          clearSelection();
-        }}
-      />
     </div>
   );
 };

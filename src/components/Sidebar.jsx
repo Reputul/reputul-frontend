@@ -157,19 +157,6 @@ const Sidebar = () => {
           ),
         },
         {
-          name: "Automation",
-          path: "/automation",
-          badge: "New",
-          icon: (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          ),
-        },
-        {
           name: "Widgets",
           path: "/widgets",
           icon: (
