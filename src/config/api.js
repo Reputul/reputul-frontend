@@ -97,6 +97,7 @@ const API_CONFIG = {
       SEQUENCE_BY_ID: (id) => `/api/v1/campaigns/sequences/${id}`,
       UPDATE_SEQUENCE: (id) => `/api/v1/campaigns/sequences/${id}`,
       DELETE_SEQUENCE: (id) => `/api/v1/campaigns/sequences/${id}`,
+      TOGGLE_STATUS: (id) => `/api/v1/campaigns/sequences/${id}/status`,
       ACTIVATE_SEQUENCE: (id) => `/api/v1/campaigns/sequences/${id}/activate`,
       DEACTIVATE_SEQUENCE: (id) =>
         `/api/v1/campaigns/sequences/${id}/deactivate`,
@@ -105,22 +106,6 @@ const API_CONFIG = {
       STOP_EXECUTION: (id) => `/api/v1/campaigns/executions/${id}/stop`,
       ANALYTICS: (sequenceId) =>
         `/api/v1/campaigns/sequences/${sequenceId}/analytics`,
-    },
-    AUTOMATION: {
-      WORKFLOWS: "/api/v1/automation/workflows",
-      WORKFLOW_BY_ID: (id) => `/api/v1/automation/workflows/${id}`,
-      FROM_TEMPLATE: "/api/v1/automation/workflows/from-template",
-      UPDATE_WORKFLOW: (id) => `/api/v1/automation/workflows/${id}`,
-      DELETE_WORKFLOW: (id) => `/api/v1/automation/workflows/${id}`,
-      TOGGLE_WORKFLOW: (id) => `/api/v1/automation/workflows/${id}/toggle`,
-      TEMPLATES: "/api/v1/automation/templates",
-      TEMPLATE_BY_ID: (id) => `/api/v1/automation/templates/${id}`,
-      EXECUTIONS: "/api/v1/automation/executions",
-      EXECUTION_BY_ID: (id) => `/api/v1/automation/executions/${id}`,
-      RETRY_EXECUTION: (id) => `/api/v1/automation/executions/${id}/retry`,
-      CUSTOMER_TIMELINE: (customerId) =>
-        `/api/v1/automation/customers/${customerId}/timeline`,
-      TRIGGER_MANUAL: "/api/v1/automation/trigger/manual",
     },
     // Add inside API_CONFIG.ENDPOINTS:
     WIDGETS: {

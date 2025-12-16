@@ -1,17 +1,45 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import PlatformIcon from '../PlatformIcon'; // ← ADDED: Platform icon component
 
 const LatestReviewsList = ({ reviews, loading, businessId }) => {
   // Get platform info with modern colors
   const getPlatformInfo = (source) => {
     const platforms = {
-      'GOOGLE': { name: 'Google', color: 'text-blue-600', bg: 'bg-gradient-to-r from-blue-500 to-blue-600' },
-      'FACEBOOK': { name: 'Facebook', color: 'text-blue-700', bg: 'bg-gradient-to-r from-blue-600 to-blue-700' },
-      'REPUTUL': { name: 'Reputul', color: 'text-purple-600', bg: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-      'DIRECT': { name: 'Direct', color: 'text-green-600', bg: 'bg-gradient-to-r from-green-500 to-emerald-500' },
+      'GOOGLE': { 
+        name: 'Google', 
+        id: 'GOOGLE_MY_BUSINESS',
+        color: 'text-blue-600', 
+        bg: 'bg-gradient-to-r from-blue-500 to-blue-600' 
+      },
+      'GOOGLE_MY_BUSINESS': { 
+        name: 'Google', 
+        id: 'GOOGLE_MY_BUSINESS',
+        color: 'text-blue-600', 
+        bg: 'bg-gradient-to-r from-blue-500 to-blue-600' 
+      },
+      'FACEBOOK': { 
+        name: 'Facebook', 
+        id: 'FACEBOOK',
+        color: 'text-blue-700', 
+        bg: 'bg-gradient-to-r from-blue-600 to-blue-700' 
+      },
+      'REPUTUL': { 
+        name: 'Reputul', 
+        id: 'REPUTUL',
+        color: 'text-purple-600', 
+        bg: 'bg-gradient-to-r from-purple-500 to-pink-500' 
+      },
+      'DIRECT': { 
+        name: 'Direct', 
+        id: 'REPUTUL',  // Use Reputul logo for direct reviews too
+        color: 'text-green-600', 
+        bg: 'bg-gradient-to-r from-green-500 to-emerald-500' 
+      },
     };
     return platforms[source?.toUpperCase()] || { 
-      name: source || 'Unknown', 
+      name: source || 'Unknown',
+      id: 'REPUTUL',  // Default to Reputul logo for unknown sources
       color: 'text-gray-600', 
       bg: 'bg-gradient-to-r from-gray-500 to-gray-600' 
     };
@@ -99,7 +127,7 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
         </div>
         {reviews && reviews.length > 0 && (
           <Link
-            to="/review-requests"
+            to="/reviews"
             className="px-4 py-2 text-sm font-semibold text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all duration-200"
           >
             View All →
@@ -129,7 +157,7 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
             return (
               <div key={review.id} className={`p-6 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-pink-50/50 transition-all duration-200 ${index !== reviews.length - 1 && index !== 4 ? 'border-b border-gray-100' : ''}`}>
                 <div className="flex items-start space-x-4">
-                  {/* Reviewer Avatar with gradient */}
+                  {/* Reviewer Avatar with initials (REVERTED) */}
                   <div className={`w-12 h-12 ${platformInfo.bg} rounded-full flex items-center justify-center flex-shrink-0 shadow-lg`}>
                     <span className="text-white font-bold text-lg">
                       {review.reviewerName?.charAt(0)?.toUpperCase() || 'A'}
@@ -142,13 +170,17 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-gray-900 text-lg">
-                          {review.reviewerName || 'Anonymous'}
+                          {review.reviewerName || 'Facebook User'}
                         </p>
                         <div className="flex items-center space-x-3 mt-1">
                           {renderStars(review.rating)}
-                          <span className={`inline-flex items-center px-2.5 py-1 text-xs font-bold text-white rounded-full ${platformInfo.bg} shadow`}>
-                            {platformInfo.name}
-                          </span>
+                          {/* UPDATED: Platform logo badge */}
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-200 rounded-full shadow-sm">
+                            <PlatformIcon platform={platformInfo.id || 'REPUTUL'} size="sm" className="flex-shrink-0" />
+                            <span className="text-xs font-semibold text-gray-700">
+                              {platformInfo.name}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <span className="text-sm text-gray-400 ml-4 flex-shrink-0 font-medium">
