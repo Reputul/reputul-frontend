@@ -5,22 +5,6 @@ import { API_ENDPOINTS, buildUrl } from "../config/api";
 
 const ReviewRequestsPage = () => {
   const navigate = useNavigate();
-  
-  // Helper function to get best available Google review URL
-  const getBestGoogleReviewUrl = (business) => {
-    // Priority: direct review URL > short URL > search URL
-    if (business?.googleReviewUrl) {
-      return business.googleReviewUrl;
-    }
-    if (business?.googleReviewShortUrl) {
-      return business.googleReviewShortUrl;
-    }
-    if (business?.googleSearchUrl) {
-      return business.googleSearchUrl;
-    }
-    return null;
-  };
-
   const [customers, setCustomers] = useState([]);
   const [businesses, setBusinesses] = useState([]); // NEW: For business selector
   const [templates, setTemplates] = useState([]);
@@ -262,12 +246,6 @@ const ReviewRequestsPage = () => {
         }
       }
 
-      // NEW: Get the selected business and best Google review URL
-      const selectedBusiness = businesses.find(
-        b => b.id === parseInt(quickSendData.businessId, 10)
-      );
-      const googleReviewUrl = getBestGoogleReviewUrl(selectedBusiness);
-
       // Send the review request
       const response = await axios.post(
         buildUrl(
@@ -283,7 +261,6 @@ const ReviewRequestsPage = () => {
             ? parseInt(quickSendData.businessId, 10)
             : null,
           deliveryMethod,
-          googleReviewUrl: googleReviewUrl, // NEW: Include best Google URL
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -44,6 +44,7 @@ import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import WidgetsPage from "./pages/WidgetsPage";
 import InsightsPage from "./pages/InsightsPage";
 import CampaignsPage from "./pages/CampaignsPage";
+import ReviewManagementPage from "./pages/ReviewsManagementPage";
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -216,6 +217,17 @@ function AppContent() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/reviews"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <ReviewManagementPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        
         <Route
           path="/account/billing"
           element={
