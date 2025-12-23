@@ -7,7 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { BusinessProvider } from "./context/BusinessContext"; // NEW: Import BusinessProvider
+import { BusinessProvider } from "./context/BusinessContext";
 import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import DashboardLayout from "./components/DashboardLayout";
@@ -45,6 +45,7 @@ import WidgetsPage from "./pages/WidgetsPage";
 import InsightsPage from "./pages/InsightsPage";
 import CampaignsPage from "./pages/CampaignsPage";
 import ReviewManagementPage from "./pages/ReviewsManagementPage";
+import SettingsPage from "./pages/SettingsPage"; // ADD THIS LINE
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -62,10 +63,14 @@ function AppContent() {
     "/email-templates",
     "/review-requests",
     "/review-platform-setup",
+    "/review-platforms",
     "/profile",
     "/campaigns",
     "/account",
     "/insights",
+    "/widgets",
+    "/reviews",
+    "/settings", // ADD THIS LINE
   ];
 
   const shouldShowNavbar = !noNavbarRoutes.some((route) =>
@@ -192,7 +197,7 @@ function AppContent() {
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <CampaignsPage /> {/* ← NEW PAGE */}
+                <CampaignsPage />
               </DashboardLayout>
             </PrivateRoute>
           }
@@ -223,6 +228,18 @@ function AppContent() {
             <PrivateRoute>
               <DashboardLayout>
                 <ReviewManagementPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        
+        {/* ADD THIS NEW ROUTE */}
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <SettingsPage />
               </DashboardLayout>
             </PrivateRoute>
           }
@@ -296,7 +313,6 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        {/* NEW: Wrap with BusinessProvider inside AuthProvider */}
         <BusinessProvider>
           <ErrorBoundary>
             <AppContent />

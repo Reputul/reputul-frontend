@@ -151,7 +151,7 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
           <EmptyState />
         ) : (
           // Actual reviews
-          reviews.slice(0, 5).map((review, index) => {
+          reviews.slice(0, 10).map((review, index) => {
             const platformInfo = getPlatformInfo(review.source);
             
             return (
@@ -170,7 +170,7 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-gray-900 text-lg">
-                          {review.reviewerName || 'Facebook User'}
+                          {review.customerName || 'Facebook User'}
                         </p>
                         <div className="flex items-center space-x-3 mt-1">
                           {renderStars(review.rating)}

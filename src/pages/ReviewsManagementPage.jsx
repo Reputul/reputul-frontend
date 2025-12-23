@@ -4,9 +4,11 @@ import { useBusiness } from '../context/BusinessContext';
 import axios from 'axios';
 import { buildUrl, API_ENDPOINTS } from '../config/api';
 import PlatformIcon from '../components/PlatformIcon';
-import { Search, Filter, Download, Star } from 'lucide-react';
+import { Search, Filter, Download, Star, Share2, MessageSquare, Link as LinkIcon } from 'lucide-react';
+import ShareReviewModal from '../components/ShareReviewModal';
+import ReplyReviewModal from '../components/ReplyReviewModal';
 
-const ReviewManagementPage = () => {
+const ReviewsManagementPage = () => {
   const { token } = useAuth();
   const { selectedBusiness } = useBusiness();
 
@@ -18,13 +20,18 @@ const ReviewManagementPage = () => {
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
-    timePeriod: 'all', // all, 7days, 30days, 90days, year
-    sentiment: 'all', // all, positive, neutral, negative
-    platform: 'all', // all, google_my_business, facebook, reputul
-    rating: 'all', // all, 5, 4, 3, 2, 1
+    timePeriod: 'all',
+    sentiment: 'all',
+    platform: 'all',
+    rating: 'all',
   });
 
   const [showFilters, setShowFilters] = useState(false);
+
+  // Modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
 
   // Fetch reviews
   useEffect(() => {
@@ -51,11 +58,10 @@ const ReviewManagementPage = () => {
     fetchReviews();
   }, [selectedBusiness, token]);
 
-  // Apply filters whenever filters or reviews change
+  // Apply filters
   useEffect(() => {
     let filtered = [...reviews];
 
-    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(
@@ -65,7 +71,6 @@ const ReviewManagementPage = () => {
       );
     }
 
-    // Time period filter
     if (filters.timePeriod !== 'all') {
       const now = new Date();
       const cutoffDate = new Date();
@@ -92,7 +97,6 @@ const ReviewManagementPage = () => {
       );
     }
 
-    // Sentiment filter (based on rating)
     if (filters.sentiment !== 'all') {
       switch (filters.sentiment) {
         case 'positive':
@@ -109,14 +113,12 @@ const ReviewManagementPage = () => {
       }
     }
 
-    // Platform filter
     if (filters.platform !== 'all') {
       filtered = filtered.filter(
         (review) => review.source?.toLowerCase() === filters.platform.toLowerCase()
       );
     }
 
-    // Rating filter
     if (filters.rating !== 'all') {
       filtered = filtered.filter(
         (review) => review.rating === parseInt(filters.rating)
@@ -126,45 +128,17 @@ const ReviewManagementPage = () => {
     setFilteredReviews(filtered);
   }, [filters, reviews]);
 
-  // Platform info mapping
+  // Platform info
   const getPlatformInfo = (source) => {
     const platforms = {
-      'GOOGLE': { 
-        name: 'Google', 
-        id: 'GOOGLE_MY_BUSINESS',
-        color: 'text-blue-600', 
-        bg: 'bg-blue-50' 
-      },
-      'GOOGLE_MY_BUSINESS': { 
-        name: 'Google', 
-        id: 'GOOGLE_MY_BUSINESS',
-        color: 'text-blue-600', 
-        bg: 'bg-blue-50' 
-      },
-      'FACEBOOK': { 
-        name: 'Facebook', 
-        id: 'FACEBOOK',
-        color: 'text-blue-700', 
-        bg: 'bg-blue-50' 
-      },
-      'REPUTUL': { 
-        name: 'Reputul', 
-        id: 'REPUTUL',
-        color: 'text-purple-600', 
-        bg: 'bg-purple-50' 
-      },
-      'DIRECT': { 
-        name: 'Direct', 
-        id: 'REPUTUL',
-        color: 'text-green-600', 
-        bg: 'bg-green-50' 
-      },
+      'GOOGLE': { name: 'Google', id: 'GOOGLE_MY_BUSINESS', color: 'text-blue-600', bg: 'bg-blue-50' },
+      'GOOGLE_MY_BUSINESS': { name: 'Google', id: 'GOOGLE_MY_BUSINESS', color: 'text-blue-600', bg: 'bg-blue-50' },
+      'FACEBOOK': { name: 'Facebook', id: 'FACEBOOK', color: 'text-blue-700', bg: 'bg-blue-50' },
+      'REPUTUL': { name: 'Reputul', id: 'REPUTUL', color: 'text-purple-600', bg: 'bg-purple-50' },
+      'DIRECT': { name: 'Direct', id: 'REPUTUL', color: 'text-green-600', bg: 'bg-green-50' },
     };
     return platforms[source?.toUpperCase()] || { 
-      name: source || 'Unknown',
-      id: 'REPUTUL',
-      color: 'text-gray-600', 
-      bg: 'bg-gray-50' 
+      name: source || 'Unknown', id: 'REPUTUL', color: 'text-gray-600', bg: 'bg-gray-50' 
     };
   };
 
@@ -213,6 +187,26 @@ const ReviewManagementPage = () => {
         </span>
       );
     }
+  };
+
+  // Handle share
+  const handleShare = (review) => {
+    setSelectedReview(review);
+    setShareModalOpen(true);
+  };
+
+  // Handle reply
+  const handleReply = (review) => {
+    setSelectedReview(review);
+    setReplyModalOpen(true);
+  };
+
+  // Handle copy link
+  const handleCopyLink = () => {
+    const publicReviewUrl = `${window.location.origin}/public/reviews/${selectedBusiness.id}`;
+    navigator.clipboard.writeText(publicReviewUrl);
+    // TODO: Show toast notification
+    alert('✅ Review page link copied to clipboard!');
   };
 
   // Export to CSV
@@ -297,7 +291,6 @@ const ReviewManagementPage = () => {
         {/* Filters Bar */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -309,7 +302,6 @@ const ReviewManagementPage = () => {
               />
             </div>
 
-            {/* Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
@@ -318,7 +310,6 @@ const ReviewManagementPage = () => {
               Filters
             </button>
 
-            {/* Export */}
             <button
               onClick={handleExport}
               disabled={filteredReviews.length === 0}
@@ -329,14 +320,10 @@ const ReviewManagementPage = () => {
             </button>
           </div>
 
-          {/* Expandable Filters */}
           {showFilters && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
-              {/* Time Period */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Time Period
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time Period</label>
                 <select
                   value={filters.timePeriod}
                   onChange={(e) => setFilters({ ...filters, timePeriod: e.target.value })}
@@ -350,11 +337,8 @@ const ReviewManagementPage = () => {
                 </select>
               </div>
 
-              {/* Sentiment */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sentiment
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sentiment</label>
                 <select
                   value={filters.sentiment}
                   onChange={(e) => setFilters({ ...filters, sentiment: e.target.value })}
@@ -367,11 +351,8 @@ const ReviewManagementPage = () => {
                 </select>
               </div>
 
-              {/* Platform */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Platform
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
                 <select
                   value={filters.platform}
                   onChange={(e) => setFilters({ ...filters, platform: e.target.value })}
@@ -384,11 +365,8 @@ const ReviewManagementPage = () => {
                 </select>
               </div>
 
-              {/* Rating */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rating
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
                 <select
                   value={filters.rating}
                   onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
@@ -406,95 +384,140 @@ const ReviewManagementPage = () => {
           )}
         </div>
 
-        {/* Reviews List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          {loading ? (
-            <div className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading reviews...</p>
-            </div>
-          ) : filteredReviews.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="text-gray-400 text-5xl mb-4">📭</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No reviews found
-              </h3>
-              <p className="text-gray-600">
-                {filters.search || filters.timePeriod !== 'all' || filters.sentiment !== 'all' || filters.platform !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'Start collecting reviews to see them here'}
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200">
-              {filteredReviews.map((review) => {
-                const platformInfo = getPlatformInfo(review.source);
-                
-                return (
-                  <div key={review.id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-4">
-                      {/* Avatar */}
-                      <div className={`w-12 h-12 ${platformInfo.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
-                        <span className="text-lg font-bold text-gray-700">
-                          {review.customerName?.charAt(0)?.toUpperCase() || 'A'}
+        {/* Reviews Grid - Individual Cards */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+          </div>
+        ) : filteredReviews.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="text-gray-400 text-5xl mb-4">📭</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews found</h3>
+            <p className="text-gray-600">
+              {filters.search || filters.timePeriod !== 'all' || filters.sentiment !== 'all' || filters.platform !== 'all'
+                ? 'Try adjusting your filters'
+                : 'Start collecting reviews to see them here'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredReviews.map((review) => {
+              const platformInfo = getPlatformInfo(review.source);
+              
+              return (
+                <div key={review.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                  {/* Header */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className={`w-12 h-12 ${platformInfo.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
+                      <span className="text-lg font-bold text-gray-700">
+                        {review.customerName?.charAt(0)?.toUpperCase() || 'A'}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">
+                        {review.customerName || 'Anonymous'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {renderStars(review.rating)}
+                        <span className="text-sm text-gray-500">
+                          {formatDate(review.createdAt)}
                         </span>
                       </div>
+                    </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Header */}
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="font-semibold text-gray-900">
-                              {review.customerName || 'Anonymous'}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              {renderStars(review.rating)}
-                              <span className="text-sm text-gray-500">
-                                {formatDate(review.createdAt)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {getSentimentBadge(review.rating)}
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-200 rounded-full shadow-sm">
-                              <PlatformIcon platform={platformInfo.id} size="sm" />
-                              <span className="text-xs font-semibold text-gray-700">
-                                {platformInfo.name}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Comment */}
-                        {review.comment && (
-                          <p className="text-gray-700 leading-relaxed">
-                            {review.comment}
-                          </p>
-                        )}
-
-                        {/* Platform Response */}
-                        {review.platformResponse && (
-                          <div className="mt-3 pl-4 border-l-2 border-blue-200 bg-blue-50 p-3 rounded">
-                            <p className="text-sm font-medium text-blue-900 mb-1">
-                              Business Response
-                            </p>
-                            <p className="text-sm text-blue-800">
-                              {review.platformResponse}
-                            </p>
-                          </div>
-                        )}
+                    <div className="flex flex-col items-end gap-2">
+                      {getSentimentBadge(review.rating)}
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-200 rounded-full shadow-sm">
+                        <PlatformIcon platform={platformInfo.id} size="sm" />
+                        <span className="text-xs font-semibold text-gray-700">
+                          {platformInfo.name}
+                        </span>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+
+                  {/* Comment */}
+                  {review.comment && (
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      {review.comment}
+                    </p>
+                  )}
+
+                  {/* Platform Response */}
+                  {review.platformResponse && (
+                    <div className="mb-4 pl-4 border-l-2 border-blue-200 bg-blue-50 p-3 rounded">
+                      <p className="text-sm font-medium text-blue-900 mb-1">Business Response</p>
+                      <p className="text-sm text-blue-800">{review.platformResponse}</p>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={handleCopyLink}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Copy review page link"
+                    >
+                      <LinkIcon size={16} />
+                      <span>Copy Link</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleReply(review)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Reply to review"
+                    >
+                      <MessageSquare size={16} />
+                      <span>Reply</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleShare(review)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                      title="Share on social media"
+                    >
+                      <Share2 size={16} />
+                      <span>Share</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Modals */}
+      {shareModalOpen && selectedReview && (
+        <ShareReviewModal
+          review={selectedReview}
+          business={selectedBusiness}
+          onClose={() => {
+            setShareModalOpen(false);
+            setSelectedReview(null);
+          }}
+        />
+      )}
+
+      {replyModalOpen && selectedReview && (
+        <ReplyReviewModal
+          review={selectedReview}
+          business={selectedBusiness}
+          onClose={() => {
+            setReplyModalOpen(false);
+            setSelectedReview(null);
+          }}
+          onReplySuccess={() => {
+            // Refresh reviews after successful reply
+            setReplyModalOpen(false);
+            setSelectedReview(null);
+            // TODO: Refresh reviews list
+          }}
+        />
+      )}
     </div>
   );
 };
 
-export default ReviewManagementPage;
+export default ReviewsManagementPage;
