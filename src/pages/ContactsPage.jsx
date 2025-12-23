@@ -1,6 +1,8 @@
 // frontend/src/pages/ContactsPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { contactsApi, handleApiError, downloadCsvFile } from '../api/Contacts';
+import { buildUrl } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import ImportModal from '../components/contacts/ImportModal';
@@ -9,7 +11,12 @@ import { ContactDetailsModal, ContactFormModal } from '../components/contacts/Co
 const ContactsPage = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState("CONTACTS"); // CONTACTS, REQUESTS, SCHEDULED
+  
   const [contacts, setContacts] = useState([]);
+  const [reviewRequests, setReviewRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -100,12 +107,25 @@ const ContactsPage = () => {
     }
   }, []);
   
+  // Load review requests for REQUESTS and SCHEDULED tabs
+  const loadReviewRequests = useCallback(async () => {
+    try {
+      const response = await axios.get(buildUrl('/api/v1/review-requests'), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReviewRequests(response.data);
+    } catch (err) {
+      console.error('Error loading review requests:', err);
+    }
+  }, [token]);
+  
   useEffect(() => {
     if (token) {
       loadContacts();
       loadContactStats();
+      loadReviewRequests();
     }
-  }, [token, loadContacts, loadContactStats]);
+  }, [token, loadContacts, loadContactStats, loadReviewRequests]);
   
   // Handle search
   const handleSearch = (e) => {
@@ -455,21 +475,12 @@ const ContactsPage = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Contact Database</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
               <p className="text-gray-600 mt-1">
-                Manage your contact database and run targeted campaigns
+                Manage your customer contacts and review requests
               </p>
             </div>
             <div className="flex gap-3">
-              <Link
-                to="/customers"
-                className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-lg"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-                <span>View Customers</span>
-              </Link>
               <button
                 onClick={handleExport}
                 className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg"
@@ -499,6 +510,40 @@ const ContactsPage = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Tab Navigation - CHANGED: Added tab navigation */}
+        <div className="bg-white rounded-2xl shadow-sm mb-6 p-2 inline-flex">
+          <button
+            onClick={() => setActiveTab("CONTACTS")}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === "CONTACTS"
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            CONTACTS
+          </button>
+          <button
+            onClick={() => setActiveTab("REQUESTS")}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === "REQUESTS"
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            REQUESTS
+          </button>
+          <button
+            onClick={() => setActiveTab("SCHEDULED")}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === "SCHEDULED"
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            SCHEDULED
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -697,156 +742,273 @@ const ContactsPage = () => {
           </form>
         </div>
 
-        {/* Contacts Table */}
+        {/* Contacts Table - CHANGED: Wrapped in conditional rendering based on activeTab */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <span className="ml-3 text-gray-600">Loading contacts...</span>
-            </div>
-          ) : contacts.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="mx-auto w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No contacts found</h3>
-              <p className="text-gray-600 mb-6">
-                {searchQuery || tagFilter ? 'No contacts match your search criteria.' : 'Get started by adding your first contact or importing from CSV.'}
-              </p>
-              <div className="space-x-4">
-                <button
-                  onClick={openAddModal}
-                  className="bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors"
-                >
-                  Add First Contact
-                </button>
-                <button
-                  onClick={() => setShowImportModal(true)}
-                  className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-colors"
-                >
-                  Import from CSV
-                </button>
-              </div>
-            </div>
-          ) : (
+          {activeTab === "CONTACTS" && (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-4 text-left">
-                        <input
-                          type="checkbox"
-                          checked={selectedContacts.size === contacts.length && contacts.length > 0}
-                          onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                        />
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Job</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consent</th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {contacts.map((contact) => (
-                      <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedContacts.has(contact.id)}
-                            onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
-                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{contact.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                          {contact.email || '—'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                          {contact.phone || '—'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                          {formatDate(contact.lastJobDate)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {contact.tags?.slice(0, 3).map((tag) => (
-                              <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                                {tag}
-                              </span>
-                            ))}
-                            {contact.tags?.length > 3 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
-                                +{contact.tags.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex space-x-2">
-                            <span title={`SMS: ${contact.smsConsent === null ? 'Unknown' : contact.smsConsent ? 'Yes' : 'No'}`} className={getConsentColor(contact.smsConsent)}>
-                              📱{getConsentDisplay(contact.smsConsent)}
-                            </span>
-                            <span title={`Email: ${contact.emailConsent === null ? 'Unknown' : contact.emailConsent ? 'Yes' : 'No'}`} className={getConsentColor(contact.emailConsent)}>
-                              📧{getConsentDisplay(contact.emailConsent)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => openDetailsModal(contact)}
-                              className="text-blue-600 hover:text-blue-900 transition-colors"
-                              title="View Details"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => openEditModal(contact)}
-                              className="text-indigo-600 hover:text-indigo-900 transition-colors"
-                              title="Edit"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleConvertToCustomer(contact)}
-                              className="text-green-600 hover:text-green-900 transition-colors"
-                              title="Convert to Customer"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDeleteContact(contact)}
-                              className="text-red-600 hover:text-red-900 transition-colors"
-                              title="Delete"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+                  <span className="ml-3 text-gray-600">Loading contacts...</span>
+                </div>
+              ) : contacts.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No contacts found</h3>
+                  <p className="text-gray-600 mb-6">
+                    {searchQuery || tagFilter ? 'No contacts match your search criteria.' : 'Get started by adding your first contact or importing from CSV.'}
+                  </p>
+                  <div className="space-x-4">
+                    <button
+                      onClick={openAddModal}
+                      className="bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition-colors"
+                    >
+                      Add First Contact
+                    </button>
+                    <button
+                      onClick={() => setShowImportModal(true)}
+                      className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-colors"
+                    >
+                      Import from CSV
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-4 py-4 text-left">
+                            <input
+                              type="checkbox"
+                              checked={selectedContacts.size === contacts.length && contacts.length > 0}
+                              onChange={(e) => handleSelectAll(e.target.checked)}
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Job</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consent</th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {contacts.map((contact) => (
+                          <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedContacts.has(contact.id)}
+                                onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
+                                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="font-medium text-gray-900">{contact.name}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                              {contact.email || '—'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                              {contact.phone || '—'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                              {formatDate(contact.lastJobDate)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {contact.tags?.slice(0, 3).map((tag) => (
+                                  <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                    {tag}
+                                  </span>
+                                ))}
+                                {contact.tags?.length > 3 && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                                    +{contact.tags.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex space-x-2">
+                                <span title={`SMS: ${contact.smsConsent === null ? 'Unknown' : contact.smsConsent ? 'Yes' : 'No'}`} className={getConsentColor(contact.smsConsent)}>
+                                  📱{getConsentDisplay(contact.smsConsent)}
+                                </span>
+                                <span title={`Email: ${contact.emailConsent === null ? 'Unknown' : contact.emailConsent ? 'Yes' : 'No'}`} className={getConsentColor(contact.emailConsent)}>
+                                  📧{getConsentDisplay(contact.emailConsent)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => openDetailsModal(contact)}
+                                  className="text-blue-600 hover:text-blue-900 transition-colors"
+                                  title="View Details"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => openEditModal(contact)}
+                                  className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                                  title="Edit"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleConvertToCustomer(contact)}
+                                  className="text-green-600 hover:text-green-900 transition-colors"
+                                  title="Convert to Customer"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteContact(contact)}
+                                  className="text-red-600 hover:text-red-900 transition-colors"
+                                  title="Delete"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination />
+                </>
+              )}
+            </>
+          )}
+
+          {/* REQUESTS TAB - CHANGED: Added requests tab content */}
+          {activeTab === "REQUESTS" && (
+            <>
+              {reviewRequests.filter(r => ['SENT', 'DELIVERED', 'OPENED', 'COMPLETED'].includes(r.status)).length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No review requests sent</h3>
+                  <p className="text-gray-600">
+                    Send review requests to your contacts to see them here.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sent Date</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Pagination />
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {reviewRequests
+                        .filter(r => ['SENT', 'DELIVERED', 'OPENED', 'COMPLETED'].includes(r.status))
+                        .map((request) => (
+                          <tr key={request.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-gray-900">{request.recipientName || request.customer?.name}</div>
+                              <div className="text-sm text-gray-500">{request.recipientEmail || request.customer?.email}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                {request.deliveryMethod}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                request.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                request.status === 'OPENED' ? 'bg-purple-100 text-purple-800' :
+                                request.status === 'DELIVERED' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {request.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-600 text-sm">
+                              {request.sentAt ? new Date(request.sentAt).toLocaleDateString() : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* SCHEDULED TAB - CHANGED: Added scheduled tab content */}
+          {activeTab === "SCHEDULED" && (
+            <>
+              {reviewRequests.filter(r => r.status === 'PENDING').length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No scheduled requests</h3>
+                  <p className="text-gray-600">
+                    Scheduled review requests will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scheduled For</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {reviewRequests
+                        .filter(r => r.status === 'PENDING')
+                        .map((request) => (
+                          <tr key={request.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-gray-900">{request.recipientName || request.customer?.name}</div>
+                              <div className="text-sm text-gray-500">{request.recipientEmail || request.customer?.email}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                {request.deliveryMethod}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-600 text-sm">
+                              {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </>
           )}
         </div>
