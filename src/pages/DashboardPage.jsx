@@ -7,14 +7,12 @@ import { buildUrl, API_ENDPOINTS } from "../config/api";
 // Component imports
 import BusinessHeader from "../components/dashboard/BusinessHeader";
 import KeyMetricsGrid from "../components/dashboard/KeyMetricsGrid";
-import ReputationScoreCard from "../components/dashboard/ReputationScoreCard";
 import LatestReviewsList from "../components/dashboard/LatestReviewsList";
 
 // Modal imports
 import AddBusinessModal from "../components/dashboard/modals/AddBusinessModal";
 import EditBusinessModal from "../components/dashboard/modals/EditBusinessModal";
 import RequestReviewsModal from "../components/dashboard/modals/RequestReviewsModal";
-import ReputationModal from "../components/dashboard/modals/ReputationModal";
 
 // Helper function to get best available Google review URL
 const getBestGoogleReviewUrl = (business) => {
@@ -44,8 +42,6 @@ const DashboardPage = () => {
   // Modal state
   const [showAddBusiness, setShowAddBusiness] = useState(false);
   const [showRequestReviews, setShowRequestReviews] = useState(false);
-  const [showReputationModal, setShowReputationModal] = useState(false);
-  const [reputationBreakdownData, setReputationBreakdownData] = useState(null);
 
   // Business form state (for add modal)
   const [newBusiness, setNewBusiness] = useState({
@@ -90,14 +86,6 @@ const DashboardPage = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Fetch reputation data
-      const reputationResponse = await axios.get(
-        buildUrl(
-          `/api/v1/reputation/business/${selectedBusiness.id}/breakdown`
-        ),
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
       // Fetch review summary
       const summaryResponse = await axios.get(
         buildUrl(API_ENDPOINTS.BUSINESS.REVIEW_SUMMARY(selectedBusiness.id)),
@@ -117,14 +105,6 @@ const DashboardPage = () => {
           avgRating: summaryResponse.data.averageRating || 0,
           engagementRate: engagementRate,
         },
-        reputation: {
-          // UPDATED: Use Wilson Score (0-5) as primary, composite (0-100) as secondary
-          publicRating: reputationResponse.data.reputulRating || 0, // 0-5 stars
-          healthScore: Math.round(reputationResponse.data.compositeScore || 0), // 0-100
-          badge: selectedBusiness.badge || "Unranked",
-          trend: 0, // TODO: Calculate trend from historical data
-          totalReviews: summaryResponse.data.totalReviews || 0,
-        },
       });
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -135,13 +115,6 @@ const DashboardPage = () => {
           newReviews: 0,
           avgRating: 0,
           engagementRate: 0,
-        },
-        reputation: {
-          publicRating: 0,
-          healthScore: 0,
-          badge: "Unranked",
-          trend: 0,
-          totalReviews: 0,
         },
       });
     } finally {
@@ -165,23 +138,6 @@ const DashboardPage = () => {
       setReviews([]);
     } finally {
       setReviewsLoading(false);
-    }
-  }, [token, selectedBusiness]);
-
-  // Fetch reputation breakdown for modal
-  const fetchReputationBreakdown = useCallback(async () => {
-    if (!token || !selectedBusiness) return;
-
-    try {
-      const response = await axios.get(
-        buildUrl(
-          `/api/v1/reputation/business/${selectedBusiness.id}/breakdown`
-        ),
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setReputationBreakdownData(response.data);
-    } catch (err) {
-      console.error("Error fetching reputation breakdown:", err);
     }
   }, [token, selectedBusiness]);
 
@@ -318,32 +274,6 @@ const DashboardPage = () => {
     [requestReviewsData, token, fetchDashboardData]
   );
 
-  // Reputation handlers
-  const handleShowReputationBreakdown = useCallback(() => {
-    setShowReputationModal(true);
-    fetchReputationBreakdown();
-  }, [fetchReputationBreakdown]);
-
-  const handleRecalculateReputation = useCallback(
-    async (businessId) => {
-      try {
-        await axios.post(
-          buildUrl(`/api/v1/reputation/business/${businessId}/recalculate`),
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        await fetchReputationBreakdown();
-        await fetchDashboardData();
-        alert("Reputation score recalculated successfully!");
-      } catch (err) {
-        console.error("Error recalculating reputation:", err);
-        alert("Failed to recalculate reputation");
-      }
-    },
-    [token, fetchReputationBreakdown, fetchDashboardData]
-  );
-
   // ============================================================
   // Render: Empty state when no businesses exist
   // ============================================================
@@ -383,7 +313,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* FIX: Modal must be included here for empty state to work */}
+        {/* Modal must be included here for empty state to work */}
         <AddBusinessModal
           showAddBusiness={showAddBusiness}
           setShowAddBusiness={setShowAddBusiness}
@@ -431,17 +361,10 @@ const DashboardPage = () => {
           onAddBusiness={() => setShowAddBusiness(true)}
         />
 
-        {/* Key Metrics Grid */}
+        {/* Key Metrics Grid - CHANGED: Removed onViewBreakdown prop, will add it to KeyMetricsGrid component later if needed */}
         <KeyMetricsGrid metrics={dashboardData?.metrics} loading={loading} />
 
-        {/* Reputation Score Card */}
-        <ReputationScoreCard
-          reputation={dashboardData?.reputation}
-          loading={loading}
-          onViewBreakdown={handleShowReputationBreakdown}
-        />
-
-        {/* NEW: Google Review URL Card */}
+        {/* Google Review URL Card */}
         {selectedBusiness && getBestGoogleReviewUrl(selectedBusiness) && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
             <div className="flex items-start justify-between">
@@ -506,12 +429,14 @@ const DashboardPage = () => {
             </div>
           </div>
         )}
-
+        
         {/* Latest Reviews List */}
         <LatestReviewsList
           reviews={reviews}
           loading={reviewsLoading}
           businessId={selectedBusiness?.id}
+          businessName={selectedBusiness?.name}
+          business={selectedBusiness} 
         />
       </div>
 
@@ -549,17 +474,6 @@ const DashboardPage = () => {
         handleRequestReviewsChange={handleRequestReviewsChange}
         handleRequestReviews={handleRequestReviews}
         businesses={businesses}
-      />
-
-      {/* Reputation Breakdown Modal */}
-      <ReputationModal
-        showReputationModal={showReputationModal}
-        setShowReputationModal={setShowReputationModal}
-        selectedBusinessForReputation={selectedBusiness}
-        setSelectedBusinessForReputation={() => {}}
-        reputationBreakdownData={reputationBreakdownData}
-        setReputationBreakdownData={setReputationBreakdownData}
-        handleRecalculateReputation={handleRecalculateReputation}
       />
     </div>
   );

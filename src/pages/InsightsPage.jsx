@@ -1,309 +1,507 @@
-import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
-import { useAuth } from "../context/AuthContext";
-import { useBusiness } from "../context/BusinessContext";
-import { useNavigate } from "react-router-dom";
-import { buildUrl } from "../config/api";
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Star, TrendingUp, TrendingDown, Users, Target, BarChart3 } from 'lucide-react';
+import axios from 'axios';
+import { buildUrl } from '../config/api';
+import { useAuth } from '../context/AuthContext';
+import { useBusiness } from '../context/BusinessContext';
 
-// Import insights components
-import OverallRatingSection from "../components/insights/OverallRatingSection";
-import RatingGoalsSection from "../components/insights/RatingGoalsSection";
-import PlatformPerformanceChart from "../components/insights/PlatformPerformanceChart";
-import SentimentBreakdown from "../components/insights/SentimentBreakdown";
-import ReviewTrendsChart from "../components/insights/ReviewTrendsChart";
+// Import your existing components
+import BusinessHeader from '../components/dashboard/BusinessHeader';
+import ReviewTrendsChart from '../components/insights/ReviewTrendsChart';
 
 const InsightsPage = () => {
   const { token } = useAuth();
   const { selectedBusiness } = useBusiness();
-  const navigate = useNavigate();
-
+  const [activeTab, setActiveTab] = useState('reviews');
+  const [period, setPeriod] = useState(90);
   const [insightsData, setInsightsData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [period, setPeriod] = useState(30); // Default 30 days
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch insights data using the NEW SINGLE ENDPOINT
-  const fetchInsightsData = useCallback(async () => {
+  // Fetch insights data
+  useEffect(() => {
     if (!token || !selectedBusiness) {
-      setLoading(false);
+      setIsLoading(false);
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      console.log(`Fetching insights for business ${selectedBusiness.id} with period ${period}d`);
-
-      // Use the NEW single insights endpoint
-      const response = await axios.get(
-        buildUrl(`/api/v1/insights/business/${selectedBusiness.id}?period=${period}d`),
-        { 
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 30000
-        }
-      );
-
-      console.log("Insights API Response:", response.data);
-      setInsightsData(response.data);
-
-    } catch (err) {
-      console.error("Error fetching insights data:", err);
-      
-      if (err.response?.status === 404) {
-        setError("Business not found or access denied");
-      } else if (err.response?.status === 401) {
-        setError("Authentication required");
-      } else if (err.response?.status === 500) {
-        setError("Server error - please check backend logs");
-      } else if (err.code === 'ECONNABORTED') {
-        setError("Request timeout - please try again");
-      } else {
-        setError(`Failed to load insights data: ${err.message}`);
+    const fetchInsights = async () => {
+      setIsLoading(true);
+      try {
+        console.log(`Fetching insights for business ${selectedBusiness.id} with period ${period}d`);
+        
+        const response = await axios.get(
+          buildUrl(`/api/v1/insights/business/${selectedBusiness.id}?period=${period}d`),
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 30000
+          }
+        );
+        
+        console.log("Insights API Response:", response.data);
+        setInsightsData(response.data);
+      } catch (error) {
+        console.error('Error fetching insights:', error);
+        // Set empty data structure on error
+        setInsightsData({
+          overallRating: 0,
+          totalReviews: 0,
+          reviewDistribution: [],
+          reputationMetrics: { score: 0, badge: 'Unranked', wilsonScore: 0 },
+          ratingGoals: [
+            { target: 4.8, reviewsNeeded: 0, progress: 0 },
+            { target: 4.9, reviewsNeeded: 0, progress: 0 },
+            { target: 5.0, reviewsNeeded: 0, progress: 0 }
+          ],
+          platformPerformance: [],
+          sentiment: { 
+            positive: { count: 0, percentage: 0 }, 
+            negative: { count: 0, percentage: 0 } 
+          },
+          timeSeries: [],
+          statistics: { 
+            averagePerMonth: 0, 
+            totalSinceJoining: 0, 
+            memberSince: null 
+          }
+        });
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Set empty data structure on error for graceful degradation
-      setInsightsData({
-        overallRating: 0,
-        totalReviews: 0,
-        reviewDistribution: [],
-        reputationMetrics: { score: 0, badge: 'Unranked', wilsonScore: 0 },
-        ratingGoals: [
-          { target: 4.8, reviewsNeeded: 0, progress: 0 },
-          { target: 4.9, reviewsNeeded: 0, progress: 0 },
-          { target: 5.0, reviewsNeeded: 0, progress: 0 }
-        ],
-        platformPerformance: [],
-        sentiment: { 
-          positive: { count: 0, percentage: 0 }, 
-          negative: { count: 0, percentage: 0 } 
-        },
-        timeSeries: [],
-        statistics: { 
-          averagePerMonth: 0, 
-          totalSinceJoining: 0, 
-          memberSince: null 
-        }
-      });
-    } finally {
-      setLoading(false);
-    }
+    fetchInsights();
   }, [token, selectedBusiness, period]);
 
-  // Get platform color (keep this helper function for consistency)
-  const getPlatformColor = (platform) => {
-    const colors = {
-      'Google': '#4285F4',
-      'Facebook': '#1877F2',
-      'Reputul': '#8B5CF6',
-      'Direct': '#10B981'
-    };
-    return colors[platform] || '#6B7280';
-  };
+  const tabs = [
+    { id: 'reviews', label: 'Reviews', icon: Star },
+    { id: 'campaigns', label: 'Campaigns', icon: Target },
+    { id: 'team', label: 'Team', icon: Users },
+    { id: 'competitors', label: 'Competitors', icon: BarChart3 }
+  ];
 
-  // Export to CSV
-  const handleExportCSV = () => {
-    if (!insightsData) return;
-
-    const csvData = [
-      ['Metric', 'Value'],
-      ['Overall Rating', insightsData.overallRating],
-      ['Total Reviews', insightsData.totalReviews],
-      ['Reputation Score', insightsData.reputationMetrics.score],
-      ['Badge', insightsData.reputationMetrics.badge],
-      ['Positive Reviews', `${insightsData.sentiment.positive.percentage}%`],
-      ['Negative Reviews', `${insightsData.sentiment.negative.percentage}%`],
-      ['Average Per Month', insightsData.statistics.averagePerMonth],
-      [''],
-      ['Platform Performance'],
-      ['Platform', 'Rating', 'Count'],
-      ...insightsData.platformPerformance.map(p => [p.name, p.rating, p.count])
-    ];
-
-    const csv = csvData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${selectedBusiness.name}-insights-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
-
-  // Export to PDF (placeholder)
-  const handleExportPDF = () => {
-    alert('PDF export coming soon! For now, use the browser print function (Ctrl/Cmd + P)');
-  };
-
-  useEffect(() => {
-    if (selectedBusiness) {
-      fetchInsightsData();
-    }
-  }, [selectedBusiness, fetchInsightsData]);
-
-  // No business selected
-  if (!selectedBusiness) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Please select a business from the sidebar</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-all"
-          >
-            Go to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading insights...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error Loading Insights</h3>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
-                <div className="mt-4">
-                  <button
-                    onClick={fetchInsightsData}
-                    className="text-sm bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded transition-colors mr-2"
-                  >
-                    Try Again
-                  </button>
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded transition-colors"
-                  >
-                    Back to Dashboard
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
+    <div className="min-h-screen bg-gray-50">
+      <BusinessHeader businessId={selectedBusiness?.id} />
+      
+      <div className="flex">
+        {/* Sidebar Navigation */}
+        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-0">
+          <nav className="p-4 space-y-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-indigo-50 text-indigo-600 font-medium'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-8">
+          {activeTab === 'reviews' && (
+            <ReviewsTab data={insightsData} period={period} setPeriod={setPeriod} />
+          )}
+          {activeTab === 'campaigns' && <CampaignsTab />}
+          {activeTab === 'team' && <TeamTab />}
+          {activeTab === 'competitors' && <CompetitorsTab />}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// REVIEWS TAB
+// ============================================
+const ReviewsTab = ({ data, period, setPeriod }) => {
+  const periods = [
+    { label: 'Last Week', value: 7 },
+    { label: 'Last Month', value: 30 },
+    { label: 'Last Year', value: 365 },
+    { label: 'All Time', value: 0 }
+  ];
+
+  // Extract data with safe fallbacks
+  const healthScore = data?.reputationMetrics?.score || 0;
+  const badge = data?.reputationMetrics?.badge || 'Unranked';
+  const wilsonScore = data?.reputationMetrics?.wilsonScore || 0;
+  const overallRating = data?.overallRating || 0;
+  const totalReviews = data?.totalReviews || 0;
+  const platformPerformance = data?.platformPerformance || [];
+  const reviewDistribution = data?.reviewDistribution || [];
+  const sentiment = data?.sentiment || { positive: { percentage: 0 }, negative: { percentage: 0 } };
+  const ratingGoals = data?.ratingGoals || [];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Review Insights</h1>
+        <div className="flex gap-2">
+          {periods.map((p) => (
             <button
-              onClick={() => navigate('/dashboard')}
-              className="text-gray-600 hover:text-gray-900 mb-2 flex items-center space-x-1 text-sm font-medium"
+              key={p.value}
+              onClick={() => setPeriod(p.value)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                period === p.value
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Back to Dashboard</span>
+              {p.label}
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Insights for {selectedBusiness.name}
-            </h1>
-            <p className="text-gray-600 mt-1">Detailed analytics and performance metrics</p>
+          ))}
+        </div>
+      </div>
+
+      {/* Health Score & Badge */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Health Score Card */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Health Score</h2>
+            <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+              healthScore >= 80 ? 'bg-green-100 text-green-800' :
+              healthScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              {healthScore >= 80 ? 'Good' : healthScore >= 60 ? 'Fair' : 'Poor'}
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative">
+              {/* Circular Progress */}
+              <svg className="w-40 h-40 transform -rotate-90">
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="70"
+                  stroke="#e5e7eb"
+                  strokeWidth="12"
+                  fill="none"
+                />
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="70"
+                  stroke="#f59e0b"
+                  strokeWidth="12"
+                  fill="none"
+                  strokeDasharray={`${healthScore * 4.4} 440`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-bold text-gray-900">
+                  {healthScore}
+                </span>
+                <span className="text-sm text-gray-500">/100</span>
+              </div>
+            </div>
           </div>
 
-          {/* Period Selector & Export */}
-          <div className="flex items-center space-x-3">
-            <select
-              value={period}
-              onChange={(e) => setPeriod(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              <option value={7}>Last 7 days</option>
-              <option value={30}>Last 30 days</option>
-              <option value={90}>Last 90 days</option>
-              <option value={365}>Last year</option>
-              <option value={-1}>All time</option>
-            </select>
+          <p className="text-sm text-gray-600 text-center">
+            Composite of Quality (60%), Velocity (25%), and Responsiveness (15%)
+          </p>
+        </div>
 
-            <button
-              onClick={handleExportCSV}
-              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm"
-            >
-              Download CSV
-            </button>
+        {/* Current Badge Card */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Badge</h2>
+          
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-2xl mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🏆</span>
+                <span className="text-xl font-bold">{badge}</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-8 w-full mt-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Reputul Score</p>
+                <p className="text-2xl font-bold text-gray-900">{healthScore}/100</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Wilson Score</p>
+                <p className="text-2xl font-bold text-gray-900">{wilsonScore.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <button
-              onClick={handleExportPDF}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium text-sm"
-            >
-              Generate PDF
-            </button>
+      {/* Overall Rating & Distribution */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Overall Rating & Review Distribution</h2>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold text-gray-900">{overallRating.toFixed(1)}</span>
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-5 h-5 ${
+                        star <= Math.round(overallRating)
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-4xl font-bold text-gray-900">{totalReviews}</p>
+            <p className="text-sm text-gray-600">Total Reviews</p>
           </div>
         </div>
 
-        {/* Insights Sections */}
-        {insightsData && (
-          <div className="space-y-8">
-            <OverallRatingSection 
-              overallRating={insightsData.overallRating}
-              totalReviews={insightsData.totalReviews}
-              distribution={insightsData.reviewDistribution}
-            />
-
-            <RatingGoalsSection
-              currentRating={insightsData.overallRating}
-              reputationMetrics={insightsData.reputationMetrics}
-              goals={insightsData.ratingGoals}
-            />
-
-            <PlatformPerformanceChart
-              platforms={insightsData.platformPerformance}
-            />
-
-            <SentimentBreakdown
-              positive={insightsData.sentiment.positive}
-              negative={insightsData.sentiment.negative}
-            />
-
-            <ReviewTrendsChart
-              timeSeriesData={insightsData.timeSeries}
-              averagePerMonth={insightsData.statistics.averagePerMonth}
-              totalSinceJoining={insightsData.statistics.totalSinceJoining}
-              memberSince={insightsData.statistics.memberSince}
-            />
+        {/* Platform Distribution */}
+        {platformPerformance.length > 0 && (
+          <div className="space-y-3 mb-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Platform Distribution</h3>
+            {platformPerformance.map((platform) => (
+              <div key={platform.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-900">{platform.name}</span>
+                  <span className="text-sm text-gray-600">({platform.count || 0} reviews)</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-900">
+                    {platform.rating ? platform.rating.toFixed(1) : '0.0'}
+                  </span>
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(platform.rating || 0)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Debug Information (only in development) */}
-        {process.env.NODE_ENV === 'development' && insightsData && (
-          <div className="mt-8 bg-gray-100 p-4 rounded-lg">
-            <details>
-              <summary className="cursor-pointer text-sm font-medium text-gray-700">
-                Debug: Raw Insights Data
-              </summary>
-              <pre className="mt-2 text-xs bg-white p-2 rounded border overflow-auto max-h-96">
-                {JSON.stringify(insightsData, null, 2)}
-              </pre>
-            </details>
+        {/* Positive/Negative Summary */}
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-green-900 mb-1">Positive Reviews</p>
+            <p className="text-2xl font-bold text-green-700">
+              {sentiment.positive.percentage.toFixed(0)}%
+            </p>
           </div>
-        )}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-red-900 mb-1">Negative Reviews</p>
+            <p className="text-2xl font-bold text-red-700">
+              {sentiment.negative.percentage.toFixed(0)}%
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* Rating Goals */}
+      {ratingGoals.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Rating Goals</h2>
+          <p className="text-sm text-gray-600 mb-4">5-star reviews needed to reach higher ratings</p>
+          
+          <div className="space-y-4">
+            {ratingGoals.map((goal) => (
+              <div key={goal.target} className="flex items-center gap-4">
+                <div className="flex items-center gap-2 w-24">
+                  <span className="text-lg font-bold text-gray-900">{goal.target.toFixed(1)}</span>
+                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full"
+                      style={{ width: `${goal.progress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-right w-32">
+                  {goal.progress >= 100 ? (
+                    <span className="text-sm font-medium text-green-600">✓ Done!</span>
+                  ) : (
+                    <span className="text-sm text-gray-600">+{goal.reviewsNeeded} needed</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Review Trends Chart */}
+      <ReviewTrendsChart 
+        timeSeriesData={data?.timeSeries || []}
+        averagePerMonth={data?.statistics?.averagePerMonth || 0}
+        totalSinceJoining={data?.statistics?.totalSinceJoining || 0}
+        memberSince={data?.statistics?.memberSince}
+      />
+
+      {/* Platform Performance */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Platform Performance</h2>
+        <div className="h-64 flex items-center justify-center text-gray-500">
+          {/* TODO: Add chart component */}
+          <p>Ratings across connected review platforms chart will go here</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// CAMPAIGNS TAB (Placeholder)
+// ============================================
+const CampaignsTab = () => {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Campaign Insights</h1>
+      
+      {/* Campaign Performance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard
+          title="Sent"
+          value="0"
+          icon={<Target className="w-5 h-5 text-indigo-600" />}
+        />
+        <StatCard
+          title="Opened"
+          value="0%"
+          icon={<TrendingUp className="w-5 h-5 text-green-600" />}
+        />
+        <StatCard
+          title="Engagement"
+          value="0%"
+          icon={<Users className="w-5 h-5 text-blue-600" />}
+        />
+        <StatCard
+          title="Website Clicked"
+          value="0%"
+          icon={<BarChart3 className="w-5 h-5 text-purple-600" />}
+        />
+      </div>
+
+      {/* Placeholder Content */}
+      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Campaign Analytics Coming Soon</h2>
+        <p className="text-gray-600">
+          Track campaign performance, message engagement, and conversion rates.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// TEAM TAB (Placeholder)
+// ============================================
+const TeamTab = () => {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Team Insights</h1>
+      
+      {/* Team Performance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          title="Requests Sent"
+          value="0"
+          icon={<Target className="w-5 h-5 text-indigo-600" />}
+        />
+        <StatCard
+          title="Engagement Rate"
+          value="0%"
+          icon={<TrendingUp className="w-5 h-5 text-green-600" />}
+        />
+        <StatCard
+          title="Customer Experience"
+          value="0%"
+          icon={<Users className="w-5 h-5 text-blue-600" />}
+          subtitle="Positive"
+        />
+      </div>
+
+      {/* Placeholder Content */}
+      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Team Performance Coming Soon</h2>
+        <p className="text-gray-600">
+          View team member performance, review mentions, and engagement metrics.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// COMPETITORS TAB (Placeholder)
+// ============================================
+const CompetitorsTab = () => {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Competitor Insights</h1>
+      
+      {/* Placeholder Content */}
+      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Competitor Analysis Coming Soon</h2>
+        <p className="text-gray-600 mb-6">
+          Compare your performance against competitors in your market.
+        </p>
+        <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+          Add Competitors
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// STAT CARD COMPONENT
+// ============================================
+const StatCard = ({ title, value, icon, subtitle }) => {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-medium text-gray-600">{title}</p>
+        {icon}
+      </div>
+      <p className="text-3xl font-bold text-gray-900">{value}</p>
+      {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
     </div>
   );
 };

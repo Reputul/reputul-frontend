@@ -32,6 +32,7 @@ const API_CONFIG = {
       CREATE: (businessId) => `/api/v1/reviews/${businessId}`,
       MANUAL: (businessId) => `/api/v1/reviews/manual/${businessId}`,
       BY_ID: (id) => `/api/v1/reviews/${id}`,
+      GENERATE_REPLY: '/api/v1/reviews/generate-reply',
     },
     PUBLIC_REVIEWS: {
       BY_BUSINESS: (businessId) =>
