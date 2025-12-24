@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Share2, Copy, Check, Loader2 } from 'lucide-react';
+import { X, Sparkles, Copy, Check, Loader2 } from 'lucide-react';
 import PlatformIcon from './PlatformIcon';
 import axios from 'axios';
 import { buildUrl, API_ENDPOINTS } from '../config/api';
@@ -349,32 +349,13 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
             <h2 className="text-2xl font-bold text-gray-900">Review from {review.customerName}</h2>
             <p className="text-sm text-gray-500 mt-1">Manage and respond to this review</p>
           </div>
-          <div className="flex items-center gap-2">
-            {/* ADDED: Debug button */}
-            <button
-              onClick={() => {
-                console.log('=== REVIEW DEBUG INFO ===');
-                console.log('Review object:', review);
-                console.log('Review business:', review?.business);
-                console.log('Review source:', review?.source);
-                console.log('Business name prop:', businessName);
-                console.log('Platform info:', platformInfo);
-                console.log('Generated URL:', platformInfo.url);
-              }}
-              className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium"
-              title="Debug - check console"
-            >
-              Debug
-            </button>
-            
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Close modal"
-            >
-              <X className="w-6 h-6 text-gray-500" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Close modal"
+          >
+            <X className="w-6 h-6 text-gray-500" />
+          </button>
         </div>
 
         {/* Review Content */}
