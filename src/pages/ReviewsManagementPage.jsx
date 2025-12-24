@@ -4,9 +4,8 @@ import { useBusiness } from '../context/BusinessContext';
 import axios from 'axios';
 import { buildUrl, API_ENDPOINTS } from '../config/api';
 import PlatformIcon from '../components/PlatformIcon';
-import { Search, Filter, Download, Star, Share2, MessageSquare, Link as LinkIcon } from 'lucide-react';
-import ShareReviewModal from '../components/ShareReviewModal';
-import ReplyReviewModal from '../components/ReplyReviewModal';
+import { Search, Filter, Download, Star } from 'lucide-react';
+import ReviewManageModal from '../components/ReviewManageModal';
 
 const ReviewsManagementPage = () => {
   const { token } = useAuth();
@@ -29,8 +28,7 @@ const ReviewsManagementPage = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   // Modal state
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [manageModalOpen, setManageModalOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
 
   // Fetch reviews
@@ -189,24 +187,10 @@ const ReviewsManagementPage = () => {
     }
   };
 
-  // Handle share
-  const handleShare = (review) => {
+  // Handle manage review
+  const handleManageReview = (review) => {
     setSelectedReview(review);
-    setShareModalOpen(true);
-  };
-
-  // Handle reply
-  const handleReply = (review) => {
-    setSelectedReview(review);
-    setReplyModalOpen(true);
-  };
-
-  // Handle copy link
-  const handleCopyLink = () => {
-    const publicReviewUrl = `${window.location.origin}/public/reviews/${selectedBusiness.id}`;
-    navigator.clipboard.writeText(publicReviewUrl);
-    // TODO: Show toast notification
-    alert('✅ Review page link copied to clipboard!');
+    setManageModalOpen(true);
   };
 
   // Export to CSV
@@ -400,87 +384,82 @@ const ReviewsManagementPage = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredReviews.map((review) => {
               const platformInfo = getPlatformInfo(review.source);
               
               return (
-                <div key={review.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                  {/* Header */}
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-12 h-12 ${platformInfo.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
-                      <span className="text-lg font-bold text-gray-700">
-                        {review.customerName?.charAt(0)?.toUpperCase() || 'A'}
-                      </span>
-                    </div>
+                <div
+                  key={review.id}
+                  className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-lg hover:border-purple-200 transition-all duration-200 group"
+                >
+                  {/* Card Header: Avatar + Name + Manage Button */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
+                      {/* Avatar */}
+                      <div className={`w-12 h-12 ${platformInfo.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
+                        <span className="text-lg font-bold text-gray-700">
+                          {review.customerName?.charAt(0)?.toUpperCase() || 'A'}
+                        </span>
+                      </div>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">
-                        {review.customerName || 'Anonymous'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {renderStars(review.rating)}
-                        <span className="text-sm text-gray-500">
+                      {/* Name + Date */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 text-base truncate">
+                          {review.customerName || 'Anonymous'}
+                        </p>
+                        <p className="text-sm text-gray-500">
                           {formatDate(review.createdAt)}
-                        </span>
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      {getSentimentBadge(review.rating)}
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-200 rounded-full shadow-sm">
-                        <PlatformIcon platform={platformInfo.id} size="sm" />
-                        <span className="text-xs font-semibold text-gray-700">
-                          {platformInfo.name}
-                        </span>
-                      </div>
+                    {/* Manage Button */}
+                    <button
+                      onClick={() => handleManageReview(review)}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg transform group-hover:-translate-y-0.5 flex-shrink-0"
+                    >
+                      Manage
+                    </button>
+                  </div>
+
+                  {/* Stars + Platform Badge */}
+                  <div className="flex items-center justify-between mb-3">
+                    {renderStars(review.rating)}
+                    <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-200 rounded-full">
+                      <PlatformIcon platform={platformInfo.id} size="xs" />
+                      <span className="text-xs font-medium text-gray-700">
+                        {platformInfo.name}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Comment */}
+                  {/* Sentiment Badge */}
+                  <div className="mb-3">
+                    {getSentimentBadge(review.rating)}
+                  </div>
+
+                  {/* Review Title (if exists) */}
+                  {review.title && (
+                    <p className="font-semibold text-gray-900 text-sm mb-2 line-clamp-1">
+                      {review.title}
+                    </p>
+                  )}
+
+                  {/* Review Comment */}
                   {review.comment && (
-                    <p className="text-gray-700 leading-relaxed mb-4">
+                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
                       {review.comment}
                     </p>
                   )}
 
-                  {/* Platform Response */}
+                  {/* Platform Response (if exists) */}
                   {review.platformResponse && (
-                    <div className="mb-4 pl-4 border-l-2 border-blue-200 bg-blue-50 p-3 rounded">
-                      <p className="text-sm font-medium text-blue-900 mb-1">Business Response</p>
-                      <p className="text-sm text-blue-800">{review.platformResponse}</p>
+                    <div className="mt-3 pl-3 border-l-2 border-blue-200 bg-blue-50 p-2 rounded text-xs">
+                      <p className="font-medium text-blue-900 mb-0.5">Your Response</p>
+                      <p className="text-blue-800 line-clamp-2">{review.platformResponse}</p>
                     </div>
                   )}
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={handleCopyLink}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Copy review page link"
-                    >
-                      <LinkIcon size={16} />
-                      <span>Copy Link</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleReply(review)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Reply to review"
-                    >
-                      <MessageSquare size={16} />
-                      <span>Reply</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleShare(review)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                      title="Share on social media"
-                    >
-                      <Share2 size={16} />
-                      <span>Share</span>
-                    </button>
-                  </div>
                 </div>
               );
             })}
@@ -488,34 +467,16 @@ const ReviewsManagementPage = () => {
         )}
       </div>
 
-      {/* Modals */}
-      {shareModalOpen && selectedReview && (
-        <ShareReviewModal
-          review={selectedReview}
-          business={selectedBusiness}
-          onClose={() => {
-            setShareModalOpen(false);
-            setSelectedReview(null);
-          }}
-        />
-      )}
-
-      {replyModalOpen && selectedReview && (
-        <ReplyReviewModal
-          review={selectedReview}
-          business={selectedBusiness}
-          onClose={() => {
-            setReplyModalOpen(false);
-            setSelectedReview(null);
-          }}
-          onReplySuccess={() => {
-            // Refresh reviews after successful reply
-            setReplyModalOpen(false);
-            setSelectedReview(null);
-            // TODO: Refresh reviews list
-          }}
-        />
-      )}
+      {/* Review Manage Modal */}
+      <ReviewManageModal
+        review={selectedReview}
+        isOpen={manageModalOpen}
+        onClose={() => {
+          setManageModalOpen(false);
+          setSelectedReview(null);
+        }}
+        businessName={selectedBusiness?.name}
+      />
     </div>
   );
 };

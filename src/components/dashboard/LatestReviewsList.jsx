@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import PlatformIcon from '../PlatformIcon'; // ← ADDED: Platform icon component
+import PlatformIcon from '../PlatformIcon';
+import ReviewManageModal from '../ReviewManageModal';
 
-const LatestReviewsList = ({ reviews, loading, businessId }) => {
+const LatestReviewsList = ({ reviews, loading, businessId, businessName, business }) => {
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Get platform info with modern colors
   const getPlatformInfo = (source) => {
     const platforms = {
@@ -32,14 +36,14 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
       },
       'DIRECT': { 
         name: 'Direct', 
-        id: 'REPUTUL',  // Use Reputul logo for direct reviews too
+        id: 'REPUTUL',
         color: 'text-green-600', 
         bg: 'bg-gradient-to-r from-green-500 to-emerald-500' 
       },
     };
     return platforms[source?.toUpperCase()] || { 
       name: source || 'Unknown',
-      id: 'REPUTUL',  // Default to Reputul logo for unknown sources
+      id: 'REPUTUL',
       color: 'text-gray-600', 
       bg: 'bg-gradient-to-r from-gray-500 to-gray-600' 
     };
@@ -59,7 +63,7 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  // Render stars with gradient
+  // Render stars (UPDATED: Bigger stars - w-5 h-5)
   const renderStars = (rating) => {
     return (
       <div className="flex items-center space-x-0.5">
@@ -77,20 +81,28 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
     );
   };
 
+  // Handle manage click
+  const handleManageClick = (review) => {
+    setSelectedReview(review);
+    setIsModalOpen(true);
+  };
+
   // Skeleton loader
-  const ReviewSkeleton = () => (
-    <div className="p-6 border-b border-gray-100 last:border-b-0 animate-pulse">
-      <div className="flex items-start space-x-4">
-        <div className="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0"></div>
-        <div className="flex-1 space-y-3">
-          <div className="flex items-center justify-between">
+  const ReviewCardSkeleton = () => (
+    <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm animate-pulse">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start space-x-3 flex-1">
+          <div className="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0"></div>
+          <div className="flex-1 space-y-2">
             <div className="h-5 bg-gray-200 rounded w-32"></div>
-            <div className="h-4 bg-gray-200 rounded w-16"></div>
+            <div className="h-4 bg-gray-200 rounded w-24"></div>
           </div>
-          <div className="h-4 bg-gray-200 rounded w-24"></div>
-          <div className="h-4 bg-gray-200 rounded w-full"></div>
-          <div className="h-4 bg-gray-200 rounded w-4/5"></div>
         </div>
+        <div className="h-9 w-24 bg-gray-200 rounded-lg"></div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 bg-gray-200 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 rounded w-4/5"></div>
       </div>
     </div>
   );
@@ -118,97 +130,133 @@ const LatestReviewsList = ({ reviews, loading, businessId }) => {
   );
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 mb-6">
-      {/* Header */}
-      <div className="flex items-center justify-between p-8 border-b border-gray-100">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Latest Reviews</h2>
-          <p className="text-sm text-gray-500 mt-1">Most recent customer feedback</p>
+    <>
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 mb-6">
+        {/* Header */}
+        <div className="flex items-center justify-between p-8 border-b border-gray-100">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Latest Reviews</h2>
+            <p className="text-sm text-gray-500 mt-1">Most recent customer feedback</p>
+          </div>
+          {reviews && reviews.length > 0 && (
+            <Link
+              to="/reviews"
+              className="px-4 py-2 text-sm font-semibold text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all duration-200"
+            >
+              View All →
+            </Link>
+          )}
         </div>
-        {reviews && reviews.length > 0 && (
-          <Link
-            to="/reviews"
-            className="px-4 py-2 text-sm font-semibold text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all duration-200"
-          >
-            View All →
-          </Link>
-        )}
-      </div>
 
-      {/* Reviews List */}
-      <div>
-        {loading ? (
-          // Loading skeletons
-          <>
-            <ReviewSkeleton />
-            <ReviewSkeleton />
-            <ReviewSkeleton />
-            <ReviewSkeleton />
-            <ReviewSkeleton />
-          </>
-        ) : !reviews || reviews.length === 0 ? (
-          // Empty state
-          <EmptyState />
-        ) : (
-          // Actual reviews
-          reviews.slice(0, 10).map((review, index) => {
-            const platformInfo = getPlatformInfo(review.source);
-            
-            return (
-              <div key={review.id} className={`p-6 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-pink-50/50 transition-all duration-200 ${index !== reviews.length - 1 && index !== 4 ? 'border-b border-gray-100' : ''}`}>
-                <div className="flex items-start space-x-4">
-                  {/* Reviewer Avatar with initials (REVERTED) */}
-                  <div className={`w-12 h-12 ${platformInfo.bg} rounded-full flex items-center justify-center flex-shrink-0 shadow-lg`}>
-                    <span className="text-white font-bold text-lg">
-                      {review.reviewerName?.charAt(0)?.toUpperCase() || 'A'}
-                    </span>
-                  </div>
+        {/* Reviews Grid */}
+        <div className="p-8">
+          {loading ? (
+            // Loading skeletons - Single column layout (UPDATED: Changed from grid to vertical stack)
+            <div className="space-y-4">
+              <ReviewCardSkeleton />
+              <ReviewCardSkeleton />
+              <ReviewCardSkeleton />
+              <ReviewCardSkeleton />
+              <ReviewCardSkeleton />
+              <ReviewCardSkeleton />
+            </div>
+          ) : !reviews || reviews.length === 0 ? (
+            // Empty state (UPDATED: Removed grid wrapper)
+            <EmptyState />
+          ) : (
+            // Actual reviews - 1-Column Layout (UPDATED: Single column instead of 3-column grid)
+            <div className="space-y-4">
+              {reviews.slice(0, 6).map((review) => {
+                const platformInfo = getPlatformInfo(review.source);
+                
+                return (
+                  <div
+                    key={review.id}
+                    className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-lg hover:border-purple-200 transition-all duration-200 group"
+                  >
+                    {/* Card Header: Avatar + Name + Manage Button */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start space-x-3 flex-1 min-w-0">
+                        {/* Avatar */}
+                        <div className={`w-12 h-12 ${platformInfo.bg} rounded-full flex items-center justify-center flex-shrink-0 shadow-md`}>
+                          <span className="text-white font-bold text-lg">
+                            {review.customerName?.charAt(0)?.toUpperCase() || 'A'}
+                          </span>
+                        </div>
 
-                  {/* Review Content */}
-                  <div className="flex-1 min-w-0">
-                    {/* Header: Name, Rating, Date */}
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 text-lg">
-                          {review.customerName || 'Facebook User'}
-                        </p>
-                        <div className="flex items-center space-x-3 mt-1">
-                          {renderStars(review.rating)}
-                          {/* UPDATED: Platform logo badge */}
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-200 rounded-full shadow-sm">
-                            <PlatformIcon platform={platformInfo.id || 'REPUTUL'} size="sm" className="flex-shrink-0" />
-                            <span className="text-xs font-semibold text-gray-700">
-                              {platformInfo.name}
-                            </span>
-                          </div>
+                        {/* Name + Date */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 text-base truncate">
+                            {review.customerName || 'Anonymous'}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(review.createdAt)}
+                          </p>
                         </div>
                       </div>
-                      <span className="text-sm text-gray-400 ml-4 flex-shrink-0 font-medium">
-                        {formatDate(review.createdAt)}
-                      </span>
+
+                      {/* Manage Button (UPDATED: Smaller button) */}
+                      <button
+                        onClick={() => handleManageClick(review)}
+                        className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg transform group-hover:-translate-y-0.5 flex-shrink-0"
+                      >
+                        Manage
+                      </button>
                     </div>
 
-                    {/* Review Title (if exists) */}
+                    {/* Stars + Platform Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      {renderStars(review.rating)}
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-200 rounded-full">
+                        <PlatformIcon platform={platformInfo.id} size="xs" />
+                        <span className="text-xs font-medium text-gray-700">
+                          {platformInfo.name}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Recommended Badge (for 4-5 star reviews) */}
+                    {review.rating >= 4 && (
+                      <div className="mb-3">
+                        <span className="inline-block px-2.5 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                          Recommended
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Review Title */}
                     {review.title && (
-                      <p className="font-semibold text-gray-900 text-base mt-3">
+                      <p className="font-semibold text-gray-900 text-sm mb-2 line-clamp-1">
                         {review.title}
                       </p>
                     )}
 
                     {/* Review Comment */}
                     {review.comment && (
-                      <p className="text-gray-600 mt-2 leading-relaxed line-clamp-2">
+                      <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
                         {review.comment}
                       </p>
                     )}
                   </div>
-                </div>
-              </div>
-            );
-          })
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Review Manage Modal */}
+      <ReviewManageModal
+        review={selectedReview}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedReview(null);
+        }}
+        businessName={businessName}
+        business={business}
+      />
+    </>
   );
 };
 
