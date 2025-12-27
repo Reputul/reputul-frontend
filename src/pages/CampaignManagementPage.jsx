@@ -3,11 +3,11 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { toast } from 'sonner';
 import { buildUrl, API_ENDPOINTS } from "../config/api";
-import CampaignSequenceBuilder from "../components/campaign/CampaignSequenceBuilder";
-import CampaignExecutionModal from "../components/campaign/CampaignExecutionModal";
-import CampaignAnalyticsModal from "../components/campaign/CampaignAnalyticsModal";
-import CampaignSequenceList from "../components/campaign/CampaignSequenceList";
-import CampaignPreviewModal from "../components/campaign/CampaignPreviewModal";
+import CampaignSequenceBuilder from "../components/campaigns/CampaignSequenceBuilder";
+import CampaignExecutionModal from "../components/campaigns/CampaignExecutionModal";
+import CampaignAnalyticsModal from "../components/campaigns/CampaignAnalyticsModal";
+import CampaignSequenceList from "../components/campaigns/CampaignSequenceList";
+import CampaignPreviewModal from "../components/campaigns/CampaignPreviewModal";
 
 const CampaignManagementPage = () => {
   const { token } = useAuth();

@@ -63,6 +63,11 @@ const API_CONFIG = {
       BULK_IMPORT_PREPARE: "/api/v1/contacts/bulk/import/prepare",
       BULK_IMPORT_COMMIT: "/api/v1/contacts/bulk/import/commit",
     },
+    EMAIL_TEMPLATE_STYLES: {
+    GET: '/api/v1/email-template-styles',
+    UPDATE: '/api/v1/email-template-styles',
+    RESET: '/api/v1/email-template-styles/reset',
+  },
     EMAIL_TEMPLATES: {
       LIST: "/api/v1/email-templates",
       BY_ID: (id) => `/api/v1/email-templates/${id}`,
