@@ -23,6 +23,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivateRoute from "./components/PrivateRoute";
 import BusinessPublicPage from "./pages/BusinessPublicPage";
 import EmailTemplatesPage from "./pages/EmailTemplatesPage";
+import BusinessSettingsPage from "./pages/BusinessSettingsPage";
 import {
   NotFoundPage,
   ServerErrorPage,
@@ -94,6 +95,16 @@ function AppContent() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route
+          path="/business/settings"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <BusinessSettingsPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
         <Route path="/business/:id" element={<BusinessPublicPage />} />
         <Route path="/sms-signup" element={<SmsSignupPage />} />
         <Route path="/sms-signup/:businessId" element={<SmsSignupPage />} />
@@ -232,8 +243,7 @@ function AppContent() {
             </PrivateRoute>
           }
         />
-        
-        {/* ADD THIS NEW ROUTE */}
+
         <Route
           path="/settings"
           element={
@@ -244,7 +254,7 @@ function AppContent() {
             </PrivateRoute>
           }
         />
-        
+
         <Route
           path="/account/billing"
           element={
