@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS, buildUrl } from "../config/api";
+import { useAuth } from "../context/AuthContext";
+import { useBusiness } from "../context/BusinessContext";
 
 const ReviewRequestsPage = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
-  const [businesses, setBusinesses] = useState([]); // NEW: For business selector
   const [templates, setTemplates] = useState([]);
+  const { token } = useAuth();
+  const { selectedBusiness } = useBusiness();
   const [reviewRequests, setReviewRequests] = useState([]);
   const [stats, setStats] = useState({});
   const [selectedCustomers, setSelectedCustomers] = useState([]);
@@ -29,49 +32,28 @@ const ReviewRequestsPage = () => {
     name: "",
     email: "",
     phone: "",
-    businessId: "",
     serviceType: "General Service",
     saveAsCustomer: true,
   });
 
   useEffect(() => {
-    fetchCustomers();
-    fetchBusinesses(); // NEW: Fetch businesses for Quick Send
-    fetchTemplates();
-    fetchReviewRequests();
-    fetchStats();
-  }, []);
-
-  // NEW: Fetch businesses for Quick Send business selector
-  const fetchBusinesses = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        buildUrl(API_ENDPOINTS.BUSINESS?.LIST || "/api/v1/businesses"),
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setBusinesses(response.data);
-      // Set default business if available
-      if (response.data.length > 0) {
-        setQuickSendData((prev) => ({
-          ...prev,
-          businessId: response.data[0].id.toString(),
-        }));
-      }
-    } catch (err) {
-      console.error("Error fetching businesses:", err);
+    if (selectedBusiness) {
+      fetchCustomers();
+      fetchTemplates();
+      fetchReviewRequests();
+      fetchStats();
     }
-  };
+  }, [selectedBusiness]);
 
   const fetchCustomers = async () => {
+    if (!selectedBusiness) return;
+
     setCustomersLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(buildUrl(API_ENDPOINTS.CUSTOMERS.LIST), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        buildUrl(API_ENDPOINTS.CUSTOMERS.BY_BUSINESS(selectedBusiness.id)),
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setCustomers(response.data);
     } catch (err) {
       setError("Failed to fetch customers");
@@ -149,8 +131,11 @@ const ReviewRequestsPage = () => {
     }
   };
 
-  // NEW: Quick send without existing customer
   const handleQuickSend = async () => {
+    if (!selectedBusiness) {
+      setError("No business selected");
+      return;
+    }
     // Validate required fields
     if (!quickSendData.name.trim()) {
       setError("Please enter the customer name");
@@ -194,7 +179,7 @@ const ReviewRequestsPage = () => {
           name: quickSendData.name,
           email: quickSendData.email,
           phone: quickSendData.phone || null,
-          businessId: parseInt(quickSendData.businessId, 10),
+          businessId: selectedBusiness.id,
           serviceType: quickSendData.serviceType || "General Service",
           serviceDate: new Date().toISOString().split("T")[0], // Today's date as YYYY-MM-DD
         };
@@ -211,36 +196,45 @@ const ReviewRequestsPage = () => {
           console.log("Customer created successfully:", customerResponse.data);
         } catch (customerErr) {
           console.error("Customer creation error:", customerErr.response?.data);
-          
+
           // If customer already exists, try to find them by email
-          if (customerErr.response?.data?.error?.includes("email already exists")) {
+          if (
+            customerErr.response?.data?.error?.includes("email already exists")
+          ) {
             console.log("Customer exists, searching for existing customer...");
             try {
               const searchResponse = await axios.get(
-                buildUrl(API_ENDPOINTS.CUSTOMERS.SEARCH || "/api/v1/customers/search") + `?q=${encodeURIComponent(quickSendData.email)}`,
+                buildUrl(
+                  API_ENDPOINTS.CUSTOMERS.SEARCH || "/api/v1/customers/search"
+                ) + `?q=${encodeURIComponent(quickSendData.email)}`,
                 { headers: { Authorization: `Bearer ${token}` } }
               );
-              
+
               const existingCustomer = searchResponse.data.find(
-                (c) => c.email?.toLowerCase() === quickSendData.email.toLowerCase()
+                (c) =>
+                  c.email?.toLowerCase() === quickSendData.email.toLowerCase()
               );
-              
+
               if (existingCustomer) {
                 customerId = existingCustomer.id;
                 console.log("Found existing customer:", existingCustomer);
                 setSuccess("Using existing customer record.");
               } else {
-                throw new Error("Customer exists but could not be found. Please try again.");
+                throw new Error(
+                  "Customer exists but could not be found. Please try again."
+                );
               }
             } catch (searchErr) {
               console.error("Error searching for customer:", searchErr);
-              throw new Error("Customer with this email already exists. Please use the Customer List tab to select them.");
+              throw new Error(
+                "Customer with this email already exists. Please use the Customer List tab to select them."
+              );
             }
           } else {
             throw new Error(
               customerErr.response?.data?.message ||
-              customerErr.response?.data?.error ||
-              "Failed to create customer. Check backend logs for details."
+                customerErr.response?.data?.error ||
+                "Failed to create customer. Check backend logs for details."
             );
           }
         }
@@ -257,9 +251,7 @@ const ReviewRequestsPage = () => {
           customerEmail: quickSendData.email || null,
           customerPhone: quickSendData.phone || null,
           customerId: customerId,
-          businessId: quickSendData.businessId
-            ? parseInt(quickSendData.businessId, 10)
-            : null,
+          businessId: selectedBusiness.id,
           deliveryMethod,
         },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -283,7 +275,6 @@ const ReviewRequestsPage = () => {
         name: "",
         email: "",
         phone: "",
-        businessId: prev.businessId,
         serviceType: "General Service",
         saveAsCustomer: true,
       }));
@@ -401,12 +392,33 @@ const ReviewRequestsPage = () => {
     setShowSendModal(true);
   };
 
+  if (!selectedBusiness) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-5xl mb-4">🏢</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No Business Selected
+          </h3>
+          <p className="text-gray-600">
+            Please select a business from the dropdown to manage review
+            requests.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Review Requests</h1>
         <p className="text-gray-600">
           Send personalized review requests to your customers via email or SMS
+          for{" "}
+          <span className="font-semibold text-gray-900">
+            {selectedBusiness.name}
+          </span>
         </p>
 
         {/* Google Compliance Notice */}
@@ -543,7 +555,7 @@ const ReviewRequestsPage = () => {
         </button>
 
         <button
-          onClick={() => navigate("/review-platform-setup")}
+          onClick={() => navigate("/settings")}
           className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
         >
           <svg
@@ -823,7 +835,8 @@ const ReviewRequestsPage = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Email Address{" "}
-                        {(deliveryMethod === "EMAIL" || quickSendData.saveAsCustomer) && (
+                        {(deliveryMethod === "EMAIL" ||
+                          quickSendData.saveAsCustomer) && (
                           <span className="text-red-500">*</span>
                         )}
                       </label>
@@ -839,11 +852,12 @@ const ReviewRequestsPage = () => {
                         placeholder="john@example.com"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
-                      {quickSendData.saveAsCustomer && deliveryMethod === "SMS" && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Email is required when saving as a customer
-                        </p>
-                      )}
+                      {quickSendData.saveAsCustomer &&
+                        deliveryMethod === "SMS" && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Email is required when saving as a customer
+                          </p>
+                        )}
                     </div>
 
                     <div>
@@ -895,43 +909,6 @@ const ReviewRequestsPage = () => {
                         <div className="space-y-3 pl-6 border-l-2 border-primary-200">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Business <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                              value={quickSendData.businessId}
-                              onChange={(e) =>
-                                setQuickSendData((prev) => ({
-                                  ...prev,
-                                  businessId: e.target.value,
-                                }))
-                              }
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            >
-                              <option value="">Select a business...</option>
-                              {businesses.map((business) => (
-                                <option key={business.id} value={business.id}>
-                                  {business.name}
-                                </option>
-                              ))}
-                            </select>
-                            {businesses.length === 0 && (
-                              <p className="text-xs text-red-500 mt-1">
-                                No businesses found.{" "}
-                                <button
-                                  onClick={() => {
-                                    setShowSendModal(false);
-                                    navigate("/dashboard");
-                                  }}
-                                  className="underline"
-                                >
-                                  Add a business first
-                                </button>
-                              </p>
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
                               Service Type
                             </label>
                             <input
@@ -947,6 +924,15 @@ const ReviewRequestsPage = () => {
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             />
                           </div>
+
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p className="text-xs text-blue-800">
+                              Customer will be associated with{" "}
+                              <span className="font-semibold">
+                                {selectedBusiness.name}
+                              </span>
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -954,11 +940,7 @@ const ReviewRequestsPage = () => {
 
                   <button
                     onClick={handleQuickSend}
-                    disabled={
-                      loading ||
-                      !quickSendData.name.trim() ||
-                      (quickSendData.saveAsCustomer && !quickSendData.businessId)
-                    }
+                    disabled={loading || !quickSendData.name.trim()}
                     className="mt-6 w-full px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 disabled:opacity-50 font-semibold flex items-center justify-center gap-2"
                   >
                     {loading ? (
