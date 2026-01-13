@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { renderTrustedHtml } from "../utils/sanitizer";
 import { API_ENDPOINTS, buildUrl } from '../config/api';
+import { useBusiness } from "../context/BusinessContext"; // ADDED
 import EmailTemplateVisualEditor from '../components/EmailTemplateVisualEditor';
 
 // Email preview styles
@@ -66,6 +67,8 @@ const emailPreviewStyles = `
 `;
 
 const EmailTemplatesPage = () => {
+  const { selectedBusiness } = useBusiness(); // ADDED - Get selected business from context
+  
   const [templates, setTemplates] = useState([]);
   const [templateTypes, setTemplateTypes] = useState([]);
   const [templateStats, setTemplateStats] = useState({});
@@ -77,14 +80,16 @@ const EmailTemplatesPage = () => {
   const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
   const [filterType, setFilterType] = useState("all"); // Filter by template type
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // UPDATED: Use selectedBusiness data for preview
   const [previewData, setPreviewData] = useState({
     customerName: "John Smith",
-    businessName: "ABC Home Services",
+    businessName: selectedBusiness?.name || "ABC Home Services",
     serviceType: "Kitchen Sink Repair",
     serviceDate: "2025-01-15",
-    businessPhone: "(555) 123-4567",
-    businessWebsite: "www.abchomeservices.com",
-    businessAddress: "123 Main St, Springfield, IL 62701",
+    businessPhone: selectedBusiness?.phone || "(555) 123-4567",
+    businessWebsite: selectedBusiness?.website || "www.abchomeservices.com",
+    businessAddress: selectedBusiness?.address || "123 Main St, Springfield, IL 62701",
     supportEmail: "support@abchomeservices.com",
     googleReviewUrl: "https://search.google.com/local/writereview?placeid=sample_place_id",
     facebookReviewUrl: "https://facebook.com/abchomeservices/reviews",
@@ -116,6 +121,19 @@ const EmailTemplatesPage = () => {
     fetchTemplateTypes();
     fetchTemplateStats();
   }, []);
+
+  // ADDED: Update preview data when selectedBusiness changes
+  useEffect(() => {
+    if (selectedBusiness) {
+      setPreviewData(prev => ({
+        ...prev,
+        businessName: selectedBusiness.name,
+        businessPhone: selectedBusiness.phone || prev.businessPhone,
+        businessWebsite: selectedBusiness.website || prev.businessWebsite,
+        businessAddress: selectedBusiness.address || prev.businessAddress,
+      }));
+    }
+  }, [selectedBusiness]);
 
   const fetchTemplates = async () => {
     try {
@@ -661,7 +679,10 @@ const EmailTemplatesPage = () => {
             </div>
           </div>
 
-          {/* Templates Display */}
+          {/* Templates Display - REST OF COMPONENT UNCHANGED */}
+          {/* ... keeping all the existing template display code ... */}
+
+{/* Templates Display */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -889,7 +910,7 @@ const EmailTemplatesPage = () => {
           />
         )}
 
-        {/* Preview Modal */}
+        {/* Preview Modal - KEEPING EXISTING CODE */}
         {showPreviewModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">

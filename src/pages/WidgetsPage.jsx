@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useBusiness } from "../context/BusinessContext"; // ADDED
 import { toast } from "sonner";
 import axios from "axios";
 import { API_ENDPOINTS, buildUrl } from "../config/api";
@@ -16,10 +17,9 @@ import WidgetList from "../components/widgets/WidgetList";
 
 const WidgetsPage = () => {
   const { token } = useAuth();
+  const { selectedBusiness, loading: businessLoading } = useBusiness(); // ADDED - Use context
 
   // State
-  const [businesses, setBusinesses] = useState([]);
-  const [selectedBusinessId, setSelectedBusinessId] = useState(null);
   const [widgets, setWidgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,26 +41,11 @@ const WidgetsPage = () => {
   // DATA FETCHING
   // ================================================================
 
-  const fetchBusinesses = useCallback(async () => {
-    try {
-      const response = await axios.get(buildUrl(API_ENDPOINTS.DASHBOARD.LIST), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBusinesses(response.data);
-      if (response.data.length > 0 && !selectedBusinessId) {
-        setSelectedBusinessId(response.data[0].id);
-      }
-    } catch (error) {
-      console.error("Error fetching businesses:", error);
-      toast.error("Failed to load businesses");
-    }
-  }, [token, selectedBusinessId]);
-
   const fetchWidgets = useCallback(async () => {
+    if (!selectedBusiness) return;
+    
     try {
-      const endpoint = selectedBusinessId
-        ? buildUrl(`/api/v1/widgets/business/${selectedBusinessId}`)
-        : buildUrl("/api/v1/widgets");
+      const endpoint = buildUrl(`/api/v1/widgets/business/${selectedBusiness.id}`);
 
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -70,7 +55,7 @@ const WidgetsPage = () => {
       console.error("Error fetching widgets:", error);
       toast.error("Failed to load widgets");
     }
-  }, [token, selectedBusinessId]);
+  }, [token, selectedBusiness]);
 
   const fetchAnalyticsOverview = useCallback(async () => {
     try {
@@ -85,19 +70,13 @@ const WidgetsPage = () => {
   }, [token]);
 
   useEffect(() => {
-    const loadData = async () => {
+    if (selectedBusiness) {
       setLoading(true);
-      await fetchBusinesses();
+      fetchWidgets().finally(() => setLoading(false));
+    } else {
       setLoading(false);
-    };
-    loadData();
-  }, [fetchBusinesses]);
-
-  useEffect(() => {
-    if (selectedBusinessId) {
-      fetchWidgets();
     }
-  }, [selectedBusinessId, fetchWidgets]);
+  }, [selectedBusiness, fetchWidgets]);
 
   useEffect(() => {
     fetchAnalyticsOverview();
@@ -108,7 +87,7 @@ const WidgetsPage = () => {
   // ================================================================
 
   const handleCreateWidget = async () => {
-    if (!selectedBusinessId || !selectedWidgetType || !widgetConfig) {
+    if (!selectedBusiness || !selectedWidgetType || !widgetConfig) {
       toast.error("Please complete all steps");
       return;
     }
@@ -116,7 +95,7 @@ const WidgetsPage = () => {
     setSaving(true);
     try {
       const payload = {
-        businessId: selectedBusinessId,
+        businessId: selectedBusiness.id,
         widgetType: selectedWidgetType,
         ...widgetConfig,
       };
@@ -276,7 +255,7 @@ const WidgetsPage = () => {
   // RENDER
   // ================================================================
 
-  if (loading) {
+  if (businessLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -287,7 +266,23 @@ const WidgetsPage = () => {
     );
   }
 
-  const selectedBusiness = businesses.find((b) => b.id === selectedBusinessId);
+  if (!selectedBusiness) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span className="text-4xl">🎯</span>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            No Business Selected
+          </h3>
+          <p className="text-gray-600">
+            Please select a business from the dropdown to manage widgets.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -300,35 +295,21 @@ const WidgetsPage = () => {
                 <span className="text-2xl">🎯</span>
                 Social Proof Widgets
               </h1>
+              {/* ADDED: Show current business name */}
               <p className="text-gray-600 mt-1">
-                Create embeddable widgets to showcase your reviews on any
-                website
+                Creating widgets for{" "}
+                <span className="font-semibold text-gray-900">
+                  {selectedBusiness.name}
+                </span>
               </p>
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Business Selector */}
-              <select
-                value={selectedBusinessId || ""}
-                onChange={(e) =>
-                  setSelectedBusinessId(
-                    e.target.value ? Number(e.target.value) : null
-                  )
-                }
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All Businesses</option>
-                {businesses.map((business) => (
-                  <option key={business.id} value={business.id}>
-                    {business.name}
-                  </option>
-                ))}
-              </select>
-
+              {/* REMOVED: Business Selector dropdown */}
+              
               <button
                 onClick={startCreateFlow}
-                disabled={!selectedBusinessId}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-all duration-200"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 flex items-center gap-2 font-medium transition-all duration-200"
               >
                 <svg
                   className="w-5 h-5"
@@ -482,8 +463,7 @@ const WidgetsPage = () => {
               </p>
               <button
                 onClick={startCreateFlow}
-                disabled={!selectedBusinessId}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 font-medium inline-flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium inline-flex items-center gap-2"
               >
                 <svg
                   className="w-5 h-5"
@@ -500,12 +480,6 @@ const WidgetsPage = () => {
                 </svg>
                 Create Widget
               </button>
-
-              {!selectedBusinessId && (
-                <p className="text-sm text-yellow-600 mt-4">
-                  Please select a business first
-                </p>
-              )}
             </div>
           </div>
         )}
@@ -533,8 +507,7 @@ const WidgetsPage = () => {
                     {createStep === 3 && "Get Your Embed Code"}
                   </h2>
                   <p className="text-gray-600 mt-1">
-                    Step {createStep} of 3 •{" "}
-                    {selectedBusiness?.name || "Select a business"}
+                    Step {createStep} of 3 • {selectedBusiness.name}
                   </p>
                 </div>
                 <button

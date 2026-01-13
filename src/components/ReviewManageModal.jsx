@@ -1,27 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Copy, Check, Loader2 } from 'lucide-react';
+import { X, Sparkles, Copy, Check, Loader2, MessageSquare } from 'lucide-react';
 import PlatformIcon from './PlatformIcon';
 import axios from 'axios';
 import { buildUrl, API_ENDPOINTS } from '../config/api';
-import { useAuth } from '../context/AuthContext'; // ADDED: Import useAuth
+import { useAuth } from '../context/AuthContext';
 
 const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) => {
   const { token } = useAuth();
   
-  // ADDED: Store replies per review ID (persists across modal open/close)
   const [savedReplies, setSavedReplies] = useState({});
-  
   const [aiReply, setAiReply] = useState('');
   const [editedReply, setEditedReply] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isPosted, setIsPosted] = useState(false);
   const [error, setError] = useState('');
+  
+  // ADDED: Manual reply state
+  const [showManualReply, setShowManualReply] = useState(false);
+  const [manualReply, setManualReply] = useState('');
+  const [isSubmittingManual, setIsSubmittingManual] = useState(false);
 
-  // UPDATED: Load saved reply when review changes, reset other state when modal closes
   useEffect(() => {
     if (isOpen && review?.id) {
-      // Load saved reply for this review if it exists
       const savedReply = savedReplies[review.id];
       if (savedReply) {
         setAiReply(savedReply);
@@ -30,26 +31,26 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
         setAiReply('');
         setEditedReply('');
       }
-      // Reset UI state
       setIsPosted(false);
       setError('');
+      // ADDED: Reset manual reply state
+      setShowManualReply(false);
+      setManualReply('');
     }
     
     if (!isOpen) {
-      // Only reset UI state when closing, keep savedReplies
       setIsGenerating(false);
       setIsCopied(false);
       setIsPosted(false);
       setError('');
+      setShowManualReply(false);
+      setManualReply('');
     }
   }, [isOpen, review?.id, savedReplies]);
 
-  // ADDED: Generate platform URL from business data if review doesn't have one
   const generatePlatformUrl = (source) => {
-    // Use business prop instead of review.business
     const businessData = business || review?.business;
     
-    // ADDED: Debug logging
     console.log('🔍 Generating platform URL:', {
       source,
       reviewId: review?.id,
@@ -63,66 +64,57 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     });
     
     if (!businessData) {
-      console.warn('⚠️ No business data available (neither prop nor review.business)');
+      console.warn('⚠️ No business data available');
       return null;
     }
     
     const sourceUpper = source?.toUpperCase();
     
     if (sourceUpper === 'GOOGLE' || sourceUpper === 'GOOGLE_MY_BUSINESS') {
-      // Priority 1: Direct review URL from sourceReviewUrl
       if (review?.sourceReviewUrl) {
         console.log('✅ Using review.sourceReviewUrl:', review.sourceReviewUrl);
         return review.sourceReviewUrl;
       }
       
-      // Priority 2: Business-level Google review URL
       if (businessData.googleReviewUrl) {
         console.log('✅ Using business.googleReviewUrl:', businessData.googleReviewUrl);
         return businessData.googleReviewUrl;
       }
       
-      // Priority 3: Google short URL
       if (businessData.googleReviewShortUrl) {
         console.log('✅ Using business.googleReviewShortUrl:', businessData.googleReviewShortUrl);
         return businessData.googleReviewShortUrl;
       }
       
-      // Priority 4: Generate from Place ID
       if (businessData.googlePlaceId) {
         const url = `https://search.google.com/local/writereview?placeid=${businessData.googlePlaceId}`;
         console.log('✅ Generated from googlePlaceId:', url);
         return url;
       }
       
-      // Priority 5: Search URL
       if (businessData.googleSearchUrl) {
         console.log('✅ Using business.googleSearchUrl:', businessData.googleSearchUrl);
         return businessData.googleSearchUrl;
       }
       
-      // Fallback: Search by business name
       if (businessData.name) {
         const url = `https://www.google.com/search?q=${encodeURIComponent(businessData.name + ' reviews')}`;
         console.log('✅ Generated from business.name:', url);
         return url;
       }
       
-      console.warn('⚠️ No Google URL available - checked all sources');
+      console.warn('⚠️ No Google URL available');
     }
     
     if (sourceUpper === 'FACEBOOK') {
-      // Priority 1: Direct review URL from sourceReviewUrl  
       if (review?.sourceReviewUrl) {
         console.log('✅ Using review.sourceReviewUrl:', review.sourceReviewUrl);
         return review.sourceReviewUrl;
       }
       
-      // Priority 2: Business Facebook page
       if (businessData.facebookPageUrl) {
         const baseUrl = businessData.facebookPageUrl.trim();
         
-        // FIXED: Check if URL already ends with /reviews
         if (baseUrl.endsWith('/reviews')) {
           console.log('✅ Using business.facebookPageUrl (already has /reviews):', baseUrl);
           return baseUrl;
@@ -133,20 +125,18 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
         return url;
       }
       
-      // Fallback: Search by business name
       if (businessData.name) {
         const url = `https://www.facebook.com/search/top?q=${encodeURIComponent(businessData.name)}`;
         console.log('✅ Generated from business.name:', url);
         return url;
       }
       
-      console.warn('⚠️ No Facebook URL available - checked all sources');
+      console.warn('⚠️ No Facebook URL available');
     }
     
     return null;
   };
 
-  // Get platform info
   const getPlatformInfo = (source) => {
     const url = generatePlatformUrl(source);
     
@@ -189,7 +179,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     };
   };
 
-  // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'long',
@@ -198,7 +187,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     });
   };
 
-  // Render stars
   const renderStars = (rating) => {
     return (
       <div className="flex items-center space-x-0.5">
@@ -216,7 +204,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     );
   };
 
-  // Generate AI reply
   const handleGenerateReply = async () => {
     setIsGenerating(true);
     setError('');
@@ -240,7 +227,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
       setAiReply(generatedReply);
       setEditedReply(generatedReply);
       
-      // ADDED: Save reply for this review ID
       setSavedReplies(prev => ({
         ...prev,
         [review.id]: generatedReply
@@ -254,7 +240,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     }
   };
 
-  // Copy reply to clipboard
   const handleCopyReply = async () => {
     try {
       await navigator.clipboard.writeText(editedReply);
@@ -265,26 +250,20 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     }
   };
 
-  // ADDED: Post reply (copy to clipboard + open platform URL)
   const handlePostReply = async () => {
     try {
-      // Copy reply to clipboard
       await navigator.clipboard.writeText(editedReply);
       
-      // Get fresh platform info
       const currentPlatformInfo = getPlatformInfo(review.source);
       
-      // Open platform URL if available
       if (currentPlatformInfo.url) {
         window.open(currentPlatformInfo.url, '_blank', 'noopener,noreferrer');
       } else {
-        // If no URL, just show success message
         console.log('No platform URL available for this review');
       }
       
       setIsPosted(true);
       
-      // Show success message
       setTimeout(() => {
         setIsPosted(false);
       }, 3000);
@@ -295,13 +274,11 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     }
   };
 
-  // ADDED: Reset and regenerate reply
   const handleRegenerateReply = () => {
     setAiReply('');
     setEditedReply('');
     setIsPosted(false);
     
-    // ADDED: Clear saved reply for this review
     setSavedReplies(prev => {
       const updated = { ...prev };
       delete updated[review.id];
@@ -311,7 +288,39 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
     handleGenerateReply();
   };
 
-  // Share review
+  // ADDED: Handle manual reply submission
+  const handleSubmitManualReply = async () => {
+    if (!manualReply.trim()) return;
+    
+    setIsSubmittingManual(true);
+    setError('');
+    
+    try {
+      // Copy reply to clipboard
+      await navigator.clipboard.writeText(manualReply);
+      
+      // Open platform URL
+      const currentPlatformInfo = getPlatformInfo(review.source);
+      if (currentPlatformInfo.url) {
+        window.open(currentPlatformInfo.url, '_blank', 'noopener,noreferrer');
+      }
+      
+      // Show success
+      setIsPosted(true);
+      setTimeout(() => {
+        setIsPosted(false);
+        setShowManualReply(false);
+        setManualReply('');
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Failed to submit manual reply:', err);
+      setError('Failed to copy reply. Please try again.');
+    } finally {
+      setIsSubmittingManual(false);
+    }
+  };
+
   const handleShare = async () => {
     const shareData = {
       title: `Review from ${review.customerName}`,
@@ -323,7 +332,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(
           `${shareData.title}\n${shareData.text}\n${shareData.url}`
         );
@@ -432,7 +440,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
               </button>
             ) : (
               <div className="space-y-4">
-                {/* Editable Reply Text Area */}
                 <div className="relative">
                   <textarea
                     value={editedReply}
@@ -442,7 +449,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
                     placeholder="Edit your reply here..."
                   />
                   
-                  {/* Success indicator */}
                   {isPosted && (
                     <div className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 animate-in fade-in slide-in-from-top-2">
                       <Check className="w-4 h-4" />
@@ -451,7 +457,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
                   )}
                 </div>
 
-                {/* Action Buttons - TrueReview Style */}
                 <div className="flex items-center justify-between">
                   <button
                     onClick={handleRegenerateReply}
@@ -477,7 +482,6 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
                         setAiReply('');
                         setEditedReply('');
                         setIsPosted(false);
-                        // ADDED: Clear saved reply
                         setSavedReplies(prev => {
                           const updated = { ...prev };
                           delete updated[review.id];
@@ -512,9 +516,56 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
 
         {/* Footer Actions */}
         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-6">
+          {/* ADDED: Manual Reply Section */}
+          {showManualReply && (
+            <div className="mb-6 animate-in slide-in-from-bottom-4 duration-200">
+              <div className="bg-white rounded-xl border-2 border-purple-200 p-4 shadow-lg">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Write your reply
+                </label>
+                <textarea
+                  value={manualReply}
+                  onChange={(e) => setManualReply(e.target.value)}
+                  placeholder="Type your reply here..."
+                  className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all resize-none"
+                  rows={4}
+                  autoFocus
+                />
+                <div className="flex items-center justify-end gap-3 mt-3">
+                  <button
+                    onClick={() => {
+                      setShowManualReply(false);
+                      setManualReply('');
+                    }}
+                    className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium hover:bg-gray-100 rounded-lg transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitManualReply}
+                    disabled={!manualReply.trim() || isSubmittingManual}
+                    className="inline-flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingManual ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Submit Reply</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* View on Platform (if available) */}
+            <div className="flex items-center space-x-3">
+              {/* View on Platform */}
               {platformInfo.url && (
                 <a
                   href={platformInfo.url}
@@ -528,6 +579,17 @@ const ReviewManageModal = ({ review, isOpen, onClose, businessName, business }) 
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
+              )}
+
+              {/* ADDED: Reply Button */}
+              {!showManualReply && (
+                <button
+                  onClick={() => setShowManualReply(true)}
+                  className="inline-flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Reply</span>
+                </button>
               )}
             </div>
 

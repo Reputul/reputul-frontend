@@ -2,15 +2,16 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
+import { useNavigate } from "react-router-dom";
 import { buildUrl, API_ENDPOINTS } from "../config/api";
-import { 
-  Plus, 
-  Settings, 
-  Share2, 
-  Copy, 
-  ExternalLink, 
+import {
+  Plus,
+  Settings,
+  Share2,
+  Copy,
+  ExternalLink,
   CheckCircle2,
-  Send
+  Send,
 } from "lucide-react";
 
 // Components
@@ -34,6 +35,7 @@ const getBestGoogleReviewUrl = (business) => {
 const DashboardPage = () => {
   const { token } = useAuth();
   const { selectedBusiness, businesses, refreshBusinesses } = useBusiness();
+  const navigate = useNavigate();
 
   // State
   const [dashboardData, setDashboardData] = useState(null);
@@ -48,13 +50,24 @@ const DashboardPage = () => {
 
   // Form States
   const [newBusiness, setNewBusiness] = useState({
-    name: "", industry: "", phone: "", website: "", address: "",
+    name: "",
+    industry: "",
+    phone: "",
+    website: "",
+    address: "",
   });
   const [editBusinessData, setEditBusinessData] = useState({
-    name: "", industry: "", phone: "", website: "", address: "",
+    name: "",
+    industry: "",
+    phone: "",
+    website: "",
+    address: "",
   });
   const [requestReviewsData, setRequestReviewsData] = useState({
-    selectedBusiness: "", customerEmail: "", customerName: "", message: "",
+    selectedBusiness: "",
+    customerEmail: "",
+    customerName: "",
+    message: "",
   });
 
   // --- DATA FETCHING ---
@@ -66,13 +79,18 @@ const DashboardPage = () => {
     try {
       setLoading(true);
       const [metricsRes, summaryRes] = await Promise.all([
-        axios.get(buildUrl(`${API_ENDPOINTS.DASHBOARD.METRICS}?days=30`), { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(buildUrl(API_ENDPOINTS.BUSINESS.REVIEW_SUMMARY(selectedBusiness.id)), { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(buildUrl(`${API_ENDPOINTS.DASHBOARD.METRICS}?days=30`), {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(
+          buildUrl(API_ENDPOINTS.BUSINESS.REVIEW_SUMMARY(selectedBusiness.id)),
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
       ]);
 
       const sent = metricsRes.data.sent || 0;
       const completed = metricsRes.data.completed || 0;
-      
+
       setDashboardData({
         metrics: {
           totalReviews: summaryRes.data.totalReviews || 0,
@@ -83,7 +101,14 @@ const DashboardPage = () => {
       });
     } catch (err) {
       console.error("Data fetch error", err);
-      setDashboardData({ metrics: { totalReviews: 0, newReviews: 0, avgRating: 0, engagementRate: 0 } });
+      setDashboardData({
+        metrics: {
+          totalReviews: 0,
+          newReviews: 0,
+          avgRating: 0,
+          engagementRate: 0,
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -114,16 +139,27 @@ const DashboardPage = () => {
 
   // --- HANDLERS (Business CRUD & Requests) ---
   // (Keeping logic identical to your original code, just shortened for brevity in this display)
-  const handleBusinessChange = (e) => setNewBusiness(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  
+  const handleBusinessChange = (e) =>
+    setNewBusiness((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
   const handleCreateBusiness = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(buildUrl(API_ENDPOINTS.BUSINESS.LIST), newBusiness, { headers: { Authorization: `Bearer ${token}` } });
-      setNewBusiness({ name: "", industry: "", phone: "", website: "", address: "" });
+      await axios.post(buildUrl(API_ENDPOINTS.BUSINESS.LIST), newBusiness, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNewBusiness({
+        name: "",
+        industry: "",
+        phone: "",
+        website: "",
+        address: "",
+      });
       setShowAddBusiness(false);
       refreshBusinesses();
-    } catch (err) { alert("Failed to create business"); }
+    } catch (err) {
+      alert("Failed to create business");
+    }
   };
 
   const handleEditBusiness = (business) => {
@@ -134,22 +170,39 @@ const DashboardPage = () => {
   const handleUpdateBusiness = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(editingBusiness)), editBusinessData, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(
+        buildUrl(API_ENDPOINTS.BUSINESS.BY_ID(editingBusiness)),
+        editBusinessData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setEditingBusiness(null);
       refreshBusinesses();
       fetchDashboardData();
-    } catch (err) { alert("Failed to update"); }
+    } catch (err) {
+      alert("Failed to update");
+    }
   };
 
   const handleRequestReviews = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(buildUrl("/api/v1/review-requests/send-direct"), requestReviewsData, { headers: { Authorization: `Bearer ${token}` } });
-      setRequestReviewsData({ selectedBusiness: "", customerEmail: "", customerName: "", message: "" });
+      await axios.post(
+        buildUrl("/api/v1/review-requests/send-direct"),
+        requestReviewsData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setRequestReviewsData({
+        selectedBusiness: "",
+        customerEmail: "",
+        customerName: "",
+        message: "",
+      });
       setShowRequestReviews(false);
       alert("Request sent!");
       fetchDashboardData();
-    } catch (err) { alert("Failed to send"); }
+    } catch (err) {
+      alert("Failed to send");
+    }
   };
 
   // --- RENDER ---
@@ -172,8 +225,12 @@ const DashboardPage = () => {
             <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-[#7d2ae8]">
               <Plus size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome to Reputul</h2>
-            <p className="text-slate-500 mb-8">Add your first business to start managing your reputation.</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              Welcome to Reputul
+            </h2>
+            <p className="text-slate-500 mb-8">
+              Add your first business to start managing your reputation.
+            </p>
             <button
               onClick={() => setShowAddBusiness(true)}
               className="w-full py-3 bg-[#7d2ae8] hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-purple-200"
@@ -182,8 +239,8 @@ const DashboardPage = () => {
             </button>
           </div>
         </div>
-        <AddBusinessModal 
-          showAddBusiness={showAddBusiness} 
+        <AddBusinessModal
+          showAddBusiness={showAddBusiness}
           setShowAddBusiness={setShowAddBusiness}
           newBusiness={newBusiness}
           handleBusinessChange={handleBusinessChange}
@@ -199,26 +256,34 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
         {/* Header Section */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{selectedBusiness.name}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {selectedBusiness.name}
+            </h1>
             <p className="text-slate-500 text-sm flex items-center gap-2 mt-1">
-              <span className={`w-2 h-2 rounded-full ${googleLink ? 'bg-green-500' : 'bg-orange-500'}`}></span>
-              {googleLink ? 'Reputation engine active' : 'Setup incomplete'}
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  googleLink ? "bg-green-500" : "bg-orange-500"
+                }`}
+              ></span>
+              {googleLink ? "Reputation engine active" : "Setup incomplete"}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setShowAddBusiness(true)}
               className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
             >
               Add Business
             </button>
-            <button 
+            <button
               onClick={() => {
-                setRequestReviewsData(prev => ({ ...prev, selectedBusiness: selectedBusiness?.id?.toString() || "" }));
+                setRequestReviewsData((prev) => ({
+                  ...prev,
+                  selectedBusiness: selectedBusiness?.id?.toString() || "",
+                }));
                 setShowRequestReviews(true);
               }}
               className="px-4 py-2 bg-[#7d2ae8] hover:bg-purple-700 text-white rounded-lg text-sm font-bold transition-all shadow-lg shadow-purple-200 hover:shadow-purple-300 flex items-center gap-2"
@@ -234,7 +299,6 @@ const DashboardPage = () => {
 
         {/* Main Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           {/* Left Column: Reviews (Wider) */}
           <div className="lg:col-span-2">
             <LatestReviewsList
@@ -242,37 +306,45 @@ const DashboardPage = () => {
               loading={reviewsLoading}
               businessId={selectedBusiness?.id}
               businessName={selectedBusiness?.name}
-              business={selectedBusiness} 
+              business={selectedBusiness}
             />
           </div>
 
           {/* Right Column: Quick Actions (Sidebar) */}
           <div className="space-y-6">
-            
             {/* Quick Actions Card */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <Settings size={18} className="text-slate-400" />
                 Quick Actions
               </h3>
-              
+
               <div className="space-y-2">
-                <button 
-                   onClick={() => handleEditBusiness(selectedBusiness)}
-                   className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 flex items-center justify-between group transition-colors"
+                <button
+                  onClick={() => navigate("/business/settings")}
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 flex items-center justify-between group transition-colors"
                 >
                   <span>Edit Business Details</span>
-                  <Settings size={16} className="text-slate-400 group-hover:text-[#7d2ae8]" />
+                  <Settings
+                    size={16}
+                    className="text-slate-400 group-hover:text-[#7d2ae8]"
+                  />
                 </button>
-                <button 
-                   onClick={() => {
-                    setRequestReviewsData(prev => ({ ...prev, selectedBusiness: selectedBusiness?.id?.toString() || "" }));
+                <button
+                  onClick={() => {
+                    setRequestReviewsData((prev) => ({
+                      ...prev,
+                      selectedBusiness: selectedBusiness?.id?.toString() || "",
+                    }));
                     setShowRequestReviews(true);
-                   }}
-                   className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 flex items-center justify-between group transition-colors"
+                  }}
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 flex items-center justify-between group transition-colors"
                 >
                   <span>Send Review Request</span>
-                  <Send size={16} className="text-slate-400 group-hover:text-[#7d2ae8]" />
+                  <Send
+                    size={16}
+                    className="text-slate-400 group-hover:text-[#7d2ae8]"
+                  />
                 </button>
               </div>
             </div>
@@ -284,17 +356,19 @@ const DashboardPage = () => {
                   <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-blue-600">
                     <Share2 size={16} />
                   </div>
-                  <h3 className="font-bold text-blue-900 text-sm">Review Link</h3>
+                  <h3 className="font-bold text-blue-900 text-sm">
+                    Review Link
+                  </h3>
                 </div>
-                
+
                 <p className="text-xs text-blue-700 mb-4 leading-relaxed">
                   Send this link directly to customers to get reviews on Google.
                 </p>
 
                 <div className="flex gap-2">
-                  <input 
-                    readOnly 
-                    value={googleLink} 
+                  <input
+                    readOnly
+                    value={googleLink}
                     className="flex-1 bg-white border border-blue-200 rounded-lg px-3 py-2 text-xs text-slate-600 focus:outline-none"
                   />
                   <button
@@ -328,14 +402,24 @@ const DashboardPage = () => {
         editingBusiness={editingBusiness}
         setEditingBusiness={setEditingBusiness}
         editBusinessData={editBusinessData}
-        handleEditBusinessChange={(e) => setEditBusinessData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+        handleEditBusinessChange={(e) =>
+          setEditBusinessData((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+          }))
+        }
         handleUpdateBusiness={handleUpdateBusiness}
       />
       <RequestReviewsModal
         showRequestReviews={showRequestReviews}
         setShowRequestReviews={setShowRequestReviews}
         requestReviewsData={requestReviewsData}
-        handleRequestReviewsChange={(e) => setRequestReviewsData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+        handleRequestReviewsChange={(e) =>
+          setRequestReviewsData((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+          }))
+        }
         handleRequestReviews={handleRequestReviews}
         businesses={businesses}
       />
