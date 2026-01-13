@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { BusinessProvider } from "./context/BusinessContext";
@@ -46,7 +47,62 @@ import WidgetsPage from "./pages/WidgetsPage";
 import InsightsPage from "./pages/InsightsPage";
 import CampaignsPage from "./pages/CampaignsPage";
 import ReviewManagementPage from "./pages/ReviewsManagementPage";
-import SettingsPage from "./pages/SettingsPage"; // ADD THIS LINE
+import SettingsPage from "./pages/SettingsPage";
+
+// ADDED: Subdomain routing component
+function SubdomainRouter({ children }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    const isAppSubdomain = hostname === 'app.reputul.com' || hostname === 'app.localhost';
+    const isMainDomain = hostname === 'reputul.com' || hostname === 'www.reputul.com' || hostname === 'localhost';
+    
+    // Protected route paths (all dashboard/app routes)
+    const protectedRoutes = [
+      '/dashboard',
+      '/customers',
+      '/contacts',
+      '/insights',
+      '/email-templates',
+      '/review-requests',
+      '/review-platforms',
+      '/campaigns',
+      '/profile',
+      '/widgets',
+      '/reviews',
+      '/settings',
+      '/account',
+      '/business/settings'
+    ];
+    
+    const isProtectedRoute = protectedRoutes.some(route => 
+      location.pathname.startsWith(route)
+    );
+
+    // If on app subdomain and at root, redirect to dashboard
+    if (isAppSubdomain && location.pathname === '/') {
+      navigate('/dashboard', { replace: true });
+    }
+
+    // If on main domain and trying to access protected routes, redirect to app subdomain
+    if (isMainDomain && isProtectedRoute && hostname !== 'localhost') {
+      window.location.href = `https://app.reputul.com${location.pathname}${location.search}`;
+    }
+
+    // If on app subdomain and trying to access landing/public routes (except auth), redirect to main domain
+    const publicRoutes = ['/', '/pricing'];
+    const isPublicRoute = publicRoutes.includes(location.pathname);
+    
+    if (isAppSubdomain && isPublicRoute && hostname !== 'app.localhost') {
+      window.location.href = `https://reputul.com${location.pathname}${location.search}`;
+    }
+
+  }, [location, navigate]);
+
+  return <>{children}</>;
+}
 
 // AppContent component - must be inside Router to use useLocation
 function AppContent() {
@@ -71,7 +127,7 @@ function AppContent() {
     "/insights",
     "/widgets",
     "/reviews",
-    "/settings", // ADD THIS LINE
+    "/settings",
   ];
 
   const shouldShowNavbar = !noNavbarRoutes.some((route) =>
@@ -79,201 +135,203 @@ function AppContent() {
   );
 
   return (
-    <div className="App">
-      {shouldShowNavbar && <Navbar />}
-      <Toaster
-        position="top-right"
-        expand={true}
-        richColors
-        closeButton
-        duration={4000}
-      />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route
-          path="/business/settings"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <BusinessSettingsPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
+    <SubdomainRouter>
+      <div className="App">
+        {shouldShowNavbar && <Navbar />}
+        <Toaster
+          position="top-right"
+          expand={true}
+          richColors
+          closeButton
+          duration={4000}
         />
-        <Route path="/business/:id" element={<BusinessPublicPage />} />
-        <Route path="/sms-signup" element={<SmsSignupPage />} />
-        <Route path="/sms-signup/:businessId" element={<SmsSignupPage />} />
-        <Route path="/twilio-proof" element={<TwilioProofPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/checkout/success" element={<CheckoutPages.Success />} />
-        <Route path="/checkout/error" element={<CheckoutPages.Error />} />
-        <Route path="/oauth/callback/google" element={<OAuthCallbackPage />} />
-        <Route
-          path="/oauth/callback/facebook"
-          element={<OAuthCallbackPage />}
-        />
-        <Route
-          path="/feedback-gate/:customerId"
-          element={<FeedbackGatePage />}
-        />
-        <Route
-          path="/feedback/:customerId"
-          element={<CustomerFeedbackPage />}
-        />
-        <Route path="/opt-in-policy" element={<OptInPolicy />} />
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route
+            path="/business/settings"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <BusinessSettingsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route path="/business/:id" element={<BusinessPublicPage />} />
+          <Route path="/sms-signup" element={<SmsSignupPage />} />
+          <Route path="/sms-signup/:businessId" element={<SmsSignupPage />} />
+          <Route path="/twilio-proof" element={<TwilioProofPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/checkout/success" element={<CheckoutPages.Success />} />
+          <Route path="/checkout/error" element={<CheckoutPages.Error />} />
+          <Route path="/oauth/callback/google" element={<OAuthCallbackPage />} />
+          <Route
+            path="/oauth/callback/facebook"
+            element={<OAuthCallbackPage />}
+          />
+          <Route
+            path="/feedback-gate/:customerId"
+            element={<FeedbackGatePage />}
+          />
+          <Route
+            path="/feedback/:customerId"
+            element={<CustomerFeedbackPage />}
+          />
+          <Route path="/opt-in-policy" element={<OptInPolicy />} />
 
-        {/* Error routes */}
-        <Route path="/forbidden" element={<ForbiddenPage />} />
-        <Route path="/server-error" element={<ServerErrorPage />} />
-        <Route path="/maintenance" element={<MaintenancePage />} />
+          {/* Error routes */}
+          <Route path="/forbidden" element={<ForbiddenPage />} />
+          <Route path="/server-error" element={<ServerErrorPage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
 
-        {/* Protected routes WITH SIDEBAR LAYOUT */}
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <DashboardPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/customers"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <CustomerManagementPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/contacts"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <ContactsPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/insights"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <InsightsPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/email-templates"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <EmailTemplatesPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/review-requests"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <ReviewRequestPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/review-platforms"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <ReviewPlatformsPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/campaigns"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <CampaignsPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <ProfilePage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/widgets"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <WidgetsPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/reviews"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <ReviewManagementPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
+          {/* Protected routes WITH SIDEBAR LAYOUT */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <DashboardPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/customers"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <CustomerManagementPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/contacts"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ContactsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/insights"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <InsightsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/email-templates"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <EmailTemplatesPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/review-requests"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ReviewRequestPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/review-platforms"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ReviewPlatformsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/campaigns"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <CampaignsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ProfilePage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/widgets"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <WidgetsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reviews"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <ReviewManagementPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
 
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <SettingsPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
+          <Route
+            path="/settings"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <SettingsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
 
-        <Route
-          path="/account/billing"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <AccountBillingPage />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/account"
-          element={<Navigate to="/account/billing" replace />}
-        />
+          <Route
+            path="/account/billing"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <AccountBillingPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={<Navigate to="/account/billing" replace />}
+          />
 
-        {/* 404 - Keep this LAST */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </div>
+          {/* 404 - Keep this LAST */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </div>
+    </SubdomainRouter>
   );
 }
 
