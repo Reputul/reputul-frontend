@@ -9,7 +9,7 @@ const OptInPolicy = () => {
           <div className="flex items-center">
             <div className="w-8 h-8 mr-2">
               <img 
-                src="/assets/reputul-logo.png" 
+                src="/assets/logos/reputul-logo.svg" 
                 alt="Reputul Logo" 
                 className="w-full h-full object-contain"
               />
@@ -193,7 +193,7 @@ const OptInPolicy = () => {
           <div className="flex items-center justify-center mb-4">
             <div className="w-6 h-6 mr-2">
               <img 
-                src="/assets/reputul-logo.png" 
+                src="/assets/logos/reputul-logo.svg" 
                 alt="Reputul Logo" 
                 className="w-full h-full object-contain filter brightness-0 invert"
               />

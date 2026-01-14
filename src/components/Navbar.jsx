@@ -73,7 +73,7 @@ const Navbar = () => {
               >
                 <div className="w-8 h-8">
                   <img
-                    src="/assets/reputul-logo.png"
+                    src="/assets/logos/reputul-logo.svg"
                     alt="Reputul Logo"
                     className="w-full h-full object-contain"
                   />

@@ -494,7 +494,7 @@ const LandingPage = () => {
           {/* Logo Section */}
           <div className="flex items-center gap-2 mb-6">
             <img 
-              src="/assets/reputul-logo.png" 
+              src="/assets/logos/reputul-logo.svg" 
               alt="Reputul" 
               className="h-8 w-auto grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300" 
             />
