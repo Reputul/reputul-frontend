@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Added Link import
 import waitlistService from "../api/WaitlistService";
 import { 
   Star, 
@@ -34,7 +35,6 @@ const LandingPage = () => {
     const fetchWaitlistCount = async () => {
       try {
         const { count } = await waitlistService.getWaitlistCount();
-        // If the API returns 0 or fails, we stick to our realistic fallback
         if (count > 0) setWaitlistCount(count);
       } catch (error) {
         console.error('Error fetching waitlist count:', error);
@@ -43,7 +43,6 @@ const LandingPage = () => {
     fetchWaitlistCount();
   }, []);
 
-  // Simulate slower, more believable growth (once every 45s, not 30s)
   useEffect(() => {
     const interval = setInterval(async () => {
       if (!isSubmitted && Math.random() < 0.3) {
@@ -84,7 +83,6 @@ const LandingPage = () => {
   };
 
   return (
-    // Updated Selection Color to match brand
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-[#7d2ae8] selection:text-white">
       
       {/* --- NAV --- */}
@@ -93,7 +91,6 @@ const LandingPage = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              {/* Brand Color Box */}
               <div className="w-8 h-8 bg-[#7d2ae8] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-200">
                 R
               </div>
@@ -164,7 +161,6 @@ const LandingPage = () => {
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <button 
                   onClick={scrollToWaitlist}
-                  // Using Brand Color with a manual dark shade for hover
                   className="bg-[#7d2ae8] hover:bg-[#6020b0] text-white px-8 py-4 rounded-xl text-lg font-bold transition-all shadow-xl shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 flex items-center justify-center gap-2"
                 >
                   Secure My Spot
@@ -200,16 +196,13 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* Visual: The Phone Mockup (CSS Only) */}
+            {/* Visual: The Phone Mockup */}
             <div className="relative mx-auto lg:ml-auto w-full max-w-[400px]">
-              {/* Abstract blobs using Brand Color */}
               <div className="absolute top-0 -right-20 w-72 h-72 bg-[#7d2ae8] rounded-full mix-blend-multiply filter blur-[64px] opacity-20 animate-pulse"></div>
               <div className="absolute bottom-0 -left-20 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-[64px] opacity-30 animate-pulse delay-1000"></div>
 
-              {/* Phone Frame */}
               <div className="relative bg-slate-900 rounded-[2.5rem] p-4 shadow-2xl border-4 border-slate-800 rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
                 <div className="bg-white rounded-[2rem] overflow-hidden h-[500px] relative">
-                  {/* Status Bar */}
                   <div className="bg-slate-100 px-6 py-3 flex justify-between items-center text-xs font-medium text-slate-500">
                     <span>9:41</span>
                     <div className="flex gap-1">
@@ -218,14 +211,12 @@ const LandingPage = () => {
                     </div>
                   </div>
                   
-                  {/* Message UI */}
                   <div className="p-4 space-y-4">
                     <div className="flex items-center gap-2 mb-6">
                       <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold">AB</div>
                       <div className="text-sm font-semibold text-slate-900">Apex Builders</div>
                     </div>
 
-                    {/* Incoming Msg */}
                     <div className="bg-gray-100 rounded-2xl rounded-tl-none p-4 max-w-[85%]">
                       <p className="text-sm text-slate-700 leading-relaxed">
                         Hi Sarah! Thanks for choosing Apex Builders. Would you mind taking 30 seconds to share your experience?
@@ -238,14 +229,12 @@ const LandingPage = () => {
                       </div>
                     </div>
 
-                    {/* Customer Reply */}
                     <div className="bg-[#7d2ae8] text-white rounded-2xl rounded-tr-none p-4 max-w-[85%] ml-auto">
                       <p className="text-sm leading-relaxed">
                         Just did! You guys were great. Thanks for the quick fix! 👍
                       </p>
                     </div>
                     
-                    {/* Notification Pop */}
                     <div className="absolute bottom-8 left-4 right-4 bg-slate-800/90 backdrop-blur text-white p-4 rounded-xl shadow-xl flex items-center gap-3 animate-bounce">
                       <div className="p-2 bg-green-500 rounded-full">
                         <TrendingUp size={16} className="text-white" />
@@ -349,7 +338,6 @@ const LandingPage = () => {
                   <span className="text-[#7d2ae8] font-bold">Result: 300% Higher Conversion.</span>
                 </p>
               </div>
-              {/* Decorative Mockup */}
               <div className="absolute right-0 bottom-0 w-3/4 h-1/2 bg-slate-800 rounded-tl-3xl p-4 transition-transform group-hover:translate-y-2">
                 <div className="w-full h-4 bg-slate-700 rounded-full mb-3"></div>
                 <div className="w-2/3 h-4 bg-slate-700 rounded-full"></div>
@@ -390,7 +378,6 @@ const LandingPage = () => {
 
       {/* --- FOUNDER'S OFFER --- */}
       <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
-        {/* Brand Color Glow */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#7d2ae8] rounded-full mix-blend-multiply filter blur-[120px] opacity-20"></div>
         
         <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
@@ -501,15 +488,35 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* --- FOOTER --- */}
-      <footer className="py-12 bg-slate-50 border-t border-slate-200 text-center">
-        <div className="flex justify-center items-center gap-2 mb-4 opacity-50">
-          <div className="w-6 h-6 bg-slate-900 rounded-md"></div>
-          <span className="font-bold text-slate-900">Reputul</span>
+      {/* --- FOOTER (Updated for Twilio Compliance) --- */}
+      <footer className="py-12 bg-slate-50 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+          {/* Logo Section */}
+          <div className="flex items-center gap-2 mb-6">
+            <img 
+              src="/assets/reputul-logo.png" 
+              alt="Reputul" 
+              className="h-8 w-auto grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300" 
+            />
+            <span className="text-xl font-bold text-slate-700">Reputul</span>
+          </div>
+
+          {/* Legal Links */}
+          <div className="flex gap-8 mb-8 text-sm font-medium text-slate-500">
+            <Link to="/privacy" className="hover:text-[#7d2ae8] transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="hover:text-[#7d2ae8] transition-colors">
+              Terms of Service
+            </Link>
+          </div>
+
+          {/* Copyright & Address for Twilio */}
+          <div className="text-center text-slate-400 text-xs space-y-2">
+            <p>&copy; 2026 Reputul LLC. All rights reserved.</p>
+            <p className="text-xs">123 Main St, Castle Rock, CO 80104</p>
+          </div>
         </div>
-        <p className="text-slate-500 text-sm">
-          &copy; 2025 Reputul. Built for local businesses.
-        </p>
       </footer>
 
     </div>
