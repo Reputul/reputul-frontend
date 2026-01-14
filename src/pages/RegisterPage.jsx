@@ -11,16 +11,19 @@ import {
   Check,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  Smartphone // Added icon for phone field
 } from "lucide-react";
 
 const RegisterPage = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
 
+  // Updated state to include phone
   const [form, setForm] = useState({
     name: '',
     email: '',
+    phone: '', // <--- NEW FIELD
     password: '',
     confirmPassword: ''
   });
@@ -79,9 +82,11 @@ const RegisterPage = () => {
     setError('');
     
     try {
+      // Updated API call to include phone
       await axios.post(buildUrl(API_ENDPOINTS.AUTH.REGISTER), {
         name: form.name,
         email: form.email,
+        phone: form.phone, // <--- SENDING PHONE TO BACKEND
         password: form.password
       });
       
@@ -101,7 +106,7 @@ const RegisterPage = () => {
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 py-12 bg-white relative">
         <div className="w-full max-w-sm mx-auto lg:w-96">
           
-          {/* Logo Section - UPDATED */}
+          {/* Logo Section */}
           <div className="flex items-center gap-3 mb-10">
             <img src="/assets/reputul-logo.png" alt="Reputul Logo" className="h-8 w-auto" />
             <span className="text-2xl font-bold tracking-tight text-slate-900">Reputul</span>
@@ -125,6 +130,7 @@ const RegisterPage = () => {
               </div>
             )}
 
+            {/* Name Input */}
             <div>
               <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Full Name
@@ -141,6 +147,7 @@ const RegisterPage = () => {
               />
             </div>
 
+            {/* Email Input */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Work Email
@@ -157,6 +164,29 @@ const RegisterPage = () => {
               />
             </div>
 
+            {/* NEW: Phone Input */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Mobile Phone
+              </label>
+              <div className="relative">
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  value={form.phone}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-purple-100 focus:border-[#7d2ae8] outline-none transition-all"
+                  placeholder="(555) 123-4567"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Smartphone size={18} />
+                </div>
+              </div>
+            </div>
+
+            {/* Password Input */}
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Password
@@ -191,6 +221,7 @@ const RegisterPage = () => {
               )}
             </div>
 
+            {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Confirm Password
@@ -211,6 +242,7 @@ const RegisterPage = () => {
               />
             </div>
 
+            {/* Compliance Checkbox */}
             <div className="pt-2">
               <label className="flex items-start gap-3 cursor-pointer group">
                 <div className="relative flex items-center mt-1">

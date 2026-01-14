@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
+import { Zap } from "lucide-react";
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isBusinessDropdownOpen, setIsBusinessDropdownOpen] = useState(false); // NEW: Business dropdown state
-  const [searchTerm, setSearchTerm] = useState(""); // NEW: Search state for businesses
-  const dropdownRef = useRef(null); // NEW: Ref for dropdown
+  const [isBusinessDropdownOpen, setIsBusinessDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef(null);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,9 +18,9 @@ const Sidebar = () => {
     businesses,
     loading: businessesLoading,
     selectBusiness,
-  } = useBusiness(); // NEW: Use business context
+  } = useBusiness();
 
-  // NEW: Close dropdown when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -33,6 +34,12 @@ const Sidebar = () => {
   }, []);
 
   const isActive = (path) => {
+    // For settings sub-pages, use exact match
+    if (path.startsWith("/settings")) {
+      return location.pathname === path;
+    }
+
+    // For other paths, use the original logic
     return (
       location.pathname === path || location.pathname.startsWith(path + "/")
     );
@@ -43,12 +50,12 @@ const Sidebar = () => {
     navigate("/login");
   };
 
-  // NEW: Filter businesses based on search
+  // Filter businesses based on search
   const filteredBusinesses = businesses.filter((business) =>
     business.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // NEW: Get business initials for icon
+  // Get business initials for icon
   const getBusinessInitials = (name) => {
     if (!name) return "?";
     const words = name.split(" ");
@@ -194,6 +201,18 @@ const Sidebar = () => {
               strokeLinejoin="round"
               strokeWidth={2}
               d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+          ),
+        },
+        {
+          name: "Integrations",
+          path: "/settings/integrations",
+          icon: (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z"
             />
           ),
         },
