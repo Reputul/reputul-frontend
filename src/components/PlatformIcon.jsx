@@ -20,8 +20,8 @@ const PlatformIcon = ({ platform, size = 'md', className = '' }) => {
     GOOGLE_MY_BUSINESS: '/assets/logos/google-logo.svg',
     GOOGLE: '/assets/logos/google-logo.svg',
     FACEBOOK: '/assets/logos/facebook-logo.svg',
-    REPUTUL: '/assets/logos/reputul-logo.png',  // ← ADDED: Reputul logo (change to .svg if you converted)
-    DIRECT: '/assets/logos/reputul-logo.png',   // ← ADDED: Use same for direct reviews
+    REPUTUL: '/assets/logos/reputul-logo.svg', 
+    DIRECT: '/assets/logos/reputul-logo.svg',   // ← ADDED: Use same for direct reviews
   };
 
   const iconSrc = icons[platform];

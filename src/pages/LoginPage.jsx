@@ -80,7 +80,7 @@ const LoginPage = () => {
           
           {/* Logo Section */}
           <div className="flex items-center gap-3 mb-10">
-            <img src="/assets/reputul-logo.png" alt="Reputul Logo" className="h-8 w-auto" />
+            <img src="/assets/logos/reputul-logo.svg" alt="Reputul Logo" className="h-8 w-auto" />
             <span className="text-2xl font-bold tracking-tight text-slate-900">Reputul</span>
           </div>
 

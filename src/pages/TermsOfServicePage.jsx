@@ -9,7 +9,7 @@ const TermsOfServicePage = () => {
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/assets/reputul-logo.png" alt="Reputul" className="h-8 w-auto" />
+            <img src="/assets/logos/reputul-logo.svg" alt="Reputul" className="h-8 w-auto" />
             <span className="text-xl font-bold tracking-tight text-slate-900">Reputul</span>
           </Link>
           <Link to="/" className="text-sm font-medium text-slate-600 hover:text-[#7d2ae8] flex items-center gap-1">
