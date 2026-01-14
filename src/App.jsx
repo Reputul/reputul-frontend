@@ -49,6 +49,10 @@ import CampaignsPage from "./pages/CampaignsPage";
 import ReviewManagementPage from "./pages/ReviewsManagementPage";
 import SettingsPage from "./pages/SettingsPage";
 
+// --- NEW IMPORTS ---
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+
 // ADDED: Subdomain routing component
 function SubdomainRouter({ children }) {
   const location = useLocation();
@@ -92,7 +96,7 @@ function SubdomainRouter({ children }) {
     }
 
     // If on app subdomain and trying to access landing/public routes (except auth), redirect to main domain
-    const publicRoutes = ['/', '/pricing'];
+    const publicRoutes = ['/', '/pricing', '/privacy', '/terms']; // Added legal pages to public list
     const isPublicRoute = publicRoutes.includes(location.pathname);
     
     if (isAppSubdomain && isPublicRoute && hostname !== 'app.localhost') {
@@ -152,6 +156,11 @@ function AppContent() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          
+          {/* --- LEGAL PAGES (ADDED) --- */}
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+
           <Route
             path="/business/settings"
             element={
