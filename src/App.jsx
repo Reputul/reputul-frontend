@@ -48,10 +48,9 @@ import InsightsPage from "./pages/InsightsPage";
 import CampaignsPage from "./pages/CampaignsPage";
 import ReviewManagementPage from "./pages/ReviewsManagementPage";
 import SettingsPage from "./pages/SettingsPage";
-
-// --- NEW IMPORTS ---
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
+import IntegrationsPage from "./pages/IntegrationsPage";
 
 // ADDED: Subdomain routing component
 function SubdomainRouter({ children }) {
@@ -60,49 +59,52 @@ function SubdomainRouter({ children }) {
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    const isAppSubdomain = hostname === 'app.reputul.com' || hostname === 'app.localhost';
-    const isMainDomain = hostname === 'reputul.com' || hostname === 'www.reputul.com' || hostname === 'localhost';
-    
+    const isAppSubdomain =
+      hostname === "app.reputul.com" || hostname === "app.localhost";
+    const isMainDomain =
+      hostname === "reputul.com" ||
+      hostname === "www.reputul.com" ||
+      hostname === "localhost";
+
     // Protected route paths (all dashboard/app routes)
     const protectedRoutes = [
-      '/dashboard',
-      '/customers',
-      '/contacts',
-      '/insights',
-      '/email-templates',
-      '/review-requests',
-      '/review-platforms',
-      '/campaigns',
-      '/profile',
-      '/widgets',
-      '/reviews',
-      '/settings',
-      '/account',
-      '/business/settings'
+      "/dashboard",
+      "/customers",
+      "/contacts",
+      "/insights",
+      "/email-templates",
+      "/review-requests",
+      "/review-platforms",
+      "/campaigns",
+      "/profile",
+      "/widgets",
+      "/reviews",
+      "/settings",
+      "/account",
+      "/business/settings",
     ];
-    
-    const isProtectedRoute = protectedRoutes.some(route => 
+
+    const isProtectedRoute = protectedRoutes.some((route) =>
       location.pathname.startsWith(route)
     );
 
     // If on app subdomain and at root, redirect to dashboard
-    if (isAppSubdomain && location.pathname === '/') {
-      navigate('/dashboard', { replace: true });
+    if (isAppSubdomain && location.pathname === "/") {
+      navigate("/dashboard", { replace: true });
     }
 
     // If on main domain and trying to access protected routes, redirect to app subdomain
-    if (isMainDomain && isProtectedRoute && hostname !== 'localhost') {
+    if (isMainDomain && isProtectedRoute && hostname !== "localhost") {
       window.location.href = `https://app.reputul.com${location.pathname}${location.search}`;
     }
 
     // If on app subdomain and trying to access landing/public routes (except auth), redirect to main domain
-    const publicRoutes = ['/', '/pricing', '/privacy', '/terms']; // Added legal pages to public list
+    const publicRoutes = ["/", "/pricing", "/privacy", "/terms"]; // Added legal pages to public list
     const isPublicRoute = publicRoutes.includes(location.pathname);
-    
-    if (isAppSubdomain && isPublicRoute && hostname !== 'app.localhost') {
+
+    if (isAppSubdomain && isPublicRoute && hostname !== "app.localhost") {
       window.location.href = `https://reputul.com${location.pathname}${location.search}`;
     }
-
   }, [location, navigate]);
 
   return <>{children}</>;
@@ -132,6 +134,7 @@ function AppContent() {
     "/widgets",
     "/reviews",
     "/settings",
+    "/settings/integrations",
   ];
 
   const shouldShowNavbar = !noNavbarRoutes.some((route) =>
@@ -156,7 +159,7 @@ function AppContent() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          
+
           {/* --- LEGAL PAGES (ADDED) --- */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
@@ -178,7 +181,10 @@ function AppContent() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/checkout/success" element={<CheckoutPages.Success />} />
           <Route path="/checkout/error" element={<CheckoutPages.Error />} />
-          <Route path="/oauth/callback/google" element={<OAuthCallbackPage />} />
+          <Route
+            path="/oauth/callback/google"
+            element={<OAuthCallbackPage />}
+          />
           <Route
             path="/oauth/callback/facebook"
             element={<OAuthCallbackPage />}
@@ -316,6 +322,17 @@ function AppContent() {
               <PrivateRoute>
                 <DashboardLayout>
                   <SettingsPage />
+                </DashboardLayout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/settings/integrations"
+            element={
+              <PrivateRoute>
+                <DashboardLayout>
+                  <IntegrationsPage />
                 </DashboardLayout>
               </PrivateRoute>
             }
