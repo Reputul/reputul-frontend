@@ -83,8 +83,7 @@ const PrivacyPolicyPage = () => {
             </a>
             <p className="text-slate-500 mt-2 text-sm">
               Reputul LLC<br />
-              [Insert Your Business Address Here]<br />
-              [City, State, Zip]
+              [Castle Rock, CO, USA]
             </p>
           </div>
 
