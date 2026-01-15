@@ -51,6 +51,7 @@ import SettingsPage from "./pages/SettingsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import IntegrationsPage from "./pages/IntegrationsPage";
+import DataDeletionStatusPage from "./pages/DataDeletionStatusPage"; // ADDED: Facebook data deletion status page
 
 // ADDED: Subdomain routing component
 function SubdomainRouter({ children }) {
@@ -160,9 +161,12 @@ function AppContent() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* --- LEGAL PAGES (ADDED) --- */}
+          {/* --- LEGAL PAGES --- */}
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
+
+          {/* --- FACEBOOK DATA DELETION (ADDED) --- */}
+          <Route path="/data-deletion-status" element={<DataDeletionStatusPage />} />
 
           <Route
             path="/business/settings"
