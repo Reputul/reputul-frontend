@@ -51,7 +51,8 @@ import SettingsPage from "./pages/SettingsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import IntegrationsPage from "./pages/IntegrationsPage";
-import DataDeletionStatusPage from "./pages/DataDeletionStatusPage"; // ADDED: Facebook data deletion status page
+import DataDeletionStatusPage from "./pages/DataDeletionStatusPage";
+import DataDeletionInstructionsPage from './pages/DataDeletionInstructionsPage';
 
 // ADDED: Subdomain routing component
 function SubdomainRouter({ children }) {
@@ -167,6 +168,7 @@ function AppContent() {
 
           {/* --- FACEBOOK DATA DELETION (ADDED) --- */}
           <Route path="/data-deletion-status" element={<DataDeletionStatusPage />} />
+<Route path="/data-deletion-instructions" element={<DataDeletionInstructionsPage />} />
 
           <Route
             path="/business/settings"
