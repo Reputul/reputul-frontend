@@ -89,6 +89,7 @@ const API_CONFIG = {
       BY_BUSINESS: (businessId, period = '30d') => `/api/v1/insights/business/${businessId}?period=${period}`
     },
     BILLING: {
+      // EXISTING ENDPOINTS (keep these if you use them)
       CHECKOUT_SESSION: "/api/v1/billing/checkout-session",
       PORTAL_SESSION: "/api/v1/billing/portal-session",
       SUBSCRIPTION: "/api/v1/billing/subscription",
@@ -97,6 +98,12 @@ const API_CONFIG = {
       BUSINESS_STATUS: (businessId) =>
         `/api/v1/billing/business/${businessId}/status`,
       WEBHOOK: "/api/v1/billing/webhook",
+      
+      // NEW ENDPOINTS - Add these for new pricing system
+      PRICING: "/api/v1/pricing",
+      PRICING_CHECKOUT: "/api/v1/pricing/checkout",
+      PRICING_PORTAL: "/api/v1/pricing/portal",
+      PRICING_USAGE: "/api/v1/pricing/usage",
     },
     CAMPAIGNS: {
       SEQUENCES: "/api/v1/campaigns/sequences",
@@ -113,7 +120,6 @@ const API_CONFIG = {
       ANALYTICS: (sequenceId) =>
         `/api/v1/campaigns/sequences/${sequenceId}/analytics`,
     },
-    // Add inside API_CONFIG.ENDPOINTS:
     WIDGETS: {
       LIST: "/api/v1/widgets",
       BY_ID: (id) => `/api/v1/widgets/${id}`,
