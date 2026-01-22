@@ -131,6 +131,22 @@ const AccountBillingPage = () => {
                 {sub.status}
               </span>
             </div>
+            
+            {/* Beta Tester Badge - NEW */}
+            {sub.isBetaTester && (
+              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-indigo-500/20 border border-purple-400/30 rounded-full">
+                <span className="text-xl">✨</span>
+                <span className="text-sm font-medium text-purple-200">
+                  Beta Tester
+                  {sub.betaExpiresAt && (
+                    <span className="ml-1 text-purple-300">
+                      - {Math.ceil((new Date(sub.betaExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days left
+                    </span>
+                  )}
+                  {!sub.betaExpiresAt && <span className="ml-1 text-purple-300">- Unlimited Access</span>}
+                </span>
+              </div>
+            )}
           </div>
           <button
             onClick={handleBillingPortal}
@@ -200,9 +216,9 @@ const AccountBillingPage = () => {
           </p>
           <button
             onClick={() => navigate('/dashboard')}
-            className="text-primary-400 hover:text-primary-300 font-semibold transition-colors"
+            className="bg-gradient-to-r from-purple-500 via-pink-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-bold hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
-            Create Business →
+            Create Business
           </button>
         </div>
       );
@@ -215,55 +231,66 @@ const AccountBillingPage = () => {
         </h3>
 
         <div className="space-y-6">
-          {/* Customers */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-white font-semibold">Customers</span>
-              <span className={`text-sm px-3 py-1 rounded-full font-semibold ${getUsageColor(usage.customers, usage.maxCustomers)}`}>
-                {usage.customers} / {usage.maxCustomers}
+          {/* SMS Usage - NEW */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-blue-200 font-medium">SMS Messages</span>
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getUsageColor(usage.smsMessages || 0, usage.smsLimit || 100)}`}>
+                {usage.smsMessages || 0} / {usage.smsLimit || 100}
               </span>
             </div>
-            <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-primary-500 to-purple-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((usage.customers / usage.maxCustomers) * 100, 100)}%` }}
+                className="h-full bg-gradient-to-r from-primary-500 to-purple-500 transition-all duration-500"
+                style={{ width: `${Math.min(((usage.smsMessages || 0) / (usage.smsLimit || 100)) * 100, 100)}%` }}
               ></div>
             </div>
           </div>
 
-          {/* SMS Messages */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-white font-semibold">SMS Messages (This Month)</span>
-              <span className={`text-sm px-3 py-1 rounded-full font-semibold ${getUsageColor(usage.smsThisMonth || 0, usage.smsIncluded)}`}>
-                {usage.smsThisMonth || 0} / {usage.smsIncluded} included
+          {/* Review Requests Usage - NEW */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-blue-200 font-medium">Review Requests</span>
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getUsageColor(usage.reviewRequests || 0, usage.reviewRequestsLimit || 100)}`}>
+                {usage.reviewRequests || 0} / {usage.reviewRequestsLimit || 100}
               </span>
             </div>
-            <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(((usage.smsThisMonth || 0) / usage.smsIncluded) * 100, 100)}%` }}
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
+                style={{ width: `${Math.min(((usage.reviewRequests || 0) / (usage.reviewRequestsLimit || 100)) * 100, 100)}%` }}
               ></div>
             </div>
-            {usage.smsThisMonth > usage.smsIncluded && (
-              <p className="text-blue-200 text-sm mt-2">
-                Additional: {usage.smsThisMonth - usage.smsIncluded} messages at $0.02 each
-              </p>
-            )}
           </div>
 
-          {/* Review Requests */}
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-white font-semibold">Review Requests (This Month)</span>
-              <span className={`text-sm px-3 py-1 rounded-full font-semibold ${getUsageColor(usage.reviewRequestsThisMonth || 0, usage.maxReviewRequests)}`}>
-                {usage.reviewRequestsThisMonth || 0} / {usage.maxReviewRequests}
+          {/* Businesses Usage - NEW */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-blue-200 font-medium">Businesses</span>
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getUsageColor(usage.businesses || 0, usage.businessesLimit || 1)}`}>
+                {usage.businesses || 0} / {usage.businessesLimit || 1}
               </span>
             </div>
-            <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(((usage.reviewRequestsThisMonth || 0) / usage.maxReviewRequests) * 100, 100)}%` }}
+                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500"
+                style={{ width: `${Math.min(((usage.businesses || 0) / (usage.businessesLimit || 1)) * 100, 100)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Users Usage - NEW */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-blue-200 font-medium">Team Members</span>
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full ${getUsageColor(usage.users || 1, usage.usersLimit || 1)}`}>
+                {usage.users || 1} / {usage.usersLimit || 1}
+              </span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500"
+                style={{ width: `${Math.min(((usage.users || 1) / (usage.usersLimit || 1)) * 100, 100)}%` }}
               ></div>
             </div>
           </div>
