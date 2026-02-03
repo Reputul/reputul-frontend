@@ -514,7 +514,7 @@ const LandingPage = () => {
           {/* Copyright & Address for Twilio */}
           <div className="text-center text-slate-400 text-xs space-y-2">
             <p>&copy; 2026 Reputul LLC. All rights reserved.</p>
-            <p className="text-xs">123 Main St, Castle Rock, CO 80104</p>
+            <p className="text-xs">Castle Rock, CO</p>
           </div>
         </div>
       </footer>
