@@ -104,7 +104,7 @@ const GoogleConnectionModal = ({ isOpen, onClose, business, onSuccess }) => {
     }
     setSavingLink(true);
     try {
-      await axios.put(
+      const res = await axios.put(
         buildUrl(`/api/v1/businesses/${business.id}/review-platforms`),
         {
           // CHANGED: only send the Google field. Omitting facebookPageUrl / yelpPageUrl leaves them unchanged.
@@ -118,7 +118,20 @@ const GoogleConnectionModal = ({ isOpen, onClose, business, onSuccess }) => {
           },
         }
       );
-      finish();
+
+      // CHANGED (SAB fix): saving the link only connects Google if the backend matched it to a real listing
+      // (Place ID). Then we finish the connection like the search flow does. If it couldn't, say so honestly -
+      // this used to show "connected" while nothing was connected.
+      const placeId = res?.data?.googlePlaceId;
+      if (placeId && !placeId.startsWith("gpage_")) {
+        await connectGooglePlace(business.id, placeId);
+        finish();
+      } else {
+        setError(
+          "We saved your link, so review requests will point customers to it. But we couldn't match it to a " +
+            "Google listing, so your Google rating won't show yet. Try searching by your business name above."
+        );
+      }
     } catch (err) {
       setError(googleApiErrorMessage(err, "Failed to save your Google link. Please try again."));
     } finally {

@@ -43,7 +43,7 @@ describe("GoogleConnectionModal", () => {
 
   it("link fallback sends only the Google field (Facebook/Yelp untouched)", async () => {
     googleApi.searchGooglePlaces.mockResolvedValue([]);
-    axios.put.mockResolvedValue({ data: {} });
+    axios.put.mockResolvedValue({ data: { googlePlaceId: null } });
     render(<GoogleConnectionModal isOpen business={business} onClose={vi.fn()} onSuccess={vi.fn()} />);
 
     await userEvent.click(await screen.findByRole("button", { name: /paste your google link/i }));
@@ -55,5 +55,37 @@ describe("GoogleConnectionModal", () => {
     expect(body.googleReviewShortUrl).toBe("https://g.page/r/CZfH8POGJQGsEAI/review");
     expect(body).not.toHaveProperty("facebookPageUrl");
     expect(body).not.toHaveProperty("yelpPageUrl");
+  });
+
+  // ADDED (SAB fix)
+  it("link fallback finishes the connection when the backend matched the link to a listing", async () => {
+    googleApi.searchGooglePlaces.mockResolvedValue([]);
+    axios.put.mockResolvedValue({ data: { googlePlaceId: "ChIJduckweedduckweed123" } });
+    googleApi.connectGooglePlace.mockResolvedValue({ businessId: 10, placeId: "ChIJduckweedduckweed123" });
+    render(<GoogleConnectionModal isOpen business={business} onClose={vi.fn()} onSuccess={vi.fn()} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /paste your google link/i }));
+    await userEvent.type(screen.getByLabelText(/google maps or g\.page link/i), "https://maps.app.goo.gl/JUVninvn7sUd4Vww9");
+    await userEvent.click(screen.getByRole("button", { name: /save link/i }));
+
+    await waitFor(() => expect(googleApi.connectGooglePlace).toHaveBeenCalledWith(10, "ChIJduckweedduckweed123"));
+    expect(await screen.findByRole("status")).toHaveTextContent(/connected/i);
+  });
+
+  // ADDED (SAB fix)
+  it("link fallback does not claim success when the link couldn't be matched", async () => {
+    googleApi.searchGooglePlaces.mockResolvedValue([]);
+    axios.put.mockResolvedValue({ data: { googlePlaceId: null } });
+    const onSuccess = vi.fn();
+    render(<GoogleConnectionModal isOpen business={business} onClose={vi.fn()} onSuccess={onSuccess} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /paste your google link/i }));
+    await userEvent.type(screen.getByLabelText(/google maps or g\.page link/i), "https://maps.app.goo.gl/nomatch");
+    await userEvent.click(screen.getByRole("button", { name: /save link/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't match it to a Google listing/i);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(googleApi.connectGooglePlace).not.toHaveBeenCalled();
+    expect(onSuccess).not.toHaveBeenCalled();
   });
 });
