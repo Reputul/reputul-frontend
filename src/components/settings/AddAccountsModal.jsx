@@ -262,6 +262,7 @@ const AddAccountsModal = ({ isOpen, onClose, business, connectedPlatforms = [], 
           onSuccess={() => {
             setConnectingPlatform(null);
             onClose();
+            onConnect?.("google"); // CHANGED (Google sync): refresh the parent's connected-platforms list
           }}
         />
       )}

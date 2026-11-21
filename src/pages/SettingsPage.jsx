@@ -86,6 +86,10 @@ const SortablePlatformCard = ({ platform, onDisconnect }) => {
 
   // Get description for platform
   const getDescription = () => {
+    // ADDED (Google sync): Place ID connections show the live rating + latest reviews; full sync needs OAuth
+    if (platform.platform === 'GOOGLE_MY_BUSINESS' && platform.connectionMethod === 'PLACES') {
+      return 'Live Google rating and latest reviews on your dashboard. Review links go straight to Google.';
+    }
     const descriptions = {
       'GOOGLE_MY_BUSINESS': 'Auto-sync reviews from Google Business Profile',
       'FACEBOOK': 'Ensure the "Reviews" tab is enabled for your Facebook page',
@@ -176,6 +180,11 @@ const SortablePlatformCard = ({ platform, onDisconnect }) => {
           {platform.connectionMethod === 'OAUTH' ? (
             <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">
               Fast Sync (15 mins)
+            </span>
+          ) : platform.connectionMethod === 'PLACES' ? (
+            // ADDED (Google sync): Place ID connection, read live from Google
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
+              Live from Google
             </span>
           ) : (
             <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded">
