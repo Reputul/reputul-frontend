@@ -9,5 +9,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist'
+  },
+  // ADDED (Google sync): Vitest + React Testing Library setup
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/setupTests.js'
   }
 })

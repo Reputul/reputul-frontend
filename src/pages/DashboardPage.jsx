@@ -18,6 +18,7 @@ import {
 import BusinessHeader from "../components/dashboard/BusinessHeader";
 import KeyMetricsGrid from "../components/dashboard/KeyMetricsGrid";
 import LatestReviewsList from "../components/dashboard/LatestReviewsList";
+import GoogleRatingCard from "../components/google/GoogleRatingCard"; // ADDED (Google sync)
 
 // Modals
 import AddBusinessModal from "../components/dashboard/modals/AddBusinessModal";
@@ -312,6 +313,9 @@ const DashboardPage = () => {
 
           {/* Right Column: Quick Actions (Sidebar) */}
           <div className="space-y-6">
+            {/* ADDED (Google sync): live Google rating + latest reviews (Places API, never stored) */}
+            <GoogleRatingCard key={selectedBusiness?.id} businessId={selectedBusiness?.id} token={token} />
+
             {/* Quick Actions Card */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
